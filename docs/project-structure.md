@@ -6,8 +6,9 @@ the sender, another Dearly user, a phone number, or an email address. Planned
 delivery channels are in-app, WhatsApp, SMS, and email.
 
 Folders contain `.gitkeep` only until implementation needs a real file. Phase 2
-adds backend entry points and focused runtime files; the database schema and Expo
-setup remain unchanged. See the phase plan for current progress.
+adds backend entry points and focused runtime files. Phase 3 adds Router, shared
+Paper themes/components, and the mobile API client while preserving SDK 58 and
+the NativeWind/Babel/Metro pipeline. The database schema remains unchanged.
 
 ## Frontend
 
@@ -32,13 +33,19 @@ storage integrations in `services/`, state providers in `context/`, hooks in
 `hooks/`, configuration in `config/`, and Paper themes/design tokens in `theme/`.
 Retain `utils/` and the existing asset folders.
 
-`App.js`, `index.js`, providers, Babel, Metro, Tailwind, CSS, and package versions
-remain unchanged. `frontend/AGENTS.md` requires Expo Router for future navigation;
-the current starter uses `App.js` and has React Navigation dependencies but no
-Expo Router dependency. When navigation is implemented, follow those instructions
-and verify SDK 58 documentation before adding `src/app/` route files. Feature UI
-can remain under `screens/`, with route files importing it. The existing
-`navigation/` folder is retained; do not build a competing navigation system.
+`index.js` imports global CSS before `expo-router/entry`. `src/app/_layout.js`
+owns the Stack, Paper/Safe Area providers, navigation theme, and status bar.
+`src/app/index.js` and `status.js` import feature screens; `+not-found.js` provides
+a recoverable missing-page state. The superseded `App.js` starter was removed.
+Babel, Metro, Tailwind, CSS, and existing core package versions are preserved;
+Router and necessary compatible peers were added through Expo install.
+
+`src/theme/` holds Paper light/dark themes and spacing/touch-size tokens.
+`src/api/client.js` handles safe requests and cancellation; `src/config/api.js`
+selects the environment; `src/services/health.js` and `src/hooks/useServiceHealth.js`
+drive the service-status flow. `navigation/` remains reserved; never create a
+competing navigation system. Feature APIs and authenticated navigation remain in
+later phases.
 
 ## Backend
 

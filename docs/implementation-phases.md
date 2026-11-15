@@ -39,7 +39,7 @@ and a simulated delivery does not complete a real channel integration.
 | --- | --- | --- | --- |
 | 1 | Project structure | — | Complete — scaffold only |
 | 2 | Backend runtime, database connection, and checks | 1 | Complete |
-| 3 | Mobile foundation, routing, theme, and API client | 1; 2 for connectivity | Not started |
+| 3 | Mobile foundation, routing, theme, and API client | 1; 2 for connectivity | Complete |
 | 4 | Phone OTP and session backend | 2 | Not started |
 | 5 | Mobile login, session restoration, and profile | 3–4 | Not started |
 | 6 | Draft message and recipient APIs | 4 | Not started |
@@ -78,8 +78,8 @@ complete.
 has a generic email/password user template. The mobile app still uses `App.js` and
 has no Expo Router despite its local instructions. There is no frontend lint script;
 a direct TypeScript check previously parsed React Native dependencies unsuccessfully.
-Backend runtime/checks are now resolved by Phase 2; frontend tooling/routing remain
-for Phase 3. The Prisma account template remains for Phase 4.
+Backend runtime/checks were resolved in Phase 2; frontend tooling/routing were
+resolved in Phase 3. The Prisma account template remains for Phase 4.
 
 **Commit scope:** Structure/documentation work already exists in history; do not
 rewrite it to match this new numbering.
@@ -543,3 +543,56 @@ of the database and exempt from ordinary rate limits; health results are not
 cached. `npm run check` passed all 21 tests, lint, typechecking, and build. The
 user's running server on port `8080` returned `200` for all three basic routes,
 including the read-only Neon check. No further feature routes were needed.
+
+### Phase 3 completion — 15 November 2026
+
+- **Status:** Complete for the mobile foundation scope.
+- **Delivered:** Expo Router entry/root layout and home/status/not-found routes;
+  preserved Safe Area/Paper providers; shared MD3 light/dark/navigation themes,
+  spacing and minimum-touch-size tokens; scrollable responsive Screen, button,
+  labeled field, and loading/error/empty-state components. API client adds explicit
+  local/hosted URL selection, safe response parsing/error types, timeout, caller
+  cancellation, and no automatic retries. The service-status screen checks the
+  actual backend/server and database endpoints and supports recovery/retry.
+- **Validation:** Frontend `npm run check` passed lint, strict JS/JSDoc checking,
+  and all 16 API/configuration/health tests. `npx expo install --check` passed;
+  Expo Doctor passed 20/20 checks. Production export succeeded for iOS, Android,
+  and web. Audit reported zero vulnerabilities. Expo fingerprint generation also
+  passed with the targeted dependency overrides.
+- **Native evidence:** Current app rendered in Expo Go 58 on iPhone 17 Pro Max
+  (iOS 26), iPad Pro 11-inch (M4, iOS 26), and Medium Phone (Android 36).
+  iPhone in-app home-to-status navigation, loading, backend-offline error, retry,
+  and successful real local backend/Neon results were observed. Light/dark and
+  enlarged-text reflow were checked on iPhone and Android; a native Android
+  1600×2560/density-240 display override checked a tablet-sized viewport, not
+  separate tablet hardware. Generated captures stay ignored under
+  `.impeccable/review/`; only source/configuration/documentation is committed.
+- **Independent review:** `ship` for this bounded foundation and the supplied
+  native simulator/emulator captures. No new visual identity was introduced:
+  Paper's established semantic palette/system fonts are retained. No material
+  code/layout fixes remained in that verified scope.
+- **Preserved:** Existing Expo/React/React Native/NativeWind/Paper/animation core
+  versions and Babel/Metro/Tailwind/global CSS configuration. The superseded
+  `App.js` was replaced by Router's layout, not retained as a competing root.
+  Backend source/schema, private environment files, and hosted API URL remain
+  unchanged. No migrations, message sends, auth screens, or feature APIs added.
+- **Decisions:** Keep JavaScript and strict JSDoc checking against dependency
+  declarations; prevent jsconfig from checking vendor runtime JS. Use a 10-second
+  request deadline and reject missing hosted configuration in every release build.
+  Keep the hosted URL empty until deployment. Add only SDK-compatible Router,
+  required peers, appearance/web support, and checking tools; preserve the rest.
+- **Verification limits:** Physical-device gestures, enlarged-text scrolling to
+  off-screen controls, Android status-screen interaction, and development-build
+  deep links remain hands-on checks for subsequent flows/release verification.
+  CUA scroll/drag calls returned `noWindowsAvailable`, so readable reflow/AX
+  presence is not claimed as proof of a successful scroll gesture. Android tablet
+  evidence is a viewport override; real tablet hardware remains untested.
+- **Cleanup:** Android display/font/night settings and temporary adb reverse
+  tunnels were restored; the QA emulator was stopped. The original iPhone's
+  light appearance/large text setting was restored. Temporary services started
+  for this verification are stopped after testing; the user's pre-existing Expo
+  process is preserved. Existing user deletion of `docs/.gitkeep` is not included.
+- **Commits:** `d12c65d` — API/configuration/health services and tests; `958e95b` —
+  SDK-compatible dependencies and frontend checks; `31ca96d` — Router, themes,
+  shared components, and the minimal mobile shell.
+- **Next:** Phase 4 — phone OTP/session backend. Begin when requested.

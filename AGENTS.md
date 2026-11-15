@@ -30,8 +30,9 @@ within a phase does not authorize the entire phase.
   versions; do not upgrade packages or replace configuration incidentally.
 - Frontend instructions live in [frontend/AGENTS.md](frontend/AGENTS.md), including
   version-matched Expo documentation and Expo Router requirements. The current
-  `App.js` starter has no Router setup; introduce it deliberately during the
-  frontend foundation phase, preserving providers and feature UI in `src/screens/`.
+  Router setup uses `index.js` for global CSS and Router registration, with
+  providers in `src/app/_layout.js` and feature UI in `src/screens/`. Do not
+  reintroduce a second `App.js` root or a separate navigation container.
 - Keep frontend JavaScript unless a scoped migration is requested. Backend uses
   TypeScript, Node.js, Express, Prisma, PostgreSQL, and Zod. Preserve the layered
   `routes → controllers → services` pattern and plural `backend/src/configs/`.
@@ -83,7 +84,8 @@ within a phase does not authorize the entire phase.
   copy its credentials into documentation, commits, logs, or frontend variables.
   The local backend port is `8080`. Frontend `EXPO_PUBLIC_API_URL` is the local
   URL (`http://localhost:8080`); `EXPO_PUBLIC_SERVER_API_URL` stays empty until
-  hosting is configured. Implement environment selection in the API client phase;
+  hosting is configured. The API client selects the local URL for development
+  and requires a remote HTTPS hosted URL for release builds;
   the backend is started separately with the documented scripts.
 
 ## Verification and documentation
@@ -95,10 +97,12 @@ within a phase does not authorize the entire phase.
   and delivery behavior as they are implemented. Exercise affected mobile flows.
 - For documentation/placeholder-only work, check links, paths, scope, and
   `git diff --check`; do not install dependencies just to validate Markdown.
-- Report exactly what passed, failed, or could not run. Backend entry points and
-  checks now exist. Remaining frontend baseline issues for Phase 3: no lint script,
-  and the previous direct TypeScript check parsed React Native dependency syntax
-  unsuccessfully. Recheck rather than treating them as permanent exceptions.
+- Report exactly what passed, failed, or could not run. Both packages now have
+  `npm run check`. Frontend checking uses strict JSDoc/JavaScript with Expo's base
+  configuration and `maxNodeModuleJsDepth: 0`: check application source against
+  dependency declarations, not vendor runtime JavaScript. Do not suppress app
+  errors to make checks pass. Use `npx expo-doctor` and platform exports for
+  dependency/bundling changes; record native-device verification separately.
 - Keep the phase plan current. Mark a phase complete only when its acceptance
   checks pass; record unresolved blockers instead of claiming success.
 - At a phase boundary, report delivered behavior, validation, limitations,
