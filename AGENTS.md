@@ -57,9 +57,13 @@ within a phase does not authorize the entire phase.
   delivery confirmation, and opening; only claim statuses supported by evidence.
 - Validate media type/size and authorize attachment access. Keep message content,
   OTPs, tokens, and credentials out of logs.
-- Prefer free/open-source integrations where practical, but verify provider
-  capabilities, terms, quotas, and costs before choosing them. Do not promise
-  unlimited free SMS/WhatsApp/email or describe a development stub as real delivery.
+- Suggest only services with a usable free plan or open-source tools that are
+  free to use. Exclude paid-only tools, paid upgrades, and temporary trials as
+  recommendations. The user explicitly skipped Meta/WhatsApp Cloud API because
+  setup takes too long; do not suggest or plan that integration unless asked.
+  Verify free-tier capabilities, limits, licensing, and infrastructure costs. Stop
+  or report quota exhaustion instead of automatically upgrading or enabling billing.
+  Do not promise unlimited free SMS/WhatsApp/email or label a stub as real delivery.
 - ShopSmart is a read-only implementation reference at
   `/Users/mayanksharma/Downloads/New_Projects/shopsmart`: WAHA for WhatsApp,
   SMSGate/InfiniReach for SMS, and Nodemailer/SMTP for email. Adapt patterns to

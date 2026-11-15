@@ -22,8 +22,11 @@ small reviewable increments. Do not use this roadmap as permission to build all
 features at once or automatically select vendors.
 
 The [messaging review](messaging-options.md) records ShopSmart findings and free
-provider suggestions. They remain editable proposals. Development adapters allow
-local progress, but real OTP delivery is required before public login is released,
+provider suggestions, restricted to usable free plans and free-to-use open-source
+tools. Paid-only options, upgrades, and temporary trials are excluded; never enable
+billing automatically. The user has skipped Meta/WhatsApp Cloud API because setup
+takes too long. Other eligible choices remain editable proposals. Development
+adapters allow local progress, but real OTP delivery is required before public login is released,
 and a simulated delivery does not complete a real channel integration.
 
 ## Progress and dependencies
@@ -235,8 +238,8 @@ draft list/recovery behavior with relevant verification.
   cancel/retry, permission-denial states, and attachment removal in the composer.
 - Cleanup for abandoned uploads and deleted drafts; storage/retention policy.
 
-**How:** Choose a storage provider after reviewing cost and capacity; keep a storage
-adapter so local development does not dictate production hosting. Validate actual
+**How:** Choose a free-to-use storage option after reviewing capacity and costs.
+Keep a storage adapter so local development does not dictate production hosting. Validate actual
 file characteristics server-side, scope object access to the authorized user, and
 avoid public permanent URLs. Use supported Expo modules after checking SDK 58 docs.
 Do not load large videos entirely into mobile memory or base64 API JSON.
@@ -356,8 +359,8 @@ adapter/templates/configuration; worker integration and event/error handling.
 
 **Build**
 
-- Review WAHA reuse versus official Cloud API requirements and explicitly select
-  the provider/configuration; do not assume either fits every production scenario.
+- Reuse WAHA's free edition as the candidate and verify supported capabilities
+  before selecting configuration. Keep paid editions out of scope.
 - Implement reusable text/secure-link dispatch, provider IDs, session readiness,
   timeouts, and per-recipient/channel delivery records in the worker pipeline.
 - Add authenticated/deduplicated callbacks where supported and operational handling
@@ -367,8 +370,8 @@ adapter/templates/configuration; worker integration and event/error handling.
 **How:** Adapt ShopSmart's WAHA HTTP boundary, not its boolean-only result or country
 heuristic. Keep sender sessions private/persistent. Use supported provider idempotency
 or reconciliation; treat a post-submit timeout as uncertain because the message
-may already have been sent. For Cloud API, review opt-in, templates, category/cost,
-and time-window constraints before promising arbitrary scheduled message bodies.
+may already have been sent. Verify free-edition capability and recipient consent;
+use text/secure links when direct media is unavailable without payment.
 
 **Done when:** Real text/link delivery is demonstrated to a designated recipient;
 session loss, provider rejection, unknown outcomes, and duplicate events are handled.
@@ -382,8 +385,8 @@ integration; readiness/recovery and user-facing channel state.
 
 **Build**
 
-- Review SMSGate and InfiniReach; select one explicitly with device/SIM/credential
-  requirements. Reuse the Phase 4 adapter foundation if real SMS OTP was added.
+- Review SMSGate and InfiniReach's free plan only; select one with explicit
+  device/SIM/credential requirements. Reuse the Phase 4 adapter foundation if real SMS OTP was added.
 - Send short text/secure links through the worker pipeline with normalized numbers,
   length/segment handling, provider IDs, timeout classification, and safe retries.
 - Add available authenticated delivery callbacks, offline-device/quota reporting,

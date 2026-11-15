@@ -1,8 +1,10 @@
 # Messaging integrations and suggestions
 
 Research date: 15 November 2026. These are reviewable suggestions, not selected
-providers or installed dependencies. Recheck documentation, licensing, limits,
-and account eligibility when implementing. No credentials were read, services
+providers or installed dependencies. Recommendations are limited to usable free
+plans and open-source tools that are free to use; paid upgrades and temporary trials
+are excluded. The user has excluded Meta/WhatsApp Cloud API because of setup time.
+Recheck documentation, licensing, limits, and account eligibility when implementing. No credentials were read, services
 started, tests dispatched, or messages sent during this review.
 
 ## What ShopSmart actually uses
@@ -31,9 +33,9 @@ versions, so adapt patterns rather than copying its package manifest.
 
 | Channel | Suggested starting point | Alternative | Decision status |
 | --- | --- | --- | --- |
-| WhatsApp | Existing WAHA integration for a controlled prototype | Official Meta Cloud API for a supported production route | Proposed; review session operations, account risk, and platform suitability |
-| SMS | SMSGate with a dedicated Android phone/SIM | Existing InfiniReach branch if its convenience/quotas suit you | Proposed; verify hardware, SIM costs, reachability, and sending limits |
-| Email | Nodemailer + Brevo SMTP for an app-focused free-tier trial | Gmail SMTP for a small demo; Resend API/SMTP for another option | Proposed; verify sender/domain setup and usable quota |
+| WhatsApp | Existing WAHA integration using its free edition | No replacement proposed | Proposed; verify free-edition capabilities and session operations |
+| SMS | SMSGate with a dedicated Android phone/SIM | InfiniReach free plan only, within its quota | Proposed; verify hardware, SIM costs, reachability, and sending limits |
+| Email | Nodemailer + Brevo SMTP free plan | Gmail SMTP for a small demo; Resend API/SMTP free plan | Proposed; verify sender/domain setup and usable quota |
 | Local email testing | Explicit local JSON/capture transport | A local test inbox | Development only; never count it as delivery |
 
 There is no demonstrated need to replace WAHA or SMSGate merely to use a different
@@ -48,9 +50,9 @@ ShopSmart's HTTP adapter is a useful starting point: retain timeout handling and
 separate local/hosted configuration. Dearly should expose it behind a WhatsApp
 provider interface so a different provider can be selected later.
 
-WAHA documents free availability and separately documents Plus features. Check
-required engine/edition support before promising direct photo/video/voice/file
-sending. Begin with text plus a secure Dearly content link, subject to the
+Use only WAHA's free edition. Check its engine/edition support before promising
+direct photo/video/voice/file sending; features requiring payment are out of scope.
+Begin with text plus a secure Dearly content link, subject to the
 recipient-access design. Sources: [WAHA introduction](https://waha.devlike.pro/docs/overview/introduction/)
 and [message capabilities](https://waha.devlike.pro/docs/how-to/send-messages/).
 
@@ -59,20 +61,11 @@ that schedules messages far in advance. Plan for session readiness, disconnectio
 re-pairing, and outages; do not promise reliable delivery merely because the API
 is running. See [WAHA's blocking guidance](https://waha.devlike.pro/docs/overview/how-to-avoid-blocking/).
 
-The official alternative is Meta's WhatsApp Business Platform. Its rules restrict
-non-template sends to an open 24-hour customer-service window; outside that window
-businesses use templates, and recipients must opt in. Categories and pricing also
-matter. Arbitrary scheduled personal messages therefore need a product-fit check;
-an approved notification template linking to Dearly may be more suitable than
-sending arbitrary message bodies. This is a design suggestion, not a guarantee
-of approval or free sending. Source: [Meta pricing and messaging rules](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing).
+**Review before Phase 13:** free-edition capability; who operates the sender number;
+text/link versus supported direct media; recipient consent; outage and re-pairing
+procedure. Do not switch providers or automatically send a second channel without an explicit configuration/policy.
 
-**Review before Phase 13:** WAHA versus Cloud API; who operates the sender number;
-prototype versus public-release requirements; text/link versus direct media;
-consent and template needs; outage and re-pairing procedure. Do not switch providers
-or automatically send a second channel without an explicit configuration/policy.
-
-## SMS: SMSGate first, InfiniReach as a convenient alternative
+## SMS: SMSGate first, InfiniReach free plan as an alternative
 
 SMSGate is free/open-source Android gateway software with local, public-cloud,
 and private-server integration options. It sends using an Android device, not a
@@ -82,8 +75,9 @@ access rather than exposing a phone's local API publicly. Sources:
 [SMSGate](https://sms-gate.app/) and [integration documentation](https://docs.sms-gate.app/).
 
 InfiniReach is already supported in ShopSmart. Its current billing guide lists
-one connected line and 100 messages/month on its free plan; paid plans and the
-underlying connected-line costs are separate considerations. It is a hosted
+one connected line and 100 messages/month on its free plan. Consider only that
+free plan; do not recommend an upgrade when its quota is exhausted. Underlying
+connected-line costs remain separate. It is a hosted
 service option, not evidence of an open-source implementation. Verify API shapes
 against current documentation before reusing the old adapter. Sources:
 [InfiniReach billing](https://infinireach.io/docs/billing),
@@ -128,6 +122,11 @@ a message representation; it does not send to an inbox. Its code still records
 separate simulation status. Production should fail configuration validation when
 an enabled channel lacks credentials. See [Nodemailer JSON transport](https://nodemailer.com/transports/stream#3-generate-a-json-encoded-message-object--v310).
 
+**Free-only rule:** Use only the free plans above. Free quotas are not unlimited;
+pause/report excess work rather than enable billing. If a service needs a domain
+you do not already own or other paid prerequisites, use an eligible free alternative
+or record the blocker; do not present a domain purchase as free.
+
 **Review before Phase 12:** provider, sending identity/domain, safe HTML templates,
 text alternative, links/attachment strategy, quota management, bounce handling,
 and permitted recipient types. Prefer secure links over attaching large files.
@@ -163,10 +162,10 @@ Fill this in when you review the options; leave unselected choices open.
 
 | Decision | Current proposal | Selected value / reason |
 | --- | --- | --- |
-| OTP channel/provider | Development adapter first; SMSGate or WAHA trial for real verification | Pending |
-| WhatsApp | WAHA prototype; assess Cloud API for production | Pending |
-| SMS | SMSGate; compare InfiniReach convenience | Pending |
-| Email | Nodemailer + Brevo SMTP; Gmail/Resend alternatives | Pending |
+| OTP channel/provider | Development adapter first; SMSGate or WAHA free edition for real verification | Pending |
+| WhatsApp | WAHA free edition; no paid alternative proposed | Pending |
+| SMS | SMSGate; InfiniReach free plan only as an alternative | Pending |
+| Email | Nodemailer + Brevo free SMTP; Gmail/Resend free alternatives | Pending |
 | External content access | Notification with secure link; define recipient proof and expiry | Pending |
 | Missing credentials | Explicit unavailable/simulated status; production validation | Pending |
 | Quota/timeout handling | Visible deferred/uncertain outcomes, bounded retries | Pending |
