@@ -16,12 +16,19 @@ backend/
 │   ├── constants/             # HTTP status codes, roles, error codes (.gitkeep)
 │   ├── controllers/           # Route controllers / request handlers (.gitkeep)
 │   ├── interfaces/            # TypeScript interfaces (.gitkeep)
+│   ├── jobs/                  # Scheduling and enqueueing work (.gitkeep)
 │   ├── middlewares/           # Auth, error handling, rate limiters, validation (.gitkeep)
+│   ├── providers/             # Vendor-specific integrations
+│   │   ├── email/             # Email delivery (.gitkeep)
+│   │   ├── sms/               # SMS delivery (.gitkeep)
+│   │   ├── storage/           # Attachment storage (.gitkeep)
+│   │   └── whatsapp/          # WhatsApp delivery (.gitkeep)
 │   ├── routes/                # Express routing endpoints (.gitkeep)
 │   ├── services/              # Business logic & Prisma queries (.gitkeep)
 │   ├── types/                 # Custom type definitions (.gitkeep)
 │   ├── utils/                 # Logger, ApiError, ApiResponse, asyncHandler (.gitkeep)
-│   └── validators/            # Zod validation schemas (.gitkeep)
+│   ├── validators/            # Zod validation schemas (.gitkeep)
+│   └── workers/               # Delivery execution and retries (.gitkeep)
 ├── logs/                      # Server and error logs (.gitkeep)
 ├── .env.example               # Environment variables template
 ├── .gitignore                 # Ignore node_modules, dist, logs, env
@@ -43,6 +50,12 @@ backend/
 ---
 
 ## 🚀 Setup & Commands
+
+The commands below are intended for implementation. This is currently a
+folder scaffold: `src/server.ts` has not been created, and the Prisma user model
+is still a generic email/password template. See the
+[project structure guide](../docs/project-structure.md) for the phone/OTP plan
+and next steps. No scheduling or delivery provider is configured yet.
 
 ### 1. Install dependencies
 ```bash

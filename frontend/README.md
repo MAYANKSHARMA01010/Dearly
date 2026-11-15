@@ -31,15 +31,24 @@ frontend/
     ├── config/                # App constants and configuration (.gitkeep)
     ├── context/               # React Context state providers (.gitkeep)
     ├── hooks/                 # Custom React hooks (.gitkeep)
-    ├── navigation/            # Navigation stacks and tabs (.gitkeep)
+    ├── navigation/            # Reserved; see AGENTS.md for future Expo Router setup
     ├── screens/               # Screen modules:
     │   ├── auth/              # Auth screens (.gitkeep)
     │   ├── home/              # Main screens (.gitkeep)
-    │   └── profile/           # Profile screens (.gitkeep)
+    │   ├── messages/          # Compose, schedule, lists, details (.gitkeep)
+    │   ├── recipients/        # Recipient selection (.gitkeep)
+    │   ├── notifications/     # Notification screens (.gitkeep)
+    │   ├── profile/           # Profile screens (.gitkeep)
+    │   └── settings/          # Preferences and app settings (.gitkeep)
     ├── services/              # External services and storage (.gitkeep)
     ├── theme/                 # Design tokens and themes (.gitkeep)
     └── utils/                 # Utility functions (.gitkeep)
 ```
+
+Feature component folders also include `components/messages/`,
+`components/media/`, and `components/recipients/`. See the
+[project structure guide](../docs/project-structure.md) for responsibilities and
+the planned navigation setup. These folders contain placeholders only.
 
 ---
 
