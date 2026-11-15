@@ -90,6 +90,13 @@ within a phase does not authorize the entire phase.
 
 ## Verification and documentation
 
+- Use a single iOS simulator: iPhone 18 Pro Max if installed; otherwise iPhone
+  17 Pro Max. Do not create additional iPhone or iPad targets for routine work.
+  Keep one suitable Android phone emulator for Android checks, and leave it
+  stopped unless Android verification is needed. Default interactive development
+  runs the iOS app and backend; do not launch Android automatically. Simulator
+  resets erase local device data and are performed when requested, not on every
+  startup. This preference supersedes earlier multi-device QA habits.
 - Establish the baseline and use existing scripts where available. For frontend
   implementation, follow the lint/typecheck requirements in `frontend/AGENTS.md`.
   For backend implementation, run relevant build/type checks and focused tests.
