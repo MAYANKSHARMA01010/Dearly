@@ -79,6 +79,12 @@ within a phase does not authorize the entire phase.
   an explicit development adapter.
 - Keep secrets out of Git and client-visible environment variables. Document
   required configuration with safe `.env.example` values.
+- Use the supplied Neon PostgreSQL connection through `backend/.env` only; never
+  copy its credentials into documentation, commits, logs, or frontend variables.
+  The local backend port is `8080`. Frontend `EXPO_PUBLIC_API_URL` is the local
+  URL (`http://localhost:8080`); `EXPO_PUBLIC_SERVER_API_URL` stays empty until
+  hosting is configured. Implement environment selection in the API client phase;
+  these settings alone do not create or start a backend server.
 
 ## Verification and documentation
 

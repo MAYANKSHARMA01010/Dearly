@@ -15,6 +15,10 @@ completion checks, and useful commit boundaries. Detailed rules live in
 [../AGENTS.md](../AGENTS.md); folder responsibilities are in
 [project-structure.md](project-structure.md).
 
+See [environment-setup.md](environment-setup.md) for the configured Neon database,
+local backend port `8080`, and separate local/future hosted API URL settings. Only
+environment values are prepared; backend startup and API selection remain below.
+
 Work only on the phase/task the user requests. Finish its checks, update the
 completion record, and make focused commits before reporting back. Start the next
 phase when requested. Within a phase, complete related backend/mobile work in
