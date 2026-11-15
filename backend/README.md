@@ -60,14 +60,22 @@ future reviewed schema work; do not run them merely to make health checks pass.
 ## Health endpoints and response contract
 
 ```bash
+curl http://localhost:8080/
+curl http://localhost:8080/health
+curl http://localhost:8080/health/db
 curl http://localhost:8080/health/live
 curl http://localhost:8080/health/ready
 ```
 
-- `GET /health/live`: `200` if the HTTP process is responsive; does not access
+- `GET /`: API name, running status, and links to the available health endpoints;
+  does not query the database.
+- `GET /health` (also `/health/live`): `200` if the HTTP process is responsive; does not access
   PostgreSQL and is exempt from the ordinary request limiter.
-- `GET /health/ready`: read-only `SELECT 1`; `200` when PostgreSQL responds or `503`
+- `GET /health/db` (also `/health/ready`): read-only `SELECT 1`; `200` when PostgreSQL responds or `503`
   with `NOT_READY` when it is unavailable. Readiness is rate-limited.
+
+Health responses use `Cache-Control: no-store` so cached results do not hide an
+outage or recovery. Both naming styles remain supported.
 
 Success responses contain `success: true`, `data`, and `requestId`. Errors contain
 `success: false`, `error: { code, message }`, optional safe validation field/code

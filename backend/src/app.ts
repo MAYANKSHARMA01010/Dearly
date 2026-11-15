@@ -7,6 +7,7 @@ import type { Database } from './configs/database';
 import { errorHandler, notFound } from './middlewares/errorHandler';
 import { requestContext } from './middlewares/requestContext';
 import { createHealthRouter } from './routes/health.routes';
+import { createRootRouter } from './routes/root.routes';
 import { ApiError } from './utils/ApiError';
 import type { AppLogger } from './utils/logger';
 
@@ -29,10 +30,11 @@ export function createApp(config: AppConfig, database: Database, logger: AppLogg
     limit: config.rateLimitMax,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skip: (req) => ['GET', 'HEAD'].includes(req.method) && req.path === '/health/live',
+    skip: (req) => ['GET', 'HEAD'].includes(req.method) && /^\/health(?:\/live)?\/?$/i.test(req.path),
     handler: (_req, _res, next) => next(new ApiError(429, 'RATE_LIMITED', 'Too many requests. Try again later.')),
   }));
   app.use(express.json({ limit: config.bodyLimitBytes }));
+  app.use('/', createRootRouter());
   app.use('/health', createHealthRouter(database));
   app.use(notFound);
   app.use(errorHandler(logger));

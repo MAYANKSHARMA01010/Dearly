@@ -9,6 +9,35 @@ import { requestContext } from '../src/middlewares/requestContext';
 import { validateBody } from '../src/middlewares/validateBody';
 import { captureLogger, config, fakeDatabase } from './helpers';
 
+test('root identifies the API and links to available health endpoints without querying the database', async () => {
+  let queries = 0;
+  const db = { ...fakeDatabase(), isReady: async () => { queries++; return false; } };
+  const app = createApp(config, db, captureLogger().logger);
+  const response = await request(app).get('/').expect(200);
+  assert.equal(response.body.success, true);
+  assert.equal(response.body.data.name, 'Dearly API');
+  assert.deepEqual(response.body.data.endpoints, {
+    health: '/health', databaseHealth: '/health/db', liveness: '/health/live', readiness: '/health/ready',
+  });
+  assert.equal(response.body.requestId, response.headers['x-request-id']);
+  assert.equal(queries, 0);
+});
+
+test('health alias stays live during database failure and after ordinary rate limits are exhausted', async () => {
+  let queries = 0;
+  const db = { ...fakeDatabase(), isReady: async () => { queries++; return false; } };
+  const app = createApp({ ...config, rateLimitMax: 1 }, db, captureLogger().logger);
+  await request(app).get('/').expect(200);
+  await request(app).get('/').expect(429);
+  for (const path of ['/health', '/health/', '/health/live', '/health/live/']) {
+    const response = await request(app).get(path).expect(200);
+    assert.deepEqual(response.body.data, { status: 'alive' });
+    assert.equal(response.headers['cache-control'], 'no-store');
+    await request(app).head(path).expect(200);
+  }
+  assert.equal(queries, 0);
+});
+
 test('liveness has security headers, a generated request ID and no database dependency', async () => {
   let queries = 0;
   const db = { ...fakeDatabase(), isReady: async () => { queries++; return false; } };
@@ -29,12 +58,21 @@ test('readiness responds to database availability changing without restarting th
   let ready = true;
   const db = { ...fakeDatabase(), isReady: async () => ready };
   const app = createApp(config, db, captureLogger().logger);
-  await request(app).get('/health/ready').expect(200);
+  for (const path of ['/health/ready', '/health/db']) {
+    const response = await request(app).get(path).expect(200);
+    assert.deepEqual(response.body.data, { status: 'ready' });
+    assert.equal(response.headers['cache-control'], 'no-store');
+  }
   ready = false;
-  const down = await request(app).get('/health/ready').expect(503);
-  assert.equal(down.body.error.code, 'NOT_READY');
+  for (const path of ['/health/ready', '/health/db']) {
+    const down = await request(app).get(path).expect(503);
+    assert.equal(down.body.error.code, 'NOT_READY');
+    assert.equal(down.headers['cache-control'], 'no-store');
+  }
   ready = true;
-  await request(app).get('/health/ready').expect(200);
+  for (const path of ['/health/ready', '/health/db']) {
+    await request(app).get(path).expect(200);
+  }
 });
 
 test('readiness hides database failures containing connection credentials', async () => {

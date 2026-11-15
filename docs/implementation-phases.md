@@ -533,3 +533,13 @@ unrelated user work, and do not push or rewrite history unless requested.
   checks; `4958905` — HTTP runtime, safeguards, health endpoints, and tests.
 - **Next:** Phase 3 — mobile foundation, routing, theme, API client, and frontend
   checks; begin when requested.
+
+### Phase 2 follow-up — basic API routes
+
+Added `GET /` with API information and endpoint links, `GET /health` for server
+liveness, and `GET /health/db` for database readiness. The existing `/health/live`
+and `/health/ready` paths remain supported. Liveness aliases remain independent
+of the database and exempt from ordinary rate limits; health results are not
+cached. `npm run check` passed all 21 tests, lint, typechecking, and build. The
+user's running server on port `8080` returned `200` for all three basic routes,
+including the read-only Neon check. No further feature routes were needed.
