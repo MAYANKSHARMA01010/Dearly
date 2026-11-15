@@ -84,7 +84,7 @@ within a phase does not authorize the entire phase.
   The local backend port is `8080`. Frontend `EXPO_PUBLIC_API_URL` is the local
   URL (`http://localhost:8080`); `EXPO_PUBLIC_SERVER_API_URL` stays empty until
   hosting is configured. Implement environment selection in the API client phase;
-  these settings alone do not create or start a backend server.
+  the backend is started separately with the documented scripts.
 
 ## Verification and documentation
 
@@ -95,10 +95,10 @@ within a phase does not authorize the entire phase.
   and delivery behavior as they are implemented. Exercise affected mobile flows.
 - For documentation/placeholder-only work, check links, paths, scope, and
   `git diff --check`; do not install dependencies just to validate Markdown.
-- Report exactly what passed, failed, or could not run. Current known blockers:
-  frontend has no lint script; the previous direct TypeScript check parsed React
-  Native dependency syntax unsuccessfully; backend entry points are absent.
-  Recheck these when relevant rather than treating them as permanent exceptions.
+- Report exactly what passed, failed, or could not run. Backend entry points and
+  checks now exist. Remaining frontend baseline issues for Phase 3: no lint script,
+  and the previous direct TypeScript check parsed React Native dependency syntax
+  unsuccessfully. Recheck rather than treating them as permanent exceptions.
 - Keep the phase plan current. Mark a phase complete only when its acceptance
   checks pass; record unresolved blockers instead of claiming success.
 - At a phase boundary, report delivered behavior, validation, limitations,

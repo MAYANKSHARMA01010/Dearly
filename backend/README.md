@@ -1,88 +1,143 @@
-# Dearly Backend
+# Dearly backend
 
-Node.js, Express, TypeScript, and Prisma with PostgreSQL backend architecture.
+Phase 2 provides a runnable Node.js/Express/TypeScript API with Prisma/PostgreSQL,
+health checks, request safeguards, safe JSON logging, and focused automated tests.
+Phone authentication, message APIs, scheduling, and channel delivery follow later.
+The generic Prisma user template is unchanged and is not an implemented login flow.
 
----
+## Setup
 
-## 📁 Directory Architecture
+Use Node.js 22.16 or a later Node 22 release and npm. From the repository root:
 
-```text
-backend/
-├── prisma/
-│   ├── migrations/            # Database migration history (.gitkeep)
-│   └── schema.prisma          # Prisma schema with PostgreSQL datasource
-├── src/
-│   ├── configs/               # Environment, database, cors, redis configs (.gitkeep)
-│   ├── constants/             # HTTP status codes, roles, error codes (.gitkeep)
-│   ├── controllers/           # Route controllers / request handlers (.gitkeep)
-│   ├── interfaces/            # TypeScript interfaces (.gitkeep)
-│   ├── jobs/                  # Scheduling and enqueueing work (.gitkeep)
-│   ├── middlewares/           # Auth, error handling, rate limiters, validation (.gitkeep)
-│   ├── providers/             # Vendor-specific integrations
-│   │   ├── email/             # Email delivery (.gitkeep)
-│   │   ├── sms/               # SMS delivery (.gitkeep)
-│   │   ├── storage/           # Attachment storage (.gitkeep)
-│   │   └── whatsapp/          # WhatsApp delivery (.gitkeep)
-│   ├── routes/                # Express routing endpoints (.gitkeep)
-│   ├── services/              # Business logic & Prisma queries (.gitkeep)
-│   ├── types/                 # Custom type definitions (.gitkeep)
-│   ├── utils/                 # Logger, ApiError, ApiResponse, asyncHandler (.gitkeep)
-│   ├── validators/            # Zod validation schemas (.gitkeep)
-│   └── workers/               # Delivery execution and retries (.gitkeep)
-├── logs/                      # Server and error logs (.gitkeep)
-├── .env.example               # Environment variables template
-├── .gitignore                 # Ignore node_modules, dist, logs, env
-├── package.json               # Dependencies & scripts
-└── tsconfig.json              # TypeScript configuration
-```
-
----
-
-## 🛠️ Tech Stack
-
-- **Runtime**: Node.js + Express
-- **Language**: TypeScript
-- **ORM**: Prisma
-- **Database**: PostgreSQL
-- **Validation**: Zod
-- **Security & Utilities**: Helmet, CORS, Express-Rate-Limit, Winston, Dotenv, ioredis
-
----
-
-## 🚀 Setup & Commands
-
-The commands below are intended for implementation. This is currently a
-folder scaffold: `src/server.ts` has not been created, and the Prisma user model
-is still a generic email/password template. See the
-[project structure guide](../docs/project-structure.md) for the phone/OTP plan
-and next steps. No scheduling or delivery provider is configured yet.
-
-### 1. Install dependencies
 ```bash
 cd backend
-npm install
-# or: pnpm install
+npm ci
 ```
 
-### 2. Configure Environment
-Copy `.env.example` to `.env` and set your PostgreSQL credentials:
-```bash
-cp .env.example .env
-```
+On a fresh checkout only, copy `.env.example` to `.env` and fill `DATABASE_URL`.
+If `.env` already exists, preserve it. The current local file has the user's Neon
+connection; neither its contents nor credentials are committed.
 
-### 3. Prisma Migrations
 ```bash
-# Generate Prisma Client
 npm run prisma:generate
-
-# Run migrations in dev
-npm run prisma:migrate
-
-# Open Prisma Studio GUI
-npm run prisma:studio
-```
-
-### 4. Run Development Server
-```bash
 npm run dev
 ```
+
+Default address: `http://localhost:8080`, bound to `127.0.0.1`. For a compiled run:
+
+```bash
+npm run build
+npm start
+```
+
+Environment loading resolves `backend/.env` relative to the application files,
+so it also works when starting the built entry point from another directory.
+Actual process environment settings take precedence over `.env`. Changing `.env`
+requires a server restart. Development source changes restart through nodemon.
+
+## Database setup
+
+The current setup uses Neon while Express runs locally. Use the supplied pooled
+connection privately and retain its SSL/channel-binding parameters. One Prisma
+client/pool is created per process. It connects lazily on readiness/first query,
+not at startup, and disconnects during shutdown. Default connect/pool/socket
+query parameters of five seconds are added internally only when absent; the
+private URL is not rewritten. Concurrent readiness probes share an in-flight check.
+
+For an optional local PostgreSQL instance, create a dedicated development database
+and role using your local PostgreSQL tools, grant that role access, then set a URL
+such as the following in the private `.env` (replace the placeholders):
+
+```dotenv
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/dearly_db?schema=public"
+```
+
+No application tables are needed for `SELECT 1`. Phase 2 does not run migrations,
+`db push`, seeds, or database resets. Design/review the phone-auth schema in Phase 4
+before applying its migration. The existing Prisma commands remain available for
+future reviewed schema work; do not run them merely to make health checks pass.
+
+## Health endpoints and response contract
+
+```bash
+curl http://localhost:8080/health/live
+curl http://localhost:8080/health/ready
+```
+
+- `GET /health/live`: `200` if the HTTP process is responsive; does not access
+  PostgreSQL and is exempt from the ordinary request limiter.
+- `GET /health/ready`: read-only `SELECT 1`; `200` when PostgreSQL responds or `503`
+  with `NOT_READY` when it is unavailable. Readiness is rate-limited.
+
+Success responses contain `success: true`, `data`, and `requestId`. Errors contain
+`success: false`, `error: { code, message }`, optional safe validation field/code
+details, and `requestId`. `X-Request-Id` matches the response ID and is generated
+by the server. Unknown routes return `404 NOT_FOUND`; malformed JSON returns
+`400 INVALID_BODY`; oversized JSON returns `413 PAYLOAD_TOO_LARGE`; unsupported
+encoding returns `415`; rejected origins return `403`; rate limiting returns `429`
+with `Retry-After`. Unexpected errors are safe `500` responses without raw stacks.
+
+## Configuration
+
+| Variable | Default / requirement |
+| --- | --- |
+| `DATABASE_URL` | Required PostgreSQL URL; backend only |
+| `PORT` | `8080` |
+| `HOST` | `127.0.0.1`; set `0.0.0.0` explicitly when testing over LAN |
+| `NODE_ENV` | `development`, `test`, or `production`; default `development` |
+| `FRONTEND_URL`, `CLIENT_URL` | Optional exact HTTP(S) browser origins; configured examples use `8081`/`3000` |
+| `LOG_LEVEL` | `info`; also `error`, `warn`, `debug` |
+| `BODY_LIMIT_BYTES` | `1048576` (1 MiB JSON); maximum configurable value 10 MiB |
+| `RATE_LIMIT_WINDOW_MS` | `900000` (15 minutes) |
+| `RATE_LIMIT_MAX` | `100` requests/IP/window |
+| `TRUST_PROXY_HOPS` | `0`; review the actual proxy topology before changing |
+| `SHUTDOWN_TIMEOUT_MS` | `10000` |
+
+Missing/invalid required settings fail startup with safe field names. Redis and
+JWT entries in the example are reserved for later phases and are not required by
+this runtime. Never expose `DATABASE_URL` or credentials via frontend variables.
+
+CORS uses exact allowed origins; requests without `Origin` are accepted for native
+clients/tools. CORS is a browser policy, not authentication. Keep proxy trust at
+zero for direct local traffic; blindly trusting forwarded headers undermines IP
+limits. The baseline limiter uses per-process memory and resets on restart; shared
+limits and auth-specific abuse controls belong to later implementation/deployment.
+
+Helmet sets baseline security headers. Only bounded JSON parsing is enabled; media
+uploads are designed in Phase 8. Logs include generated request ID, method, status,
+and elapsed time, not URL/query strings, bodies, headers, raw errors, OTPs, or tokens.
+Logging goes to stdout as JSON; `logs/` is reserved, not an active file sink.
+
+`SIGINT`/`SIGTERM` stop new connections, drain active requests, then disconnect
+Prisma. Keep-alive sockets are closed as responses finish. A deadline forces stuck
+connections closed and exits unsuccessfully rather than hanging indefinitely.
+
+## Checks
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+# All four in order:
+npm run check
+```
+
+Tests use Node's test runner, tsx, and Supertest. They inject database availability
+instead of connecting to Neon; no messages are sent or database records changed.
+Coverage includes recovery from readiness failure, config validation, safe errors,
+body limits, CORS, request IDs/logging, rate limits, request validation, startup
+conflicts, and shutdown draining/deadlines. Typechecking includes source and tests;
+production compilation emits only `src/` into ignored `dist/`.
+
+Zod was deliberately updated from the scaffold's v3 range to patched v4.6.7 for
+[GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5). No previous
+backend validation implementation existed to migrate. Narrow npm overrides pin
+patched minimatch ranges for nodemon and TypeScript ESLint because their upstream
+ranges resolve an affected major; see
+[GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249). Validate
+these overrides when upgrading either tool. Express remains v4 and Prisma v5.
+
+See [environment setup](../docs/environment-setup.md),
+[project structure](../docs/project-structure.md), and
+[implementation phases](../docs/implementation-phases.md) for remaining work.

@@ -5,8 +5,9 @@ text, photos, videos, voice recordings, and other attachments. Recipients may be
 the sender, another Dearly user, a phone number, or an email address. Planned
 delivery channels are in-app, WhatsApp, SMS, and email.
 
-Folders contain `.gitkeep` only until implementation needs a real file. Existing
-configuration, dependencies, entry points, and database schema are preserved.
+Folders contain `.gitkeep` only until implementation needs a real file. Phase 2
+adds backend entry points and focused runtime files; the database schema and Expo
+setup remain unchanged. See the phase plan for current progress.
 
 ## Frontend
 
@@ -70,9 +71,10 @@ delivery.
 
 ## Next implementation steps
 
-1. Add the Express application and server entry points using existing backend
-   conventions. The current scripts reference `src/server.ts`, which does not yet
-   exist, so backend start/build readiness is not part of this folder-only phase.
+1. Backend foundation is implemented in Phase 2: `src/app.ts` assembles Express,
+   `src/server.ts` loads the environment, and `src/serverLifecycle.ts` manages
+   listening and shutdown. See [backend setup](../backend/README.md) for health
+   endpoints and checks. Mobile foundation follows in Phase 3.
 2. Replace the generic email/password Prisma user template with the agreed
    phone/OTP account design; then design messages, recipients, attachments,
    schedules, and per-channel delivery records before generating migrations.

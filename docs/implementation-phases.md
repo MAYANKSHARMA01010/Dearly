@@ -38,7 +38,7 @@ and a simulated delivery does not complete a real channel integration.
 | Phase | Deliverable | Depends on | Status |
 | --- | --- | --- | --- |
 | 1 | Project structure | — | Complete — scaffold only |
-| 2 | Backend runtime, database connection, and checks | 1 | Not started |
+| 2 | Backend runtime, database connection, and checks | 1 | Complete |
 | 3 | Mobile foundation, routing, theme, and API client | 1; 2 for connectivity | Not started |
 | 4 | Phone OTP and session backend | 2 | Not started |
 | 5 | Mobile login, session restoration, and profile | 3–4 | Not started |
@@ -74,11 +74,12 @@ paths, and checked that existing implementation/configuration remained unchanged
 Structure and whitespace checks passed. Planning documents do not make the runtime
 complete.
 
-**Baseline to resolve:** Backend scripts reference missing `src/server.ts`; Prisma
+**Baseline at Phase 1 (historical):** Backend scripts referenced missing `src/server.ts`; Prisma
 has a generic email/password user template. The mobile app still uses `App.js` and
 has no Expo Router despite its local instructions. There is no frontend lint script;
 a direct TypeScript check previously parsed React Native dependencies unsuccessfully.
-Resolve backend readiness in Phase 2 and frontend tooling/routing in Phase 3.
+Backend runtime/checks are now resolved by Phase 2; frontend tooling/routing remain
+for Phase 3. The Prisma account template remains for Phase 4.
 
 **Commit scope:** Structure/documentation work already exists in history; do not
 rewrite it to match this new numbering.
@@ -94,7 +95,8 @@ rewrite it to match this new numbering.
 - Configure CORS, Helmet, request-size limits, and baseline rate limiting.
 - Add liveness and database-readiness endpoints, graceful shutdown, and reproducible
   backend build/typecheck/lint/test commands.
-- Document local PostgreSQL creation and connection; keep Redis optional.
+- Document the configured Neon connection and optional local PostgreSQL setup;
+  keep Redis optional.
 
 **How:** Use the existing `configs/`, `middlewares/`, `utils/`, and `routes/` layers.
 Reuse installed dependencies before adding packages. Validate required environment
@@ -501,3 +503,33 @@ the behavior they validate, migrations with their model changes, and lockfiles
 with dependency changes. Make as many coherent commits as needed; neither one
 commit per file nor one commit for the whole phase is the default. Preserve
 unrelated user work, and do not push or rewrite history unless requested.
+
+### Phase 2 completion — 15 November 2026
+
+- **Status:** Complete.
+- **Delivered:** Separate Express app/startup, validated environment, one Prisma
+  client per process, live/ready endpoints, safe response/error contracts,
+  request IDs/logging, CORS/security headers/body limits/IP limits, reusable Zod
+  body validation, graceful shutdown, developer commands, and a backend lockfile.
+- **Validation:** `npm run check` passed lint, source/test typechecking, all 19
+  automated tests, Prisma client generation, and production compilation.
+  `npm audit` reported zero vulnerabilities after a fresh dependency install.
+  Real compiled-server smoke on port `8080` returned live `200` and Neon-ready
+  `200` using read-only `SELECT 1`. A controlled unavailable database returned
+  live `200` and ready `503`. Both stopped cleanly on `SIGTERM`. Development
+  nodemon start/graceful restart also passed; test processes were stopped afterward.
+  Documentation links, whitespace, ignored private files, and absence of supplied
+  database credentials in versioned candidates were checked.
+- **Decisions:** Keep Express v4/Prisma v5; use lazy database connection so liveness
+  survives an outage. Redis is not required. Zod deliberately moved to patched
+  v4.6.7, with narrow patched-minimatch overrides for development tools; rationale
+  and advisory sources are in the backend README. No schema or data changes,
+  migrations, messaging-provider calls, or frontend modifications were made.
+- **Limitations:** Memory rate limits are local to one process; auth, shared abuse
+  controls, mobile configuration/routing, and delivery features remain in their
+  planned phases. The Prisma user model remains a template, not a login system.
+  No blocker remains for the Phase 2 scope.
+- **Implementation commits:** `15a2214` — configuration/database setup and developer
+  checks; `4958905` — HTTP runtime, safeguards, health endpoints, and tests.
+- **Next:** Phase 3 — mobile foundation, routing, theme, API client, and frontend
+  checks; begin when requested.

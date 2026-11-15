@@ -5,7 +5,7 @@
 | Setting | Location | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | `backend/.env` only | Supplied Neon PostgreSQL connection; preserve its SSL/channel-binding query parameters |
-| `PORT=8080` | `backend/.env` | Local Express port when the server is implemented |
+| `PORT=8080` | `backend/.env` | Local Express listening port |
 | `EXPO_PUBLIC_API_URL=http://localhost:8080` | `frontend/.env` | Local backend base URL |
 | `EXPO_PUBLIC_SERVER_API_URL=` | `frontend/.env` | Future hosted backend base URL; intentionally empty |
 | `EXPO_PUBLIC_APP_ENV=development` | `frontend/.env` | Current development environment |
@@ -18,7 +18,12 @@ Private `.env` files are ignored by Git. Committed `.env.example` files contain
 only safe placeholders/public defaults. On a fresh checkout, copy each example
 to `.env` and supply the real backend database connection privately. Other backend
 example settings are scaffolding and must be validated when their features are
-implemented; this task does not establish production authentication or Redis.
+implemented; Phase 2 does not establish production authentication or Redis.
+
+Backend defaults are `HOST=127.0.0.1`, `LOG_LEVEL=info`, a 1 MiB JSON body limit,
+and a 10-second graceful-shutdown deadline. New settings in `backend/.env.example`
+are optional defaults, so the existing private environment file remains usable.
+See [backend setup](../backend/README.md) for all runtime settings and checks.
 
 ## API client behavior to implement in Phase 3
 
@@ -28,9 +33,11 @@ implemented; this task does not establish production authentication or Redis.
 - Keep the hosted value empty until a real deployment URL exists. Restart the
   frontend development process after changing environment settings.
 
-These are configuration requirements, not implemented API-selection logic. The
-backend server and frontend API client do not exist yet. No server was started,
-database connection tested, schema pushed, or migration applied during this setup.
+These are requirements for the future mobile API client; its selection logic is
+not implemented yet. The backend runtime now exists. The original environment-only
+setup did not start it or change the database; Phase 2 runtime verification is
+recorded in the [phase plan](implementation-phases.md). No schema push or migration
+is needed for the Phase 2 `SELECT 1` readiness probe.
 
 ## Running on a device later
 
