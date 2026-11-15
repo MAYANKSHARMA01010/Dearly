@@ -12,8 +12,10 @@ including content, attachments, recipients, timestamps, and delivery status.
 Planned channels are in-app, WhatsApp, SMS, and email. Support drafts and editing,
 rescheduling, and canceling messages before delivery.
 
-Read [the phase plan](docs/implementation-phases.md) and
-[the structure guide](docs/project-structure.md) before implementation. Work on
+Read [the 16-phase plan](docs/implementation-phases.md) and
+[the structure guide](docs/project-structure.md) before implementation. Consult
+[messaging options](docs/messaging-options.md) before provider work; it records
+ShopSmart reuse evidence and editable suggestions, not final provider decisions. Work on
 the phase or task requested by the user. Finish, verify, document, and commit that
 scope before moving on; do not implement all phases in one run. Report completion
 and the next phase, then wait for the user to start it. A request for a small task
@@ -58,6 +60,19 @@ within a phase does not authorize the entire phase.
 - Prefer free/open-source integrations where practical, but verify provider
   capabilities, terms, quotas, and costs before choosing them. Do not promise
   unlimited free SMS/WhatsApp/email or describe a development stub as real delivery.
+- ShopSmart is a read-only implementation reference at
+  `/Users/mayanksharma/Downloads/New_Projects/shopsmart`: WAHA for WhatsApp,
+  SMSGate/InfiniReach for SMS, and Nodemailer/SMTP for email. Adapt patterns to
+  Dearly's versions and architecture; do not copy credentials, sessions, personal
+  data, branding, or its email JSON fallback as successful delivery. Do not run
+  its live messaging tests during inspection. Provider proposals remain open for
+  user review; no automatic provider replacement or live test sends.
+- Record provider IDs and accepted/rejected/unknown outcomes. A submission timeout
+  can occur after actual sending; use supported idempotency/reconciliation and
+  document uncertainty rather than promising exactly-once external delivery.
+- Keep immediate OTP dispatch separate from scheduled messages. Real OTP dispatch
+  must be verified before public login is released even if local development uses
+  an explicit development adapter.
 - Keep secrets out of Git and client-visible environment variables. Document
   required configuration with safe `.env.example` values.
 
