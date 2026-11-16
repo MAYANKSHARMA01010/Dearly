@@ -53,6 +53,12 @@ export function createApiClient({ getBaseUrl = getApiBaseUrl, fetcher = fetch, t
             AUTH_DISABLED: 'Sign-in is not enabled on this server yet.',
             OTP_UNAVAILABLE: 'A new code could not be confirmed. Wait a minute before trying again.',
             VALIDATION_ERROR: 'Check the entered details and try again.',
+            DRAFT_NOT_FOUND: 'This draft is unavailable or has been deleted.',
+            INVALID_RECIPIENTS: 'An account recipient is unavailable. Check the selected recipients.',
+            VERSION_CONFLICT: 'This draft changed elsewhere. Reload it before saving or deleting.',
+            DRAFT_NOT_EDITABLE: 'This message is no longer an editable draft.',
+            DRAFTS_UNAVAILABLE: 'Draft storage is unavailable. Please try again later.',
+            RATE_LIMITED: 'Too many requests. Please wait before trying again.',
           });
           try {
             const body = await response.json();

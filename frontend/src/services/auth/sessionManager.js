@@ -125,6 +125,22 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
         current(expected); publish({ status: 'authenticated', user, message: '' }); return user;
       });
     },
+    /** @param {string} path @param {RequestInit} [options] */
+    request(path, options = {}) {
+      const expected = epoch;
+      return serial(async () => {
+        if (state.status !== 'authenticated') throw expired();
+        try { return await authorized(path, options, expected); }
+        catch (error) {
+          // Foreground restoration can invalidate a response after a write was
+          // accepted. Treat its outcome as unknown instead of allowing replay.
+          if (epoch !== expected && options.method && !['GET', 'HEAD'].includes(options.method)) {
+            throw new ApiError('The save result could not be confirmed. Check your drafts before trying again.', 'aborted');
+          }
+          throw error;
+        }
+      });
+    },
     /** @param {{ name: string | null, email: string | null, timezone: string }} input */
     updateProfile(input) {
       const expected = epoch;

@@ -166,3 +166,26 @@ test('logout after local access expiry renews only to revoke, without saving new
   await s.establish({ ...tokens(), user }); expired = true; await s.logout();
   assert.deepEqual(calls, ['/auth/refresh', '/auth/logout']); assert.equal(store.value, null); assert.equal(s.getSnapshot().status, 'anonymous');
 });
+
+test('general protected requests reject signed-out callers and attach only current access credentials', async () => {
+  const store = memory(); const calls = [];
+  const s = manager(store, async (path, options) => { calls.push({ path, options }); return { items: [], nextCursor: null }; });
+  await assert.rejects(s.request('/messages/drafts')); assert.equal(calls.length, 0);
+  await s.establish({ ...tokens(), user }); await s.request('/messages/drafts');
+  assert.equal(calls[0].options.headers.Authorization, `Bearer ${tokens().accessToken}`);
+  await s.logout(); await assert.rejects(s.request('/messages/drafts'));
+});
+
+test('foreground restoration makes an in-flight write uncertain and never replays it', async () => {
+  let finish; let writes = 0;
+  const s = manager(memory(), async (path, options) => {
+    if (options.method === 'POST') { writes++; return new Promise((resolve) => { finish = resolve; }); }
+    return user;
+  });
+  await s.establish({ ...tokens(), user });
+  const saving = s.request('/messages/drafts', { method: 'POST' });
+  await until(() => finish);
+  const restoring = s.restore(); finish({ id });
+  await assert.rejects(saving, (error) => error.kind === 'aborted');
+  await restoring; assert.equal(writes, 1); assert.equal(s.getSnapshot().status, 'authenticated');
+});
