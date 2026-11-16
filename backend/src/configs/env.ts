@@ -24,6 +24,13 @@ const environmentSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(100000).default(100),
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(10).default(0),
   SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().min(100).max(60000).default(10000),
+  AUTH_MODE: z.enum(['disabled', 'development']).default('disabled'),
+  OTP_PEPPER: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+}).superRefine((env, ctx) => {
+  if (env.AUTH_MODE === 'development' && (env.NODE_ENV === 'production' ||
+      !['127.0.0.1', '::1', 'localhost'].includes(env.HOST) || !env.OTP_PEPPER)) {
+    ctx.addIssue({ code: 'custom', path: ['AUTH_MODE'], message: 'Development auth requires loopback, a pepper and a non-production environment.' });
+  }
 });
 
 export interface AppConfig {
@@ -38,6 +45,8 @@ export interface AppConfig {
   rateLimitMax: number;
   trustProxyHops: number;
   shutdownTimeoutMs: number;
+  authMode: 'disabled' | 'development';
+  otpPepper?: string;
 }
 
 export class EnvironmentError extends Error {}
@@ -63,5 +72,7 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     rateLimitMax: env.RATE_LIMIT_MAX,
     trustProxyHops: env.TRUST_PROXY_HOPS,
     shutdownTimeoutMs: env.SHUTDOWN_TIMEOUT_MS,
+    authMode: env.AUTH_MODE,
+    otpPepper: env.OTP_PEPPER,
   };
 }

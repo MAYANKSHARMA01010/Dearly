@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 export interface Database {
+  readonly prisma?: PrismaClient;
   isReady(): Promise<boolean>;
   disconnect(): Promise<void>;
 }
@@ -18,6 +19,7 @@ export function createDatabase(databaseUrl: string): Database {
   });
   let pendingCheck: Promise<boolean> | undefined;
   return {
+    prisma,
     isReady() {
       // Concurrent probes share one query instead of amplifying a database outage.
       pendingCheck ??= prisma.$queryRaw`SELECT 1`

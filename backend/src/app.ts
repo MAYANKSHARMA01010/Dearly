@@ -10,8 +10,11 @@ import { createHealthRouter } from './routes/health.routes';
 import { createRootRouter } from './routes/root.routes';
 import { ApiError } from './utils/ApiError';
 import type { AppLogger } from './utils/logger';
+import { AuthService } from './services/auth.service';
+import { developmentOtpProvider } from './providers/otp/otp.provider';
+import { createAuthRouter } from './routes/auth.routes';
 
-export function createApp(config: AppConfig, database: Database, logger: AppLogger) {
+export function createApp(config: AppConfig, database: Database, logger: AppLogger, authOverride?: AuthService) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', config.trustProxyHops);
@@ -36,6 +39,9 @@ export function createApp(config: AppConfig, database: Database, logger: AppLogg
   app.use(express.json({ limit: config.bodyLimitBytes }));
   app.use('/', createRootRouter());
   app.use('/health', createHealthRouter(database));
+  const auth = config.authMode === 'development' && database.prisma && config.otpPepper
+    ? new AuthService(database.prisma, config.otpPepper, developmentOtpProvider()) : undefined;
+  app.use('/auth', createAuthRouter(config.authMode === 'development' ? authOverride ?? auth : undefined));
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;
