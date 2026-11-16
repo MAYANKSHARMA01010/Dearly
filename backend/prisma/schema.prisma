@@ -82,6 +82,8 @@ model RefreshToken {
 
 enum MessageStatus {
   DRAFT
+  SCHEDULED
+  CANCELED
 }
 
 enum RecipientType {
@@ -102,10 +104,17 @@ model DraftMessage {
   version    Int              @default(1)
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
+  scheduledFor DateTime? @db.Timestamptz(3)
+  scheduleTimezone String? @db.VarChar(80)
+  scheduleLocalDateTime String? @db.VarChar(16)
+  canceledAt DateTime? @db.Timestamptz(3)
+  scheduleRequestHash String? @db.Char(64)
+  deliveryIntents DeliveryIntent[]
   attachments Attachment[]
   recipients DraftRecipient[]
 
   @@index([ownerId, status, createdAt, id])
+  @@index([status, scheduledFor, id])
   @@map("draft_messages")
 }
 
@@ -118,12 +127,14 @@ model DraftRecipient {
   position       Int
   label          String?       @db.VarChar(80)
   targetUserId   String?
+  deliveryIntents DeliveryIntent[]
   targetUser     User?         @relation("DraftTargets", fields: [targetUserId], references: [id], onDelete: SetNull)
   phone          String?       @db.VarChar(16)
   country        String?       @db.Char(2)
   email          String?       @db.VarChar(254)
 
   @@unique([messageId, destinationKey])
+  @@unique([id, messageId])
   @@index([messageId, position])
   @@index([targetUserId])
   @@map("draft_recipients")
@@ -157,4 +168,24 @@ model Attachment {
   @@index([ownerId, draftId, state])
   @@index([state, expiresAt])
   @@map("attachments")
+}
+
+
+enum DeliveryChannel {
+  IN_APP
+  WHATSAPP
+  SMS
+  EMAIL
+}
+
+model DeliveryIntent {
+  id String @id @default(uuid())
+  messageId String
+  message DraftMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient DraftRecipient @relation(fields: [recipientId, messageId], references: [id, messageId], onDelete: Cascade)
+  channel DeliveryChannel
+
+  @@unique([messageId, recipientId, channel])
+  @@map("delivery_intents")
 }
