@@ -37,6 +37,7 @@ function SessionNavigator() {
     <Stack.Protected guard={Boolean(user)}>
       <Stack.Screen name="profile" options={{ title: 'Your profile' }} />
       <Stack.Screen name="drafts" options={{ headerShown: false }} />
+      <Stack.Screen name="schedules" options={{ headerShown: false }} />
     </Stack.Protected>
     <Stack.Screen name="+not-found" options={{ title: 'Page not found' }} />
   </Stack>;

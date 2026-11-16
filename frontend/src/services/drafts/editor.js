@@ -22,7 +22,7 @@ export function createDraftEditor({ api, ownerId, id = null }) {
   /** @param {Partial<EditorState>} patch */
   const publish = (patch) => { if (disposed) return; state = { ...state, ...patch }; for (const listener of listeners) listener(); };
   /** @param {Draft} draft */
-  const accept = (draft) => { if (disposed) return; baseline = clone(draft); publish({ id: draft.id, version: draft.version, content: clone(draft), dirty: false, loaded: true, savedAt: draft.updatedAt, conflict: false, uncertain: false, error: '' }); };
+  const accept = (draft) => { if (disposed) return; baseline = clone(draft); publish({ id: draft.id, version: draft.version, content: clone(draft), dirty: false, deleted: false, loaded: true, savedAt: draft.updatedAt, conflict: false, uncertain: false, error: '' }); };
   /** @param {() => Promise<void>} work @param {'loading'|'saving'|'deleting'} kind */
   const single = (work, kind) => {
     if (disposed) return Promise.resolve(false);
@@ -92,6 +92,8 @@ export function createDraftWorkspace(api) {
       if (!editors.has(key)) editors.set(key, createDraftEditor({ api, ownerId, id }));
       return editors.get(key);
     },
+    /** @param {string} id */
+    forget(id) { editors.get(id)?.dispose(); editors.delete(id); },
     /** @param {string} id @param {ReturnType<typeof createDraftEditor>} model */
     adopt(id, model) { if (editors.get('new') === model) editors.delete('new'); editors.set(id, model); },
   };

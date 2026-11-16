@@ -21,11 +21,12 @@ export default function HomeScreen() {
         </Text>
         <Divider style={{ marginVertical: spacing.sm }} />
         <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-          {user ? 'Write and save a private draft with photos, video, voice or files. Scheduling and sending will come in later updates.' : 'Sign in to start a private draft. Scheduling and sending will come in later updates.'}
+          {user ? 'Write and save a private draft with photos, video, voice or files. You can save a schedule; automatic delivery is not running yet.' : 'Sign in to start a private draft. You can save a schedule; automatic delivery is not running yet.'}
         </Text>
       </View>
       {message ? <Text accessibilityLiveRegion="polite">{message}</Text> : null}
       {user ? <AppButton mode="contained" onPress={() => router.push('/drafts')}>Your drafts</AppButton> : null}
+      {user ? <AppButton mode="outlined" onPress={() => router.push('/schedules')}>Your schedules</AppButton> : null}
       <AppButton mode={user ? 'outlined' : 'contained'} onPress={() => router.push(user ? '/profile' : '/login')}>{user ? 'Your profile' : 'Sign in with your phone'}</AppButton>
       <AppButton mode="outlined" onPress={() => router.push('/status')}>Check service status</AppButton>
     </Screen>

@@ -9,6 +9,7 @@ import { createAuthService } from '../../src/services/auth/authService.js';
 import { createSessionManager } from '../../src/services/auth/sessionManager.js';
 import { createDraftService } from '../../src/services/drafts/service.js';
 import { createDraftEditor } from '../../src/services/drafts/editor.js';
+import { createScheduleService } from '../../src/services/schedules/service.js';
 import { prepareContent } from '../../src/services/drafts/contracts.js';
 
 const require = createRequire(new URL('../../../backend/package.json', import.meta.url));
@@ -20,14 +21,14 @@ const url = new URL(databaseUrl); url.searchParams.set('schema', schema); url.se
 const db = new PrismaClient({ datasources: { db: { url: url.toString() } }, log: [], errorFormat: 'minimal' });
 const admin = new PrismaClient({ datasources: { db: { url: databaseUrl } }, log: [], errorFormat: 'minimal' });
 
-test('mobile draft editor and real API/PostgreSQL: compose, reopen, conflict, update and delete', { timeout: 120000 }, async () => {
+test('mobile draft editor and real API/PostgreSQL: compose, conflict, schedule, edit, reschedule, cancel and reopen', { timeout: 180000 }, async () => {
   let server; let stage = 'schema';
   try {
     await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);
     const migrations = new URL('../../../backend/prisma/migrations/', import.meta.url);
     for (const folder of readdirSync(migrations).filter((name) => /^\d/.test(name)).sort()) {
       const sql = readFileSync(new URL(`${folder}/migration.sql`, migrations), 'utf8')
-        .replace(/"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|MessageStatus|RecipientType|AttachmentState)"/g, `"${schema}"."$1"`);
+        .replace(/"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|delivery_intents|MessageStatus|RecipientType|AttachmentState|DeliveryChannel)"/g, `"${schema}"."$1"`);
       for (const statement of sql.split(';').filter((s) => s.trim())) await db.$executeRawUnsafe(statement);
     }
     stage = 'server';
@@ -63,6 +64,27 @@ test('mobile draft editor and real API/PostgreSQL: compose, reopen, conflict, up
     assert.equal(await reopened.save(), false); assert.equal(reopened.getSnapshot().conflict, true); assert.equal(reopened.getSnapshot().content.text, 'Local unsaved edit');
     await reopened.reload(); assert.equal(reopened.getSnapshot().content.text, 'Changed elsewhere');
     reopened.edit({ text: 'Final thought' }); assert.equal(await reopened.save(), true); assert.equal(reopened.getSnapshot().version, 3);
+    stage = 'schedule source';
+    await api.update(id, reopened.getSnapshot().version, {text:'Final thought',recipients:[{type:'SELF'}]});
+    const schedules=createScheduleService(session);
+    const source=await schedules.source(id);
+    assert.equal((await schedules.capabilities()).inAppAvailable,true);
+    const choice={version:source.version,localDateTime:'2027-01-02T00:15',timezone:'Asia/Kolkata',deliveries:source.recipients.map(r=>({recipientId:r.id,channels:['IN_APP']}))};
+    stage = 'schedule review';
+    const review=await schedules.preview(id,choice);assert.equal(review.resolved.scheduledFor,'2027-01-01T18:45:00.000Z');
+    const saved=await schedules.confirm(id,choice,review.reviewToken);assert.equal(saved.status,'SCHEDULED');
+    assert.equal((await schedules.confirm(id,choice,review.reviewToken)).version,saved.version);
+    assert.equal((await schedules.list()).items[0].id,id);
+    stage = 'schedule edit and reschedule';
+    const edited=await schedules.edit(id,saved.version,{subject:'New subject',text:'Edited scheduled thought',occasion:null});
+    const movedChoice={version:edited.version,localDateTime:'2027-04-01T12:30',timezone:'America/New_York'};
+    const nextReview=await schedules.preview(id,movedChoice,true);
+    const moved=await schedules.confirm(id,movedChoice,nextReview.reviewToken,true);assert.equal(moved.scheduledFor,'2027-04-01T16:30:00.000Z');
+    stage = 'cancel and reopen';
+    const canceled=await schedules.cancel(id,moved.version);assert.equal(canceled.status,'CANCELED');
+    assert.equal((await schedules.list('CANCELED')).items[0].id,id);
+    const returned=await schedules.reopen(id,canceled.version);assert.equal(returned.text,'Edited scheduled thought');
+    assert.equal((await schedules.list()).items.length,0);await reopened.reload();
     assert.equal(await reopened.remove(), true); assert.equal(await db.draftMessage.count(), 0); assert.equal(await db.draftRecipient.count(), 0);
     await session.logout(); await assert.rejects(api.list()); assert.equal(store.value, null);
   } catch (error) {

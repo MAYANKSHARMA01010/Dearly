@@ -19,15 +19,17 @@ export default function DraftEditorScreen({ draftId }) {
   const state = useSyncExternalStore(model.subscribe, model.getSnapshot, model.getSnapshot);
   const [repeat, setRepeat] = useState(/** @type {{ run: () => void }|null} */ (null));
   const [confirm, setConfirm] = useState(/** @type {'reload'|'delete'|null} */ (null));
+  const [createdId, setCreatedId] = useState(/** @type {string|null} */ (null));
   const [recipientPending, setRecipientPending] = useState(false);
   const [mediaGuard, setMediaGuard] = useState({ pending:false, busy:false });
   const busy = mediaGuard.busy || state.saving || state.loading || state.deleting;
   const dirty = state.dirty || state.uncertain || recipientPending || mediaGuard.pending;
   usePreventRemove(Boolean(user) && !state.deleted && (dirty || busy), (event) => { setRepeat({ run: event.repeat }); });
   useEffect(() => { void model.open(); }, [model]);
+  useEffect(() => { if (createdId && !dirty && !busy) router.replace({ pathname: '/drafts/[id]', params: { id: createdId } }); }, [createdId, dirty, busy, router]);
   const save = async () => {
     Keyboard.dismiss(); const success = await model.save(); const next = model.getSnapshot();
-    if (success && next.id && !draftId) { workspace.adopt(next.id, model); router.replace({ pathname: '/drafts/[id]', params: { id: next.id } }); }
+    if (success && next.id && !draftId) { workspace.adopt(next.id, model); setCreatedId(next.id); }
   };
   const remove = async () => { setConfirm(null); if (await model.remove()) { if (router.canGoBack()) router.back(); else router.replace('/drafts'); } };
   if (state.deleted) return <Screen><StateView title="Draft unavailable" description={state.error || 'This draft was deleted.'} actionLabel="Your drafts" onAction={() => router.replace('/drafts')} /></Screen>;
@@ -50,7 +52,8 @@ export default function DraftEditorScreen({ draftId }) {
     <AppButton mode="contained" loading={state.saving} disabled={recipientPending || busy || state.uncertain || state.conflict || Boolean(state.id && !state.dirty)} onPress={() => { void save(); }}>Save draft</AppButton>
     {state.id ? <AppButton mode="outlined" disabled={busy || state.conflict || state.uncertain} onPress={() => setConfirm('delete')}>Delete draft</AppButton> : null}
     {state.id ? <AttachmentPanel draftId={state.id} disabled={state.saving || state.loading || state.deleting || state.uncertain || state.conflict} onGuardChange={setMediaGuard} /> : <Text>Save this draft first to add photos, videos, voice or files.</Text>}
-    <Text variant="bodyMedium">This is a private draft. Scheduling and sending will be available in later updates.</Text>
+    {state.id ? <AppButton mode="contained" disabled={busy || dirty || state.conflict} onPress={() => router.replace({pathname:'/schedules/new',params:{draftId:state.id}})}>Schedule this draft</AppButton> : null}
+    <Text variant="bodyMedium">Save changes and finish uploads before scheduling. Automatic delivery is not running yet.</Text>
     <Portal>
       <Dialog visible={Boolean(repeat)} onDismiss={() => setRepeat(null)}>
         <Dialog.Title>{busy ? 'Please wait' : 'Discard local changes?'}</Dialog.Title>
