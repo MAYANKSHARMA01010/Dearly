@@ -62,6 +62,11 @@ within a phase does not authorize the entire phase.
   require a new explicit review; do not bulk-enable them. Inbox/attachment access
   requires a committed recipient-owned delivery. PHONE bindings must never redirect
   a recycled number to a replacement account. No external provider sends are enabled.
+- Phase 11 mailbox rules are in [mailbox contracts](docs/mailboxes.md). Keep counts
+  and list/detail projections scoped to the current owner or delivered inbox user.
+  Preserve partial outcomes and explicit opened choices; GET/refresh/media viewing
+  must never create an opened receipt. Record activity inside the same transaction
+  as each mutation, with no fabricated pre-tracking history or private payloads.
 - Track delivery per recipient and channel. Distinguish provider acceptance,
   delivery confirmation, and opening; only claim statuses supported by evidence.
 - Phase 8 uses private filesystem attachments with owner-only APIs, bounded

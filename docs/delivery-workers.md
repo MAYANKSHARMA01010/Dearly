@@ -132,9 +132,9 @@ do not expose a public URL. Deleting an account/message through administrative
 retention operations follows the schema cascades; permanent inbox history and
 independent account-deletion policy remain later release work.
 
-The full mobile inbox/mailboxes/dashboard and opening/history UX belong to Phase 11.
-Existing schedule details and filters show worker-backed outcomes now and remove
-edit/cancel controls after dispatch begins. They refresh explicitly rather than
+Phase 11 implements the [mobile mailboxes/dashboard](mailboxes.md), owned activity
+and an explicit opened choice. Existing schedule details and filters show worker-
+backed outcomes and remove edit/cancel controls after dispatch begins. They refresh explicitly rather than
 inferring delivery from the phone's clock.
 
 ## Operations and bounded recovery

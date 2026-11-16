@@ -126,3 +126,9 @@ never put credentials on a command line or in frontend configuration.
 Phase 10 rechecks current status/version, due time, bound target and ready
 attachments. Atomic inbox records provide in-app delivery uniqueness; no external
 provider acceptance, receipt or opened claim is made. See [delivery operations](delivery-workers.md).
+
+Phase 11 [mailboxes and activity](mailboxes.md) provide dashboard counts, scoped
+list/detail views, per-recipient outcomes and durable mutation history. Opened
+status requires a recipient's explicit choice; viewing a detail or media alone
+never marks it. Existing schedule-management actions retain their version/state
+checks and dispatch boundary.

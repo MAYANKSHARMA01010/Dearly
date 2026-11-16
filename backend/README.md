@@ -187,3 +187,11 @@ reviewed again. Run `npm run delivery:status` for safe queue diagnostics and
 a failure. `/health/worker` reports recent worker activity separately from API
 liveness and database readiness. Inbox APIs enforce delivered-recipient access,
 including private attachment ranges. See [delivery rules and operations](../docs/delivery-workers.md).
+
+## Mailboxes and activity
+
+Phase 11 adds `/messages/dashboard`, filtered `/messages/mailboxes`, owned detail/
+history APIs and explicit `POST /messages/inbox/:id/open`. Apply the additive
+tracking migration and restart the built delivery worker. Existing records get a
+truthful tracking baseline; earlier history is not invented. GETs never mark a
+message opened. See [mailbox contracts](../docs/mailboxes.md).

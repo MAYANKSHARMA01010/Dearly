@@ -184,3 +184,8 @@ own committed inbox item and a due message; draft/schedule recipient records alo
 never authorize reads. The worker verifies ready bytes/hashes before committing
 inbox records. API and worker must share the same persistent private volume.
 See [delivery contracts](delivery-workers.md).
+
+Phase 11 message details reuse session-aware private downloads for both owned
+messages and received inbox records. Received views never use an owner's media
+route or expose other recipients; viewing a file does not mark the message opened.
+See [mailbox access rules](mailboxes.md).

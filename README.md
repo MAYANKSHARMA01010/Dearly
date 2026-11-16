@@ -22,7 +22,8 @@ limits and the persistent-disk requirement.
 Phase 9 adds timezone-aware schedule review, confirmation, edits, rescheduling and
 cancellation. Phase 10 adds durable PostgreSQL work, a separate in-app delivery
 worker and private recipient inbox APIs; existing paused plans require a new review.
-The full mobile inbox arrives in Phase 11. See [worker operations](docs/delivery-workers.md). See [scheduling](docs/scheduling.md).
+Phase 11 adds the mobile dashboard, scoped mailboxes, private message/attachment
+details, durable activity and an explicit opened choice. See [mailboxes](docs/mailboxes.md). See [worker operations](docs/delivery-workers.md). See [scheduling](docs/scheduling.md).
 See [backend authentication](docs/authentication.md) and
 [mobile authentication](docs/mobile-auth.md) for setup and security limits.
 The [draft API contract](docs/draft-api.md) covers private message work and recipients.

@@ -47,7 +47,7 @@ and a simulated delivery does not complete a real channel integration.
 | 8 | Attachment storage and mobile media tools | 6–7 | Complete |
 | 9 | Schedule, reschedule, and cancellation | 7–8 | Complete — saved plans; automatic delivery not enabled |
 | 10 | Durable workers and in-app delivery | 9 | Complete — native UI check unavailable |
-| 11 | Dashboard, mailboxes, message details, and tracking | 10 | Not started |
+| 11 | Dashboard, mailboxes, message details, and tracking | 10 | Complete |
 | 12 | Email delivery and secure external content access | 10–11 | Not started |
 | 13 | WhatsApp message delivery | 10–12 | Not started |
 | 14 | SMS message delivery | 10–12 | Not started |
@@ -1043,3 +1043,82 @@ including the read-only Neon check. No further feature routes were needed.
   documentation commit records the contracts, operations and completion evidence.
 - **Next:** Phase 11 — dashboard, mailboxes, message details and tracking. Start
   only when requested.
+
+
+### Phase 11 completion — 17 November 2026
+
+- **Status:** Complete. Phases 1–11 are complete for their recorded scope. Phase 12
+  has not started. Authentication remains development-only; email, WhatsApp and SMS
+  delivery remain unavailable.
+- **Delivered:** A signed-in dashboard with snapshot counts and Created, Scheduled,
+  Sent, Received, Drafts and Needs attention mailboxes. Account-scoped lists provide
+  state/opened filters, stable bounded cursor pages, refresh, empty/error/loading
+  states and safe recovery. Categories overlap deliberately: partially delivered
+  messages remain visible in both Sent and Needs attention, and self-deliveries
+  appear in Sent and Received. Only committed IN_APP evidence establishes sending;
+  unavailable external channels never become confirmed delivery/opened receipts.
+- **Details/privacy:** Owned details include ready attachments, recipients, saved
+  timezone/UTC instant, per-channel outcomes/attempt summaries and paged activity.
+  Received details show only the recipient's delivered content and ready media,
+  sender display name and own delivery/opened timestamps. They omit other recipients,
+  sender phone details, private owner history, tokens and storage paths. Draft and
+  schedule actions link to the existing versioned editors; dispatch locks remain
+  enforced. Temporary private downloads are cleaned on close/unmount. Confirmed
+  missing/denied reads clear retained content; transient refresh failures preserve a
+  labeled previous snapshot. Focus changes clear private read state and ignore late
+  results; account changes continue to remove all protected routes and draft state.
+- **Tracking:** The additive migration adds nullable inbox opened timestamps and
+  durable message events. Real mutations, claims, retries and outcomes append events
+  in their transaction, ordered by an internal sequence that never appears publicly.
+  Pre-existing messages receive a truthful BASELINE event, without invented earlier
+  history. Viewing/refreshing/media access never marks a message opened. The explicit
+  recipient choice records the first server timestamp once, even for concurrent or
+  repeated requests, without changing message state/version. Opened does not claim
+  reading/understanding or an external receipt.
+- **Verification:** Backend `npm run check` passed lint, strict source/test checking,
+  48 standard tests and production compilation. Frontend `npm run check` passed lint,
+  strict JavaScript/JSDoc checking and 70 standard tests. All 58 backend integration
+  runner entries passed (52 scenarios plus six parent tests), including existing
+  authentication, drafts, media, schedules and delivery recovery tests. Seven new
+  mailbox scenarios cover baseline migration, category overlap, two-account scope,
+  tied-date/cross-filter pagination, explicit concurrent opened choices, durable
+  history/no-op idempotency, private file ranges and unavailable external receipts.
+  All three mobile integration tests passed; the new two-session scenario composes,
+  schedules, delivers, opens separate mailboxes, marks opened explicitly, checks
+  sender history and restores/signs out through the real client, Express and
+  PostgreSQL. Temporary test schemas/storage were removed. Client tests cover
+  malformed evidence, safe media paths, uncertain writes, stale reads, focus clearing
+  and confirmed access-denial cleanup. Expo Doctor passed 20/20 checks; iOS production
+  export succeeded. No dependency or Expo/NativeWind/Paper configuration changed.
+- **Native:** On the existing iPhone 17 Pro Max / iOS 26 simulator, verified the new
+  dashboard and created a synthetic self-recipient draft with a private synthetic
+  text attachment. Reviewed/confirmed 17 November at 01:32 Asia/Kolkata (16 November
+  20:02 UTC). The worker delivered at 01:32:17, advancing version 2 to version 3.
+  Received details and private text preview worked and remained unmarked as opened.
+  The explicit opened choice persisted at 01:35:10; the Opened filter included that
+  receipt, and sender details showed its individual delivery/opened evidence plus
+  CREATED → SCHEDULED → DISPATCH_STARTED → DELIVERED → OPENED history. The database
+  confirmed one receipt and one OPENED event. Edit/cancel controls were absent after
+  dispatch. Removed only that synthetic message, private file, receipt and related
+  metadata; existing drafts/profile/session were preserved. Reloaded the app and
+  verified its original dashboard counts. Two-account isolation, failure recovery
+  and multi-page behavior were checked through automated client/API tests, not by
+  switching native accounts. No microphone capture, OS picker, device reset,
+  additional simulator, Android launch, external send or visual/design review ran.
+- **Runtime:** Applied `202611170006_mailboxes` without a database reset. Drained
+  the previous local worker, then started the new build with transactional activity
+  recording. Cleared a stale Metro bundle and restarted the frontend in development
+  watch mode. Backend 8080, Metro 8081 and the separate worker remain running with
+  healthy database/worker checks. Full mailbox/tracking rules are in
+  [mailbox contracts](mailboxes.md); queue operations remain in
+  [delivery operations](delivery-workers.md).
+- **Commits:** `02642fb` schema/baseline and isolated migration fixtures; `33b0e22`
+  snapshot mailbox APIs, transactional activity and access tests; `f48bf63` mobile
+  dashboard/details, explicit opened choice, private viewer and client tests. A
+  separate documentation commit records contracts and completion.
+- **Limits/next:** Opened is opt-in evidence, not a read guarantee. History before
+  the tracking baseline is unavailable and message deletion cascades its history.
+  Display names are profile information, not verified identity. The dispatch boundary,
+  paused-plan protection, persistent storage requirement and bounded operator recovery
+  remain unchanged. Next is Phase 12 — email delivery and secure external message
+  access. Begin only when requested.

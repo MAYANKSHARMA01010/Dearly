@@ -142,7 +142,7 @@ NativeWind's CSS side-effect import. No application type errors are suppressed.
 ESLint uses the SDK-compatible Expo flat config; ESLint 9 is retained to satisfy
 its React plugin's peer range. Tests exercise production URL isolation, safe errors,
 timeouts/cancellation, response parsing, no automatic retries, and health recovery.
-The 62 standard tests neither connect to Neon nor send messages. The separate
+The 70 standard tests neither connect to Neon nor send messages. The separate
 opt-in `npm run test:integration` requires a built backend and private
 `AUTH_TEST_DATABASE_URL`; it exercises the real client/auth/draft/schedule APIs in temporary
 PostgreSQL schemas. See [mobile auth verification](../docs/mobile-auth.md#verification-commands).
@@ -164,4 +164,14 @@ message and recipients before confirming. **Your schedules** supports edits,
 rescheduling, cancellation and returning canceled plans to drafts. The app labels
 delivery-service availability and per-message dispatch/delivery states;
 SMS/WhatsApp/email choices remain unavailable. Existing paused plans require a new
-review to activate delivery. The full inbox/mailbox UI follows in Phase 11. See [schedule rules and API](../docs/scheduling.md).
+review to activate delivery. Phase 11 adds the mailbox/dashboard/detail UI, with an explicit opened choice. See [schedule rules and API](../docs/scheduling.md).
+
+## Dashboard and mailboxes
+
+The signed-in home now loads counts for Created, Scheduled, Sent, Received, Drafts
+and Needs attention. Mailboxes support state/opened filters, refresh and bounded
+pagination. Details show private media and evidence-based outcomes; recipients
+choose whether to mark a delivered message opened. Viewing alone does not do so.
+Owned history pages show actual recorded activity and preserve the dispatch edit/
+cancel boundary. Focus-scoped reads clear private state and ignore late results.
+See [mailboxes and tracking](../docs/mailboxes.md).

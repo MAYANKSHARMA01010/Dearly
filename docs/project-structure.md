@@ -22,6 +22,7 @@ Keep the existing `src/screens/` convention for feature UI:
 | `screens/auth/` | Phone entry and OTP verification |
 | `screens/home/` | Dashboard: created, scheduled, sent, received, drafts, failed |
 | `screens/messages/` | Compose, attachments, occasion, scheduling, lists, details; edit, reschedule, cancel |
+| `screens/mailboxes/` | Dashboard counts, scoped mailbox lists and private owned/received details |
 | `screens/schedules/` | Schedule form/review, saved-plan list and editable details |
 | `screens/recipients/` | Choose self, app user, phone number, or email |
 | `screens/notifications/` | Notification list and message-opening actions |
@@ -67,6 +68,13 @@ Phase 10 adds `jobs/enqueueDeliveries.ts`, `workers/deliveryWorker.ts` and a sep
 `workers/runDeliveryWorker.ts` process. Inbox routes/controllers/services enforce
 recipient-owned delivered content and attachment reads. `jobs/manageDelivery.ts`
 provides bounded operator diagnostics/recovery.
+
+Phase 11 adds guarded `app/mailboxes/` routes, `screens/mailboxes/`, strict client
+contracts/services in `services/mailboxes/`, focus-scoped read state and a private
+attachment viewer. Backend mailbox routes/controllers/validators/services provide
+snapshot counts, filters, individual delivery evidence and owned history. A shared
+transactional event recorder tracks real mutations; inbox opened choices remain
+explicit. See [mailbox contracts](mailboxes.md).
 
 ## Backend
 
