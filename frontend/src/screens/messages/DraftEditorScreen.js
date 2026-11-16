@@ -53,7 +53,7 @@ export default function DraftEditorScreen({ draftId }) {
     {state.id ? <AppButton mode="outlined" disabled={busy || state.conflict || state.uncertain} onPress={() => setConfirm('delete')}>Delete draft</AppButton> : null}
     {state.id ? <AttachmentPanel draftId={state.id} disabled={state.saving || state.loading || state.deleting || state.uncertain || state.conflict} onGuardChange={setMediaGuard} /> : <Text>Save this draft first to add photos, videos, voice or files.</Text>}
     {state.id ? <AppButton mode="contained" disabled={busy || dirty || state.conflict} onPress={() => router.replace({pathname:'/schedules/new',params:{draftId:state.id}})}>Schedule this draft</AppButton> : null}
-    <Text variant="bodyMedium">Save changes and finish uploads before scheduling. Automatic delivery is not running yet.</Text>
+    <Text variant="bodyMedium">Save changes and finish uploads before scheduling. Confirming a schedule enables in-app delivery.</Text>
     <Portal>
       <Dialog visible={Boolean(repeat)} onDismiss={() => setRepeat(null)}>
         <Dialog.Title>{busy ? 'Please wait' : 'Discard local changes?'}</Dialog.Title>

@@ -10,7 +10,10 @@ import { useAuth } from '../../context/AuthContext';
 import { useDraftWorkspace } from '../../context/DraftWorkspaceContext';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { createScheduleService } from '../../services/schedules/service';
-import { scheduleLabel } from '../../services/schedules/contracts';
+import {
+  scheduleLabel,
+  scheduleStatusLabel,
+} from '../../services/schedules/contracts';
 const noGuard = () => {};
 /** @param {{id:string}} props */
 export default function ScheduleDetailScreen({ id }) {
@@ -147,8 +150,7 @@ export default function ScheduleDetailScreen({ id }) {
           : 'Your scheduled message'}
       </Text>
       <Text>
-        Version {message.version} ·{' '}
-        {message.status === 'CANCELED' ? 'Canceled' : 'Schedule saved'}
+        Version {message.version} · {scheduleStatusLabel(message.status)}
       </Text>
       <Text variant="titleLarge">
         {scheduleLabel(message.scheduledFor ?? '', message.timezone ?? 'UTC')}
@@ -158,14 +160,21 @@ export default function ScheduleDetailScreen({ id }) {
       </Text>
       <Text selectable>Universal time: {message.scheduledFor}</Text>
       <Text>
-        Automatic delivery is not running yet. Saving a schedule does not
-        deliver or share this message.
+        Once delivery starts, editing and cancellation are locked. Delivered
+        means available in the recipient’s Dearly inbox; it does not mean
+        opened.
       </Text>
-      {message.status === 'SCHEDULED' &&
+      {message.status === 'SCHEDULED' && !message.deliveryEnabled ? (
+        <Text accessibilityRole="alert">
+          This older plan is paused. Reschedule and confirm a new review to
+          enable delivery.
+        </Text>
+      ) : null}
+      {message.status === 'SCHEDULED' && message.deliveryEnabled &&
       Date.parse(message.scheduledFor ?? '') < checkedAt ? (
         <Text accessibilityRole="alert">
-          The scheduled time has passed. Delivery has not run. You can
-          reschedule or cancel.
+          The scheduled time has passed. This message is waiting to be claimed.
+          You can still reschedule or cancel until dispatch starts.
         </Text>
       ) : null}
       {message.status === 'CANCELED' ? (
@@ -232,8 +241,9 @@ export default function ScheduleDetailScreen({ id }) {
           {r.label ||
             (r.type === 'SELF'
               ? 'Myself'
-              : (r.userId ?? 'Unavailable account'))}{' '}
-          · In-app (planned){r.unavailable ? ' · Account unavailable' : ''}
+              : ((r.type === 'PHONE' ? r.phone : r.userId) ??
+                'Unavailable account'))}{' '}
+          · In-app{r.unavailable ? ' · Account unavailable' : ''}
         </Text>
       ))}
       {message.status === 'SCHEDULED' ? (
@@ -268,7 +278,7 @@ export default function ScheduleDetailScreen({ id }) {
             message back to drafts. You’ll review a new schedule afterward.
           </Text>
         </>
-      ) : (
+      ) : message.status === 'CANCELED' ? (
         <AppButton
           mode="contained"
           disabled={action.busy}
@@ -276,6 +286,11 @@ export default function ScheduleDetailScreen({ id }) {
         >
           Move back to drafts
         </AppButton>
+      ) : (
+        <Text>
+          Dispatch has started. This message cannot return to drafts. Reload to
+          check its current outcome.
+        </Text>
       )}
       {action.error ? (
         <Text accessibilityRole="alert" style={{ color: theme.colors.error }}>

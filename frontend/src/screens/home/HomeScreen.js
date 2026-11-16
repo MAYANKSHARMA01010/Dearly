@@ -21,7 +21,7 @@ export default function HomeScreen() {
         </Text>
         <Divider style={{ marginVertical: spacing.sm }} />
         <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-          {user ? 'Write and save a private draft with photos, video, voice or files. You can save a schedule; automatic delivery is not running yet.' : 'Sign in to start a private draft. You can save a schedule; automatic delivery is not running yet.'}
+          {user ? 'Write and save a private draft with photos, video, voice or files. Schedule a message for delivery to a Dearly inbox.' : 'Sign in to start a private draft. Schedule a message for delivery to a Dearly inbox.'}
         </Text>
       </View>
       {message ? <Text accessibilityLiveRegion="polite">{message}</Text> : null}

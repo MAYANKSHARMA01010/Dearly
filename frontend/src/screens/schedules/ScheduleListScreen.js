@@ -5,7 +5,10 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { List, SegmentedButtons, Text, useTheme } from 'react-native-paper';
 import { useAuth } from '../../context/AuthContext';
 import { createScheduleService } from '../../services/schedules/service';
-import { scheduleLabel } from '../../services/schedules/contracts';
+import {
+  scheduleLabel,
+  scheduleStatusLabel,
+} from '../../services/schedules/contracts';
 import { ApiError } from '../../api/client';
 import AppButton from '../../components/common/AppButton';
 import StateView from '../../components/common/StateView';
@@ -16,7 +19,9 @@ export default function ScheduleListScreen() {
     theme = useTheme();
   const api = useMemo(() => createScheduleService(session), [session]);
   const [status, setStatus] = useState(
-    /** @type {'SCHEDULED'|'CANCELED'} */ ('SCHEDULED'),
+    /** @type {'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'FAILED'} */ (
+      'SCHEDULED'
+    ),
   );
   const [page, setPage] = useState(
     /** @type {{items:import('../../services/schedules/contracts').Summary[],nextCursor:string|null}} */ ({
@@ -118,20 +123,43 @@ export default function ScheduleListScreen() {
               Your schedules
             </Text>
             <Text>
-              Automatic delivery is not running yet. These are saved delivery
-              plans.
+              Confirmed schedules deliver to Dearly inboxes. Older paused plans
+              require a new review.
             </Text>
             <SegmentedButtons
               value={status}
               onValueChange={(value) => {
                 setPage({ items: [], nextCursor: null });
-                setStatus(/** @type {'SCHEDULED'|'CANCELED'} */ (value));
+                setStatus(
+                  /** @type {'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'FAILED'} */ (
+                    value
+                  ),
+                );
               }}
               buttons={[
                 { value: 'SCHEDULED', label: 'Scheduled' },
                 { value: 'CANCELED', label: 'Canceled' },
+                { value: 'DELIVERED', label: 'Delivered' },
               ]}
             />
+            {
+              /** @type {('DISPATCHING'|'PARTIALLY_DELIVERED'|'FAILED')[]} */ ([
+                'DISPATCHING',
+                'PARTIALLY_DELIVERED',
+                'FAILED',
+              ]).map((value) => (
+                <AppButton
+                  key={value}
+                  mode={status === value ? 'contained' : 'text'}
+                  onPress={() => {
+                    setPage({ items: [], nextCursor: null });
+                    setStatus(value);
+                  }}
+                >
+                  {scheduleStatusLabel(value)}
+                </AppButton>
+              ))
+            }
             <AppButton onPress={() => router.push('/drafts')}>
               Choose a draft to schedule
             </AppButton>
@@ -140,7 +168,7 @@ export default function ScheduleListScreen() {
         renderItem={({ item }) => (
           <List.Item
             title={item.subject || 'Untitled message'}
-            description={`${scheduleLabel(item.scheduledFor, item.timezone)}\n${item.timezone} · ${item.status === 'CANCELED' ? 'Canceled' : 'Saved schedule'}`}
+            description={`${scheduleLabel(item.scheduledFor, item.timezone)}\n${item.timezone} · ${scheduleStatusLabel(item.status)}${item.status === 'SCHEDULED' && !item.deliveryEnabled ? ' · Paused' : ''}`}
             descriptionNumberOfLines={4}
             accessibilityRole="button"
             accessibilityLabel={`Open schedule ${item.subject || 'Untitled message'}`}

@@ -31,7 +31,8 @@ const draft = () => ({
   canceledAt: null,
   attachments: [],
   deliveries: [],
-  backgroundDelivery: false,
+  backgroundDelivery: true,
+  deliveryEnabled: false,
 });
 const scheduled = () => ({
   ...draft(),
@@ -53,12 +54,13 @@ const review = () => ({
   deliveries: [{ recipientId: rid, channels: ['IN_APP'] }],
   reviewToken: 'opaque.review-proof',
   expiresAt: '2027-01-01T18:30:00.000Z',
-  backgroundDelivery: false,
+  backgroundDelivery: true,
+  deliveryEnabled: false,
 });
 test('schedule parsing preserves recipient IDs and rejects incomplete or misleading saved state', () => {
   assert.equal(parseScheduleMessage(scheduled()).recipients[0].id, rid);
   for (const patch of [
-    { backgroundDelivery: true },
+    { backgroundDelivery: false },
     { status: 'SENT' },
     { timezone: 'Invalid/Zone' },
     { scheduledFor: 'bad' },
@@ -92,7 +94,7 @@ test('review requires authoritative time, proof and a unique supported choice fo
   assert.equal(parseScheduleReview(review()).resolved.scheduledFor, date);
   for (const patch of [
     { reviewToken: '' },
-    { backgroundDelivery: true },
+    { backgroundDelivery: false },
     { deliveries: [] },
     { deliveries: [{ recipientId: rid, channels: ['SMS'] }] },
     { resolved: { ...review().resolved, offset: 'unknown' } },
@@ -166,4 +168,51 @@ test('forgetting a scheduled editor clears old private state before reopening it
   const reopened = workspace.editor(id, id);
   assert.notEqual(reopened, old);
   assert.equal(reopened.getSnapshot().deleted, false);
+});
+
+test('dispatch and final delivery states parse without treating them as editable schedules', () => {
+  for (const status of [
+    'DISPATCHING',
+    'DELIVERED',
+    'PARTIALLY_DELIVERED',
+    'FAILED',
+  ]) {
+    const message = parseScheduleMessage({
+      ...scheduled(),
+      status,
+      deliveryEnabled: true,
+    });
+    assert.equal(message.status, status);
+    assert.equal(message.deliveryEnabled, true);
+  }
+  assert.throws(() =>
+    parseScheduleMessage({
+      ...scheduled(),
+      status: 'OPENED',
+      deliveryEnabled: true,
+    }),
+  );
+  assert.throws(() =>
+    parseScheduleMessage({ ...scheduled(), deliveryEnabled: 'yes' }),
+  );
+});
+test('delivery capabilities distinguish a running worker from supported in-app delivery', async () => {
+  let status = 'offline';
+  const api = createScheduleService({
+    request: async () => ({
+      backgroundDelivery: true,
+      worker: { status },
+      channels: [
+        { channel: 'IN_APP', available: true, mode: 'DATABASE' },
+        { channel: 'SMS', available: false },
+      ],
+    }),
+  });
+  assert.deepEqual(await api.capabilities(), {
+    backgroundDelivery: true,
+    workerOnline: false,
+    inAppAvailable: true,
+  });
+  status = 'running';
+  assert.equal((await api.capabilities()).workerOnline, true);
 });

@@ -35,6 +35,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
     [time, setTime] = useState(''),
     [timezone, setTimezone] = useState(user?.timezone ?? 'UTC');
   const [selected, setSelected] = useState(/** @type {string[]} */ ([]));
+  const [workerOnline, setWorkerOnline] = useState(false);
   const [available, setAvailable] = useState(false),
     [loaded, setLoaded] = useState(false),
     [touched, setTouched] = useState(false),
@@ -69,11 +70,13 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
           setSelected(
             message.recipients
               .filter(
-                (r) => ['SELF', 'USER'].includes(r.type) && !r.unavailable,
+                (r) =>
+                  ['SELF', 'USER', 'PHONE'].includes(r.type) && !r.unavailable,
               )
               .map((r) => r.id),
           );
           setAvailable(capabilities.inAppAvailable);
+          setWorkerOnline(capabilities.workerOnline);
           setReview(null);
           setTouched(false);
         } finally {
@@ -166,9 +169,15 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         {reschedule ? 'Choose a new time' : 'Plan a delivery time'}
       </Text>
       <Text>
-        Automatic delivery isn’t running yet. This saves your schedule, but no
-        message will be delivered.
+        Confirming enables delivery to Dearly inboxes at or after the chosen
+        time. Delivery continues when this app is closed.
       </Text>
+      {!workerOnline ? (
+        <Text accessibilityRole="alert">
+          The delivery service is offline. Your schedule stays saved and
+          delivery will resume when the service is available.
+        </Text>
+      ) : null}
       <Text variant="titleMedium">{source.subject || 'Untitled message'}</Text>
       <AppTextField
         label="Date (YYYY-MM-DD)"
@@ -223,7 +232,8 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
       </Text>
       {source.recipients.map((recipient) => {
         const supported =
-          ['SELF', 'USER'].includes(recipient.type) && !recipient.unavailable;
+          ['SELF', 'USER', 'PHONE'].includes(recipient.type) &&
+          !recipient.unavailable;
         const label =
           recipient.label ||
           (recipient.type === 'SELF'
@@ -236,7 +246,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         return (
           <View key={recipient.id} style={{ gap: spacing.sm }}>
             <Checkbox.Item
-              label={`${label} · In-app (planned)`}
+              label={`${label} · In-app`}
               status={selected.includes(recipient.id) ? 'checked' : 'unchecked'}
               disabled={action.busy || reschedule || !supported || !available}
               onPress={() => {
@@ -250,17 +260,18 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
             />
             {!supported ? (
               <Text style={{ color: theme.colors.error }}>
-                This recipient cannot use in-app delivery. Cancel and return to
-                drafts to change recipients.
+                This recipient cannot use in-app delivery. Update recipients in
+                drafts.
               </Text>
             ) : null}
           </View>
         );
       })}
       <Text>
-        SMS, WhatsApp and email delivery are unavailable. Recipient and
-        attachment changes require returning to drafts and reviewing a new
-        schedule.
+        Phone recipients need an existing verified Dearly account. In-app does
+        not send an SMS or WhatsApp message. SMS, WhatsApp and email delivery
+        are unavailable. Recipient and attachment changes require returning to
+        drafts and reviewing a new schedule.
       </Text>
       <AppButton
         mode="contained"
@@ -310,8 +321,10 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
               {recipient.label ||
                 (recipient.type === 'SELF'
                   ? 'Myself'
-                  : `Dearly account ${recipient.userId}`)}{' '}
-              · In-app (planned)
+                  : recipient.type === 'PHONE'
+                    ? recipient.phone
+                    : `Dearly account ${recipient.userId}`)}{' '}
+              · In-app
             </Text>
           ))}
           {review.data.message.attachments.map((file) => (
@@ -319,8 +332,8 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
           ))}
           <Text>
             Review valid until{' '}
-            {new Date(review.data.expiresAt).toLocaleTimeString()}. Automatic
-            delivery is not enabled.
+            {new Date(review.data.expiresAt).toLocaleTimeString()}. Confirming
+            enables in-app delivery.
           </Text>
           <AppButton
             mode="contained"

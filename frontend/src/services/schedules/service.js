@@ -31,7 +31,7 @@ export function createScheduleService(session) {
         !r ||
         typeof r !== 'object' ||
         !('backgroundDelivery' in r) ||
-        r.backgroundDelivery !== false ||
+        r.backgroundDelivery !== true ||
         !('channels' in r) ||
         !Array.isArray(r.channels)
       )
@@ -40,14 +40,22 @@ export function createScheduleService(session) {
           'invalid_response',
         );
       return {
-        backgroundDelivery: false,
+        backgroundDelivery: true,
+        workerOnline:
+          'worker' in r &&
+          Boolean(
+            r.worker &&
+            typeof r.worker === 'object' &&
+            'status' in r.worker &&
+            r.worker.status === 'running',
+          ),
         inAppAvailable: r.channels.some(
           (value) =>
             value &&
             typeof value === 'object' &&
             value.channel === 'IN_APP' &&
             value.available === true &&
-            value.mode === 'INTENT_ONLY',
+            value.mode === 'DATABASE',
         ),
       };
     },
@@ -58,13 +66,14 @@ export function createScheduleService(session) {
       parseDraft(r);
       return parseScheduleMessage({
         .../** @type {object} */ (r),
+        deliveryEnabled: false,
         scheduledFor: null,
         timezone: null,
         localDateTime: null,
         canceledAt: null,
         attachments: [],
         deliveries: [],
-        backgroundDelivery: false,
+        backgroundDelivery: true,
       });
     },
     /** @param {string} id @param {AbortSignal} [signal] */
@@ -120,7 +129,7 @@ export function createScheduleService(session) {
         await write(`${path(id)}/reopen`, 'POST', { version }, signal),
       );
     },
-    /** @param {'SCHEDULED'|'CANCELED'} [status] @param {string|null} [cursor] @param {AbortSignal} [signal] */
+    /** @param {'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'FAILED'} [status] @param {string|null} [cursor] @param {AbortSignal} [signal] */
     async list(status = 'SCHEDULED', cursor = null, signal) {
       return parseSchedulePage(
         await session.request(

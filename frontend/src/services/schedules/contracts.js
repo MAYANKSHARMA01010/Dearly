@@ -5,9 +5,9 @@ import { parseAttachment } from '../attachments/contracts.js';
 /** @typedef {{recipientId:string,channel:'IN_APP'}} Delivery */
 /** @typedef {{recipientId:string,channels:string[]}} DeliveryChoice */
 /** @typedef {{version:number,localDateTime:string,timezone:string,deliveries?:DeliveryChoice[]}} Choice */
-/** @typedef {Omit<import('../drafts/contracts.js').Draft,'recipients'> & {status:'DRAFT'|'SCHEDULED'|'CANCELED',recipients:ScheduleRecipient[],scheduledFor:string|null,timezone:string|null,localDateTime:string|null,canceledAt:string|null,attachments:import('../attachments/contracts.js').Attachment[],deliveries:Delivery[],backgroundDelivery:false}} Message */
-/** @typedef {{id:string,status:'SCHEDULED'|'CANCELED',version:number,subject:string|null,scheduledFor:string,timezone:string,localDateTime:string,canceledAt:string|null}} Summary */
-/** @typedef {{message:Message,resolved:{scheduledFor:string,timezone:string,localDateTime:string,offset:string},deliveries:DeliveryChoice[],reviewToken:string,expiresAt:string,backgroundDelivery:false}} Review */
+/** @typedef {Omit<import('../drafts/contracts.js').Draft,'recipients'> & {status:'DRAFT'|'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'FAILED',recipients:ScheduleRecipient[],scheduledFor:string|null,timezone:string|null,localDateTime:string|null,canceledAt:string|null,attachments:import('../attachments/contracts.js').Attachment[],deliveries:Delivery[],backgroundDelivery:true,deliveryEnabled:boolean}} Message */
+/** @typedef {{id:string,status:'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'FAILED',version:number,subject:string|null,scheduledFor:string,timezone:string,localDateTime:string,canceledAt:string|null,deliveryEnabled:boolean}} Summary */
+/** @typedef {{message:Message,resolved:{scheduledFor:string,timezone:string,localDateTime:string,offset:string},deliveries:DeliveryChoice[],reviewToken:string,expiresAt:string,backgroundDelivery:true}} Review */
 const invalid = () =>
   new ApiError(
     'The schedule response could not be confirmed. Reload before trying again.',
@@ -37,7 +37,15 @@ export function parseScheduleSummary(value) {
   if (
     typeof r.id !== 'string' ||
     !uuid.test(r.id) ||
-    !['SCHEDULED', 'CANCELED'].includes(String(r.status)) ||
+    ![
+      'SCHEDULED',
+      'CANCELED',
+      'DISPATCHING',
+      'DELIVERED',
+      'PARTIALLY_DELIVERED',
+      'FAILED',
+    ].includes(String(r.status)) ||
+    typeof r.deliveryEnabled !== 'boolean' ||
     !Number.isInteger(r.version) ||
     Number(r.version) < 1 ||
     !(r.subject === null || typeof r.subject === 'string') ||
@@ -58,14 +66,24 @@ export function parseScheduleSummary(value) {
     timezone: r.timezone,
     localDateTime: r.localDateTime,
     canceledAt: r.canceledAt,
+    deliveryEnabled: r.deliveryEnabled,
   });
 }
 /** @param {unknown} value @returns {Message} */
 export function parseScheduleMessage(value) {
   const r = record(value);
   if (
-    !['DRAFT', 'SCHEDULED', 'CANCELED'].includes(String(r.status)) ||
-    r.backgroundDelivery !== false
+    ![
+      'DRAFT',
+      'SCHEDULED',
+      'CANCELED',
+      'DISPATCHING',
+      'DELIVERED',
+      'PARTIALLY_DELIVERED',
+      'FAILED',
+    ].includes(String(r.status)) ||
+    r.backgroundDelivery !== true ||
+    typeof r.deliveryEnabled !== 'boolean'
   )
     throw invalid();
   const base = parseDraft({ ...r, status: 'DRAFT' });
@@ -124,7 +142,8 @@ export function parseScheduleMessage(value) {
     canceledAt: /** @type {string|null} */ (r.canceledAt),
     attachments: r.attachments.map(parseAttachment),
     deliveries,
-    backgroundDelivery: false,
+    backgroundDelivery: true,
+    deliveryEnabled: /** @type {boolean} */ (r.deliveryEnabled),
   };
 }
 /** @param {unknown} value @returns {Review} */
@@ -133,7 +152,7 @@ export function parseScheduleReview(value) {
     resolved = record(r.resolved);
   const message = parseScheduleMessage(r.message);
   if (
-    r.backgroundDelivery !== false ||
+    r.backgroundDelivery !== true ||
     typeof r.reviewToken !== 'string' ||
     !r.reviewToken ||
     r.reviewToken.length > 512 ||
@@ -168,7 +187,7 @@ export function parseScheduleReview(value) {
     deliveries,
     reviewToken: r.reviewToken,
     expiresAt: r.expiresAt,
-    backgroundDelivery: false,
+    backgroundDelivery: true,
   });
 }
 /** @param {unknown} value @returns {{items:Summary[],nextCursor:string|null}} */
@@ -212,4 +231,17 @@ export function defaultWallTime(
   }).formatToParts(now);
   const p = Object.fromEntries(parts.map((p) => [p.type, p.value]));
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+
+/** @param {string} status */
+export function scheduleStatusLabel(status) {
+  const labels = /** @type {Record<string,string>} */ ({
+    SCHEDULED: 'Scheduled',
+    CANCELED: 'Canceled',
+    DISPATCHING: 'Dispatch started',
+    DELIVERED: 'Delivered in app',
+    PARTIALLY_DELIVERED: 'Partially delivered',
+    FAILED: 'Delivery failed',
+  });
+  return labels[status] ?? 'Unknown state';
 }
