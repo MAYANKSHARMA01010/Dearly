@@ -20,6 +20,7 @@ model User {
   drafts          DraftMessage[]   @relation("OwnedDrafts")
   draftTargets    DraftRecipient[] @relation("DraftTargets")
   attachments     Attachment[]
+  inboxItems      InboxItem[]
 
   @@map("users")
 }
@@ -84,6 +85,10 @@ enum MessageStatus {
   DRAFT
   SCHEDULED
   CANCELED
+  DISPATCHING
+  DELIVERED
+  PARTIALLY_DELIVERED
+  FAILED
 }
 
 enum RecipientType {
@@ -109,6 +114,9 @@ model DraftMessage {
   scheduleLocalDateTime String? @db.VarChar(16)
   canceledAt DateTime? @db.Timestamptz(3)
   scheduleRequestHash String? @db.Char(64)
+  deliveryEnabled Boolean @default(false)
+  deliveryWork DeliveryWork[]
+  inboxItems InboxItem[]
   deliveryIntents DeliveryIntent[]
   attachments Attachment[]
   recipients DraftRecipient[]
@@ -185,7 +193,88 @@ model DeliveryIntent {
   recipientId String
   recipient DraftRecipient @relation(fields: [recipientId, messageId], references: [id, messageId], onDelete: Cascade)
   channel DeliveryChannel
+  attempts DeliveryAttempt[]
+  inboxItem InboxItem?
 
   @@unique([messageId, recipientId, channel])
   @@map("delivery_intents")
+}
+
+
+enum WorkState {
+  READY
+  RUNNING
+  SUCCEEDED
+  FAILED
+  OBSOLETE
+}
+
+enum AttemptState {
+  STARTED
+  SUCCEEDED
+  RETRYABLE_FAILED
+  PERMANENT_FAILED
+  ABANDONED
+}
+
+model DeliveryWork {
+  id String @id @default(uuid())
+  messageId String
+  message DraftMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  scheduleVersion Int
+  state WorkState @default(READY)
+  attempts Int @default(0)
+  attemptLimit Int @default(5)
+  nextAttemptAt DateTime @db.Timestamptz(3)
+  leaseToken String?
+  leaseExpiresAt DateTime? @db.Timestamptz(3)
+  lastError String? @db.VarChar(40)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deliveries DeliveryAttempt[]
+
+  @@unique([messageId, scheduleVersion])
+  @@index([state, nextAttemptAt])
+  @@index([state, leaseExpiresAt])
+  @@map("delivery_work")
+}
+
+model DeliveryAttempt {
+  id String @id @default(uuid())
+  workId String
+  work DeliveryWork @relation(fields: [workId], references: [id], onDelete: Cascade)
+  intentId String
+  intent DeliveryIntent @relation(fields: [intentId], references: [id], onDelete: Cascade)
+  number Int
+  state AttemptState @default(STARTED)
+  errorCode String? @db.VarChar(40)
+  startedAt DateTime @default(now()) @db.Timestamptz(3)
+  finishedAt DateTime? @db.Timestamptz(3)
+
+  @@unique([workId, intentId, number])
+  @@map("delivery_attempts")
+}
+
+model InboxItem {
+  id String @id @default(uuid())
+  intentId String @unique
+  intent DeliveryIntent @relation(fields: [intentId], references: [id], onDelete: Cascade)
+  messageId String
+  message DraftMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveredAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, deliveredAt, id])
+  @@map("inbox_items")
+}
+
+model WorkerHeartbeat {
+  id String @id
+  startedAt DateTime @default(now()) @db.Timestamptz(3)
+  lastSeenAt DateTime @db.Timestamptz(3)
+  stoppedAt DateTime? @db.Timestamptz(3)
+
+  @@index([lastSeenAt])
+  @@map("worker_heartbeats")
 }
