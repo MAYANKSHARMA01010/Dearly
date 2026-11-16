@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
-import { Readable } from 'node:stream';
+import { PassThrough, Readable } from 'node:stream';
 import { LocalStorage } from '../src/providers/storage/local.storage';
 import { signatureMatches, inspectFile } from '../src/providers/storage/inspectFile';
 import { inspectPdf } from '../src/providers/storage/inspectPdf';
@@ -28,6 +28,15 @@ test('private storage streams exact bytes, rejects traversal and discards partia
     await assert.rejects(store.write(randomUUID(), randomUUID(), Readable.from([bytes]), bytes.length + 1));
     const controller = new AbortController(); controller.abort();
     await assert.rejects(store.write(randomUUID(), randomUUID(), Readable.from([bytes]), bytes.length, controller.signal));
+    const mid = new PassThrough(); const abort = new AbortController(); const interrupted = randomUUID();
+    const pending = store.write(interrupted, randomUUID(), mid, 30, abort.signal);
+    mid.write(Buffer.from('first chunk'));
+    let started = false;
+    for (let i = 0; i < 100; i++) {
+      if ((await store.entries()).some((entry) => entry.key.startsWith(`${interrupted}.`))) { started = true; break; }
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    assert.equal(started, true); abort.abort(); mid.end(); await assert.rejects(pending);
     assert.deepEqual((await store.entries()).map((entry) => entry.key), [id]);
     await inspectFile(store.path(id), 'text/plain', 'unused');
     await assert.rejects(inspectFile(store.path(id), 'image/png', 'unused'));
@@ -47,4 +56,13 @@ test('PDF validation parses a real document and rejects disguised or empty docum
   const doc = await PDFDocument.create(); doc.addPage();
   assert.equal(await inspectPdf(Buffer.from(await doc.save())), true);
   assert.equal(await inspectPdf(Buffer.from('%PDF-1.4\nnot-a-document\n%%EOF')), false);
+  const root = await mkdtemp(join(tmpdir(), 'dearly-pdf-limit-')); const file = join(root, 'test.pdf');
+  try {
+    await writeFile(file, await doc.save());
+    const outcomes = await Promise.allSettled(Array.from({ length: 3 }, () => inspectFile(file, 'application/pdf', 'unused')));
+    assert.equal(outcomes[0].status, 'fulfilled'); assert.equal(outcomes[1].status, 'fulfilled');
+    assert.equal(outcomes[2].status, 'rejected');
+    if (outcomes[2].status === 'rejected') assert.equal((outcomes[2].reason as {statusCode: number}).statusCode, 503);
+    await inspectFile(file, 'application/pdf', 'unused');
+  } finally { await rm(root, { recursive:true, force:true }); }
 });

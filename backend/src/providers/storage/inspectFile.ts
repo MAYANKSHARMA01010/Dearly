@@ -18,7 +18,7 @@ export function signatureMatches(data: Buffer, mime: string) {
   return mime === 'text/plain';
 }
 
-export async function inspectFile(path: string, mime: string, ffprobe: string) {
+async function inspectContents(path: string, mime: string, ffprobe: string) {
   const handle = await open(path, 'r');
   const head = Buffer.alloc(32);
   try { await handle.read(head, 0, 32, 0); } finally { await handle.close(); }
@@ -63,4 +63,13 @@ export async function inspectFile(path: string, mime: string, ffprobe: string) {
     if (videos.length !== 1 || !video || !['h264', 'hevc', 'vp8', 'vp9', 'av1'].includes(video.codec_name ?? '') || !video.width || !video.height || video.width > 4096 || video.height > 4096 || video.width * video.height > 10000000) throw invalid();
     if (audios.length > 1 || audios.some((s) => !['aac', 'mp3', 'opus', 'vorbis'].includes(s.codec_name ?? ''))) throw invalid();
   }
+}
+
+
+let activeInspections = 0;
+export async function inspectFile(path: string, mime: string, ffprobe: string) {
+  if (activeInspections >= 2) throw new ApiError(503, 'MEDIA_UNAVAILABLE', 'Media validation is busy. Try again shortly.');
+  activeInspections++;
+  try { await inspectContents(path, mime, ffprobe); }
+  finally { activeInspections--; }
 }
