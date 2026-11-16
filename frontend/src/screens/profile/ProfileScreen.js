@@ -29,6 +29,8 @@ export default function ProfileScreen() {
     <Text variant="headlineMedium" accessibilityRole="header">{user?.name ? 'Your profile' : 'Make Dearly yours'}</Text>
     <Text variant="bodyLarge">{user?.name ? 'Keep your delivery details up to date.' : 'Add your name and timezone to finish setting up.'}</Text>
     <AppTextField label="Phone number" value={user?.phone ?? ''} editable={false} />
+    <Text selectable accessibilityLabel={`Your Dearly ID ${user?.id}`}>Your Dearly ID: {user?.id}</Text>
+    <Text variant="bodySmall">Share this ID with someone who wants to add your Dearly account as a recipient.</Text>
     <AppTextField label="Your name" value={name} onChangeText={setName} autoComplete="name" textContentType="name" maxLength={80} disabled={action.busy} />
     <AppTextField label="Email for delivery (optional)" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none"
       autoCorrect={false} autoComplete="email" textContentType="emailAddress" maxLength={254} disabled={action.busy} />

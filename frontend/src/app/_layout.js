@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import Screen from '../components/layout/Screen';
 import StateView from '../components/common/StateView';
 import AppButton from '../components/common/AppButton';
+import { DraftWorkspaceProvider } from '../context/DraftWorkspaceContext';
 
 function SessionNavigator() {
   const { status, user, message, recovery, session } = useAuth();
@@ -35,6 +36,7 @@ function SessionNavigator() {
     </Stack.Protected>
     <Stack.Protected guard={Boolean(user)}>
       <Stack.Screen name="profile" options={{ title: 'Your profile' }} />
+      <Stack.Screen name="drafts" options={{ headerShown: false }} />
     </Stack.Protected>
     <Stack.Screen name="+not-found" options={{ title: 'Page not found' }} />
   </Stack>;
@@ -48,7 +50,7 @@ export default function RootLayout() {
       <PaperProvider theme={themes.paper}>
         <ThemeProvider value={themes.navigation}>
           <StatusBar style={dark ? 'light' : 'dark'} />
-          <AuthProvider><SessionNavigator /></AuthProvider>
+          <AuthProvider><DraftWorkspaceProvider><SessionNavigator /></DraftWorkspaceProvider></AuthProvider>
         </ThemeProvider>
       </PaperProvider>
     </SafeAreaProvider>
