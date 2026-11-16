@@ -43,9 +43,9 @@ and a simulated delivery does not complete a real channel integration.
 | 4 | Phone OTP and session backend | 2 | Complete — development only |
 | 5 | Mobile login, session restoration, and profile | 3–4 | Complete — development only |
 | 6 | Draft message and recipient APIs | 4 | Complete |
-| 7 | Mobile composer, recipients, and draft management | 5–6 | Not started |
-| 8 | Attachment storage and mobile media tools | 6–7 | Not started |
-| 9 | Schedule, reschedule, and cancellation | 7–8 | Not started |
+| 7 | Mobile composer, recipients, and draft management | 5–6 | Complete |
+| 8 | Attachment storage and mobile media tools | 6–7 | Complete |
+| 9 | Schedule, reschedule, and cancellation | 7–8 | Complete — saved plans; automatic delivery not enabled |
 | 10 | Durable workers and in-app delivery | 9 | Not started |
 | 11 | Dashboard, mailboxes, message details, and tracking | 10 | Not started |
 | 12 | Email delivery and secure external content access | 10–11 | Not started |
@@ -905,3 +905,65 @@ including the read-only Neon check. No further feature routes were needed.
   cleanup operation. Format validation is not antivirus scanning or sanitization.
 - **Next:** Phase 9 — schedule, reschedule and cancel, with timezone-aware review
   and durable schedule intent. Begin only when requested.
+
+
+### Phase 9 completion — 16 November 2026
+
+- **Status:** Complete. Phases 1–9 are complete for their recorded scope. The
+  summary table now also reflects the already-recorded Phase 7/8 completion.
+  Phone authentication remains development-only. No automatic delivery is running;
+  Phase 10 has not started.
+- **Delivered:** An additive schedule/delivery-intent migration, UTC instants with
+  retained IANA timezone/local input, server-side Temporal conversion, a ten-minute
+  content/attachment-bound review proof, explicit confirmation, versioned scheduled
+  content edits, rescheduling, cancellation and return to drafts. Owner-only lists
+  support scheduled/canceled filters and bounded pagination. Shared row locking
+  coordinates schedule changes with attachment reservations/removal. Ready media
+  stays private and readable by its owner; scheduled/canceled media mutations are
+  frozen. In-app delivery choices are labeled planned; external channels reject
+  scheduling instead of pretending to deliver.
+- **Mobile:** Added guarded schedule routes, full time/content/recipient/manifest
+  review, explicit confirmation dialogs, safe retry/reload guidance and unsaved
+  choice/edit protection. Canceled messages can return to drafts with their text
+  and recipients intact. Cached editors are cleared on transitions. Fixed a
+  create-save navigation race that could show an unnecessary discard prompt;
+  navigation now waits for the clean saved render. Rescheduling replaces the
+  detail route so Back does not reopen an obsolete schedule snapshot.
+- **Verification:** Backend `npm run check` passed lint, strict typechecking,
+  40 standard tests and production compilation. Frontend `npm run check` passed
+  lint, strict JavaScript/JSDoc checking and 60 standard tests. All 39 backend
+  integration runner entries passed against isolated PostgreSQL schemas (35
+  scenarios plus four parent tests). Both mobile integration tests passed using
+  the real client/session/services, Express and disposable PostgreSQL schemas;
+  the draft scenario now covers schedule review/confirmation/retry, edits,
+  rescheduling, cancellation and reopening. Tests cover timezone day boundaries,
+  quarter-hour offsets, New York/Lord Howe DST gaps/folds, unavailable channels,
+  ownership, tampered/expired/stale reviews, attachment freeze, cursor privacy and
+  competing mutations. Temporary schemas were removed. The additive migration
+  applied to the configured Neon database successfully, without a reset.
+- **Native check:** On the existing iPhone 17 Pro Max / iOS 26 simulator, created
+  a synthetic self-recipient draft, reviewed the server-resolved Asia/Kolkata
+  instant, confirmed version 2, saved a text edit as version 3, reviewed and
+  confirmed 2 January 2027 at 00:15 (1 January at 18:45 UTC) as version 4,
+  canceled through its confirmation dialog as version 5, and returned to an
+  editable draft as version 6 with edited content/recipient intact. Read-only
+  attachment controls were present on scheduled/canceled details. The synthetic
+  test draft was removed afterward; existing user drafts and session were preserved.
+  No microphone/picker test or external send was performed. Android stayed stopped;
+  no reset or additional simulator was created. This was a functional check, not
+  a visual/design review. Native conflict recovery and the deferred create-save
+  navigation fix were checked in code/automated checks, not repeated on-device.
+- **Bundling/runtime:** iOS production export succeeded in a temporary output
+  directory. No frontend dependencies or Expo/NativeWind/Paper configuration
+  changed. Backend 8080 and Metro 8081 remain running; database readiness is healthy.
+- **Limits:** Due plans remain SCHEDULED, even after their time passes. Nothing
+  is sent, delivered or exposed to recipients. Recipient/channel/media edits
+  require cancel → return to drafts → new review. Cancellation keeps the current
+  plan until reopening clears its schedule/intents; there is no permanent event
+  history yet. Runtime timezone data must stay maintained. Future dispatch states
+  must extend the database shape constraint and coordinate edits/cancellation
+  with claiming. See [schedule contracts](scheduling.md).
+- **Commits:** `880777f` schema/intents and migration fixtures; `7cead40` reviewed
+  timezone APIs, locking and tests; `a9f92f1` mobile schedule flows and tests.
+  A separate documentation commit records contracts, setup and completion.
+- **Next:** Phase 10 — durable workers and in-app delivery. Start only when requested.

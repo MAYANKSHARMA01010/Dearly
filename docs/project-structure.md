@@ -22,6 +22,7 @@ Keep the existing `src/screens/` convention for feature UI:
 | `screens/auth/` | Phone entry and OTP verification |
 | `screens/home/` | Dashboard: created, scheduled, sent, received, drafts, failed |
 | `screens/messages/` | Compose, attachments, occasion, scheduling, lists, details; edit, reschedule, cancel |
+| `screens/schedules/` | Schedule form/review, saved-plan list and editable details |
 | `screens/recipients/` | Choose self, app user, phone number, or email |
 | `screens/notifications/` | Notification list and message-opening actions |
 | `screens/profile/` | Account and profile |
@@ -55,6 +56,13 @@ in-memory editor models in `services/drafts/`, with guarded `app/drafts/` routes
 Phase 8 adds `services/attachments/` and `components/media/` for selection, private
 transfers, recording and playback. See [mobile authentication](mobile-auth.md),
 [mobile drafts](mobile-drafts.md) and [attachments](attachments.md).
+
+Phase 9 adds guarded `app/schedules/` routes, feature screens and strict API/response
+contracts in `services/schedules/`. Backend schedule routes/controllers/validators/
+services use `utils/scheduleTime.ts` for server timezone conversion and
+`utils/lockMessage.ts` for schema-aware transaction locking. The additive migration
+persists message schedule metadata and per-recipient delivery intents. See
+[scheduling](scheduling.md); no delivery worker exists yet.
 
 ## Backend
 

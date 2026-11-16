@@ -169,3 +169,11 @@ and remaining runtime limitations. Scheduling and provider delivery remain Phase
 SDK note: when supplying a recording filename to `prepareToRecordAsync`, pass the
 full quality/container preset as well. A filename-only override can fall back to
 native PCM defaults; a `.m4a` suffix alone is not proof of AAC/MP4 content.
+
+## Scheduled messages
+
+Phase 9 freezes attachment mutations once a message is scheduled or canceled.
+Owner-only reads/previews remain available through the same private endpoints.
+Reservations and removal acquire the message lock used by scheduling; pending or
+deleting attachments block confirmation. Cancel and return the message to drafts
+before changing attachments, then review a new schedule. See [scheduling](scheduling.md).

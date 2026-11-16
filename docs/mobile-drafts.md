@@ -68,5 +68,5 @@ See the dated completion record in [the phase plan](implementation-phases.md) fo
 native verification and remaining limits.
 
 Phase 8 adds [attachments, recording and uploads](attachments.md) to saved drafts.
-Scheduling, delivery and inbox access remain later phases. OTP is still a local development simulation; no provider messages
+Phase 9 adds [schedule review and management](scheduling.md); delivery and inbox access follow later. OTP is still a local development simulation; no provider messages
 are sent by these checks.

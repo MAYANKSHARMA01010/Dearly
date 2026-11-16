@@ -54,6 +54,11 @@ within a phase does not authorize the entire phase.
 - Store delivery instants in UTC and retain the user's IANA timezone. Use durable
   schedules, bounded retries, and idempotent delivery handling; do not depend on
   the mobile app staying open or a process-local timer for reliable delivery.
+- Phase 9 stores schedules and in-app delivery intents, with no dispatcher yet.
+  Follow [schedule contracts](docs/scheduling.md), use the shared message lock for
+  schedule/attachment mutations, and preserve reviewed UTC instants and versions.
+  Phase 10 must recheck current state at dispatch and update the schedule-shape
+  constraint when adding new states. Never label a saved plan as delivered.
 - Track delivery per recipient and channel. Distinguish provider acceptance,
   delivery confirmation, and opening; only claim statuses supported by evidence.
 - Phase 8 uses private filesystem attachments with owner-only APIs, bounded

@@ -169,3 +169,10 @@ volume when hosting. Run `npm run attachments:cleanup` explicitly in development
 configure an external hourly cleanup job when hosted. See
 [attachments and storage](../docs/attachments.md) for exact limits, retention, API
 contracts and verification. No public media URLs or paid storage service is enabled.
+
+## Scheduling
+
+Phase 9 adds owner-only `/messages/schedules` APIs for timezone-aware review,
+confirmation, text edits, rescheduling, cancellation and return to drafts. Apply
+the additive migration with `npm run prisma:deploy`. Only planned in-app choices
+are accepted; no worker or provider sends messages. See [schedule contracts](../docs/scheduling.md).
