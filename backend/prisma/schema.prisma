@@ -115,6 +115,7 @@ model DraftMessage {
   canceledAt DateTime? @db.Timestamptz(3)
   scheduleRequestHash String? @db.Char(64)
   deliveryEnabled Boolean @default(false)
+  events MessageEvent[]
   deliveryWork DeliveryWork[]
   inboxItems InboxItem[]
   deliveryIntents DeliveryIntent[]
@@ -264,6 +265,7 @@ model InboxItem {
   userId String
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   deliveredAt DateTime @default(now()) @db.Timestamptz(3)
+  openedAt DateTime? @db.Timestamptz(3)
 
   @@index([userId, deliveredAt, id])
   @@map("inbox_items")
@@ -277,4 +279,36 @@ model WorkerHeartbeat {
 
   @@index([lastSeenAt])
   @@map("worker_heartbeats")
+}
+
+
+enum MessageEventKind {
+  BASELINE
+  CREATED
+  EDITED
+  SCHEDULED
+  RESCHEDULED
+  CANCELED
+  REOPENED
+  DISPATCH_STARTED
+  RETRY_SCHEDULED
+  RETRY_REQUESTED
+  DELIVERED
+  PARTIALLY_DELIVERED
+  FAILED
+  OPENED
+}
+
+model MessageEvent {
+  id String @id @default(uuid())
+  sequence BigInt @unique @default(autoincrement())
+  messageId String
+  message DraftMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  kind MessageEventKind
+  state MessageStatus
+  version Int
+  occurredAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([messageId, sequence])
+  @@map("message_events")
 }
