@@ -50,7 +50,9 @@ drive the service-status flow. Phase 5 adds `services/auth/`, `context/AuthConte
 `hooks/useAsyncAction.js`, login/profile screens and guarded Router routes. Native
 credentials use SecureStore; web sessions stay in memory. `navigation/` remains
 reserved; never create a competing navigation system. Phase 6 provides draft APIs;
-the mobile composer follows in Phase 7. See [mobile authentication](mobile-auth.md).
+Phase 7 implements the mobile composer/list, recipient review and account-scoped
+in-memory editor models in `services/drafts/`, with guarded `app/drafts/` routes.
+See [mobile authentication](mobile-auth.md) and [mobile drafts](mobile-drafts.md).
 
 ## Backend
 

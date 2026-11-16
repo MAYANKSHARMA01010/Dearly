@@ -791,3 +791,46 @@ including the read-only Neon check. No further feature routes were needed.
   and validation/security tests; a separate documentation commit records contracts.
 - **Next:** Phase 7 — mobile composer, recipients and draft management. Begin when
   requested, using server versions and safe authenticated writes.
+
+
+### Phase 7 completion — 16 November 2026
+
+- **Status:** Complete. Phases 1–7 are complete for their recorded scope; phone
+  login remains development-only. Phase 8 has not started.
+- **Delivered:** Protected composer and draft-list routes, subject/message fields,
+  preset/custom occasions, reviewed self/known-user-ID/phone/email recipients,
+  canonical duplicate prevention, and explicit save/reopen/edit/delete. The list
+  supports refresh, cursor pagination and loading/empty/error/retry states.
+- **Recovery/privacy:** Visible saved versions and unsaved state; navigation
+  confirmation covers edits and unfinished recipient entry. Conflicts retain local
+  work until confirmed reload. Duplicate taps share one request. Unknown write
+  outcomes block replay, including a session restoration during a pending write.
+  Account/API-scoped memory models survive same-account restoration and clear on
+  sign-out/scope changes; late results cannot repopulate cleared models. No draft
+  content is persisted on device; process closure/reload loses unsaved work.
+- **Validation:** Frontend `npm run check` passed lint, strict JSDoc/JS type checks
+  and all 48 standard tests. Both opt-in mobile/auth and mobile/draft PostgreSQL
+  integration scenarios passed against temporary schemas. Draft integration covers
+  all four recipient types, one POST for repeated saves, persisted reopen, version
+  conflict/reload/update, delete/cascade and signed-out rejection. Expo Doctor
+  passed 20/20; final iOS, Android and web exports passed. No dependencies changed.
+- **iPhone functional check:** iPhone 17 Pro Max, Expo Go SDK 58: simulated phone
+  login/profile, empty list, compose/save, process reload/reopen with persisted
+  content, self/email recipients with normalized email, custom occasion, confirmed
+  version 2 update, keep-editing/discard navigation, recipient removal and delete
+  confirmation/cancel. Signed out afterward. Final native delete dispatch,
+  phone/other-account entry, offline/conflict UI, pagination and foreground recovery
+  were not manually exercised on iPhone; core cases have unit/API integration
+  coverage. No Android runtime or visual/preview review was performed.
+- **Preservation/cleanup:** Existing Expo/NativeWind/Paper settings, backend sources,
+  migration history and private environment files are preserved. Temporary test
+  schemas and the reserved-number QA account/drafts/auth records were removed.
+  Backend 8080 and Metro 8081 remain running; iPhone remains available and Android
+  stays closed. No upload, schedule or provider message was sent.
+- **Commits:** `becf12b` — authenticated persistence, editor/workspace state and
+  tests; `d2e3ffb` — composer, recipients, protected routes and draft list; a separate
+  documentation commit records contracts and completion.
+- **Guide:** [Mobile drafts](mobile-drafts.md) documents manual save, recipient
+  semantics and recovery limits. POST creation still has no server idempotency key.
+- **Next:** Phase 8 — attachments, voice and private storage. Begin only when
+  requested, after choosing a free-to-use storage option and defining limits.

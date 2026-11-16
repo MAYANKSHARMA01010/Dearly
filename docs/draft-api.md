@@ -3,7 +3,7 @@
 Drafts are private saved work owned by the authenticated sender. This phase adds
 backend APIs only. It does not attach files, schedule work, send messages, notify
 recipients, or expose drafts to their intended recipients. The mobile composer is
-Phase 7. Authentication still uses the development-only Phase 4/5 OTP setup.
+implemented in Phase 7; see [mobile drafts](mobile-drafts.md). Authentication still uses the development-only Phase 4/5 OTP setup.
 
 ## Setup and endpoints
 

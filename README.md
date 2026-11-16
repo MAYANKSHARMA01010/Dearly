@@ -15,7 +15,8 @@ adds phone OTP/session/profile APIs with explicit local simulation; real OTP del
 is not configured. Phase 5 adds mobile phone login, secure session recovery and
 own-profile editing, with explicit test-code labeling. Scheduling and delivery
 follow later. Phase 6 adds private, versioned draft and recipient
-APIs; the mobile composer follows in Phase 7.
+APIs. Phase 7 adds the mobile composer, manual recipients, draft list, explicit
+save/edit/delete, and unsaved/conflict recovery. See [mobile drafts](docs/mobile-drafts.md).
 See [backend authentication](docs/authentication.md) and
 [mobile authentication](docs/mobile-auth.md) for setup and security limits.
 The [draft API contract](docs/draft-api.md) covers private message work and recipients.
