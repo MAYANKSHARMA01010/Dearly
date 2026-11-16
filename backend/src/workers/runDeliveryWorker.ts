@@ -1,0 +1,106 @@
+import { setTimeout as delay } from 'node:timers/promises';
+import { randomUUID } from 'node:crypto';
+import { loadEnvironment } from '../configs/loadEnvironment';
+import { createDatabase } from '../configs/database';
+import { LocalStorage } from '../providers/storage/local.storage';
+import { enqueueDeliveries } from '../jobs/enqueueDeliveries';
+import { DeliveryWorker, deliveryPolicy } from './deliveryWorker';
+import { createLogger } from '../utils/logger';
+
+export interface WorkerLoop {
+  enqueue(): Promise<unknown>;
+  claim(): Promise<import('./deliveryWorker').Claim | null>;
+  execute(claim: import('./deliveryWorker').Claim): Promise<unknown>;
+  heartbeat(stopped?: boolean): Promise<unknown>;
+}
+/** Stop taking work on SIGTERM; finish the current bounded transaction, then close. */
+export async function runWorkerLoop(
+  worker: WorkerLoop,
+  signal: AbortSignal,
+  pollMs = deliveryPolicy.pollMs,
+  onError: () => void = () => {},
+) {
+  try {
+    while (!signal.aborted) {
+      try {
+        await worker.heartbeat();
+        if (signal.aborted) break;
+        await worker.enqueue();
+        for (let n = 0; n < 20 && !signal.aborted; n++) {
+          const claim = await worker.claim();
+          if (!claim) break;
+          await worker.execute(claim);
+          await worker.heartbeat();
+        }
+      } catch {
+        onError();
+      }
+      if (!signal.aborted)
+        try {
+          await delay(pollMs, undefined, { signal });
+        } catch {
+          /* shutdown wakes the poll */
+        }
+    }
+  } finally {
+    try {
+      await worker.heartbeat(true);
+    } catch {
+      onError();
+    }
+  }
+}
+async function main() {
+  const config = loadEnvironment(),
+    db = createDatabase(config.databaseUrl),
+    log = createLogger(config.logLevel),
+    id = randomUUID();
+  const worker = new DeliveryWorker(
+    db.prisma!,
+    new LocalStorage(config.storageRoot),
+  );
+  const stop = new AbortController();
+  let deadline: NodeJS.Timeout | undefined;
+  const shutdown = () => {
+    stop.abort();
+    deadline ??= setTimeout(() => {
+      log.error('delivery.worker.shutdown_deadline', {
+        code: 'SHUTDOWN_DEADLINE',
+      });
+      process.exit(1);
+    }, 45000);
+    deadline.unref();
+  };
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
+  try {
+    log.info('delivery.worker.started');
+    await runWorkerLoop(
+      {
+        enqueue: () => enqueueDeliveries(db.prisma!),
+        claim: () => worker.claim(),
+        execute: (c) => worker.execute(c),
+        heartbeat: (stopped) => worker.heartbeat(id, stopped),
+      },
+      stop.signal,
+      deliveryPolicy.pollMs,
+      () =>
+        log.error('delivery.worker.cycle_failed', {
+          code: 'DELIVERY_CYCLE_FAILED',
+        }),
+    );
+  } finally {
+    process.off('SIGTERM', shutdown);
+    process.off('SIGINT', shutdown);
+    await db.disconnect();
+    clearTimeout(deadline);
+    log.info('delivery.worker.stopped');
+  }
+}
+if (require.main === module)
+  void main().catch(() => {
+    process.stderr.write(
+      'Delivery worker stopped. Check database availability and applied migrations.\n',
+    );
+    process.exitCode = 1;
+  });

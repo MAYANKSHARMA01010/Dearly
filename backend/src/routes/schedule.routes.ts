@@ -1,3 +1,4 @@
+import { workerStatus } from '../services/workerStatus.service';
 import { Router } from 'express';
 import type { PrismaClient } from '@prisma/client';
 import type { AuthService } from '../services/auth.service';
@@ -33,9 +34,7 @@ export function createScheduleRouter(
     return router;
   }
   const c = scheduleController(new ScheduleService(prisma, secret));
-  router.get('/capabilities', (req, res) =>
-    sendSuccess(res, scheduleCapabilities, req.requestId),
-  );
+  router.get('/capabilities', (req,res,next) => { void workerStatus(prisma).then(worker => sendSuccess(res,{...scheduleCapabilities,worker},req.requestId)).catch(next); });
   router.get('/', c.list);
   router.get('/:id', c.read);
   router.patch('/:id', c.edit);

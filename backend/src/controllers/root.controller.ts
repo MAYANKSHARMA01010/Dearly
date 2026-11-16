@@ -10,6 +10,7 @@ export const apiInfo: RequestHandler = (req, res) => {
       databaseHealth: '/health/db',
       liveness: '/health/live',
       readiness: '/health/ready',
+      workerHealth: '/health/worker',
     },
   }, req.requestId);
 };

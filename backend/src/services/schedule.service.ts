@@ -39,9 +39,9 @@ const stateError = () =>
 const digest = (value: string) =>
   createHash('sha256').update(value).digest('hex');
 export const scheduleCapabilities = {
-  backgroundDelivery: false,
+  backgroundDelivery: true,
   channels: [
-    { channel: 'IN_APP', available: true, mode: 'INTENT_ONLY' },
+    { channel: 'IN_APP', available: true, mode: 'DATABASE' },
     { channel: 'WHATSAPP', available: false },
     { channel: 'SMS', available: false },
     { channel: 'EMAIL', available: false },
@@ -50,6 +50,7 @@ export const scheduleCapabilities = {
 export function publicSchedule(message: Message) {
   return {
     ...publicDraft(message),
+    deliveryEnabled: message.deliveryEnabled,
     scheduledFor: message.scheduledFor,
     timezone: message.scheduleTimezone,
     localDateTime: message.scheduleLocalDateTime,
@@ -61,7 +62,7 @@ export function publicSchedule(message: Message) {
       recipientId: i.recipientId,
       channel: i.channel,
     })),
-    backgroundDelivery: false,
+    backgroundDelivery: true,
   };
 }
 export class ScheduleService {
@@ -87,7 +88,7 @@ export class ScheduleService {
     ownerId: string,
     id: string,
   ) {
-    if (!await lockMessage(tx, ownerId, id)) throw missing();
+    if (!(await lockMessage(tx, ownerId, id))) throw missing();
     return tx.draftMessage.findUniqueOrThrow({ where: { id }, include });
   }
   private version(message: Message, version: number) {
@@ -134,30 +135,63 @@ export class ScheduleService {
       deliveries.some(
         (d) => d.channels.length !== 1 || d.channels[0] !== 'IN_APP',
       ) ||
-      message.recipients.some((r) => !['SELF', 'USER'].includes(r.type))
+      message.recipients.some(
+        (r) => !['SELF', 'USER', 'PHONE'].includes(r.type),
+      )
     )
       throw new ApiError(
         400,
         'CHANNEL_UNAVAILABLE',
-        'Only planned in-app delivery to Dearly accounts is available. Phone, SMS, WhatsApp and email delivery are not enabled.',
+        'Only in-app delivery to verified Dearly accounts is available. SMS, WhatsApp and email are not enabled.',
       );
-    const targetIds = [
-      ...new Set(
-        message.recipients.flatMap((r) =>
-          r.targetUserId ? [r.targetUserId] : [],
-        ),
-      ),
-    ];
-    if (
-      message.recipients.some((r) => !r.targetUserId) ||
-      (await tx.user.count({ where: { id: { in: targetIds } } })) !==
-        targetIds.length
-    )
+    // A phone is resolved only to a verified current account. Confirmation binds
+    // that account permanently; dispatch never redirects a recycled number.
+    const users = await tx.user.findMany({
+      where: {
+        phoneVerifiedAt: { lte: this.now() },
+        OR: [
+          {
+            id: {
+              in: message.recipients.flatMap((r) =>
+                r.targetUserId ? [r.targetUserId] : [],
+              ),
+            },
+          },
+          {
+            phone: {
+              in: message.recipients.flatMap((r) =>
+                r.type === 'PHONE' && r.phone ? [r.phone] : [],
+              ),
+            },
+          },
+        ],
+      },
+      select: { id: true, phone: true },
+    });
+    const bindings = message.recipients.map((r) => {
+      const user =
+        r.type === 'PHONE'
+          ? users.find(
+              (u) =>
+                u.phone === r.phone &&
+                (message.status === 'DRAFT' || u.id === r.targetUserId),
+            )
+          : users.find((u) => u.id === r.targetUserId);
+      if (!user)
+        throw new ApiError(
+          400,
+          'INVALID_RECIPIENTS',
+          'An in-app recipient is unavailable. Update recipients in drafts.',
+        );
+      return { recipientId: r.id, userId: user.id };
+    });
+    if (new Set(bindings.map((b) => b.userId)).size !== bindings.length)
       throw new ApiError(
         400,
         'INVALID_RECIPIENTS',
-        'An account recipient is unavailable. Return to drafts and update recipients.',
+        'Choose each in-app recipient only once. Remove duplicate account destinations.',
       );
+    return bindings;
   }
   private choices(message: Message) {
     return message.recipients.map((r) => ({
@@ -172,12 +206,15 @@ export class ScheduleService {
     choice: ScheduleChoice | RescheduleChoice,
     mode: string,
     deliveries: ScheduleChoice['deliveries'],
+    bindings: { recipientId: string; userId: string }[],
   ) {
     return digest(
       JSON.stringify({
         mode,
         message: publicDraft(message),
         ownerId: message.ownerId,
+        deliveryEnabled: message.deliveryEnabled,
+        bindings,
         attachments: message.attachments.map((a) => ({
           id: a.id,
           state: a.state,
@@ -246,7 +283,7 @@ export class ScheduleService {
       const deliveries = reschedule
         ? this.choices(message)
         : (choice as ScheduleChoice).deliveries;
-      await this.ready(tx, message, deliveries);
+      const bindings = await this.ready(tx, message, deliveries);
       const resolved = resolveScheduleTime(
         choice.localDateTime,
         choice.timezone,
@@ -266,11 +303,12 @@ export class ScheduleService {
             choice,
             reschedule ? 'reschedule' : 'schedule',
             deliveries,
+            bindings,
           ),
           expires,
         ),
         expiresAt: new Date(expires).toISOString(),
-        backgroundDelivery: false,
+        backgroundDelivery: true,
       };
     });
   }
@@ -303,7 +341,7 @@ export class ScheduleService {
       const deliveries = reschedule
         ? this.choices(message)
         : (choice as ScheduleChoice).deliveries;
-      await this.ready(tx, message, deliveries);
+      const bindings = await this.ready(tx, message, deliveries);
       this.verify(
         choice.reviewToken,
         this.fingerprint(
@@ -311,6 +349,7 @@ export class ScheduleService {
           choice,
           reschedule ? 'reschedule' : 'schedule',
           deliveries,
+          bindings,
         ),
       );
       const resolved = resolveScheduleTime(
@@ -322,6 +361,7 @@ export class ScheduleService {
         where: { id },
         data: {
           status: 'SCHEDULED',
+          deliveryEnabled: true,
           scheduledFor: new Date(resolved.scheduledFor),
           scheduleTimezone: resolved.timezone,
           scheduleLocalDateTime: resolved.localDateTime,
@@ -330,6 +370,16 @@ export class ScheduleService {
           version: { increment: 1 },
         },
       });
+      if (!reschedule) {
+        for (const r of message.recipients.filter((r) => r.type === 'PHONE'))
+          await tx.draftRecipient.update({
+            where: { id: r.id },
+            data: {
+              targetUserId: bindings.find((b) => b.recipientId === r.id)!
+                .userId,
+            },
+          });
+      }
       if (!reschedule)
         await tx.deliveryIntent.createMany({
           data: deliveries.map((d) => ({
@@ -347,7 +397,20 @@ export class ScheduleService {
     return this.db.$transaction(
       async (tx) => {
         const message = await tx.draftMessage.findFirst({
-          where: { id, ownerId, status: { in: ['SCHEDULED', 'CANCELED'] } },
+          where: {
+            id,
+            ownerId,
+            status: {
+              in: [
+                'SCHEDULED',
+                'CANCELED',
+                'DISPATCHING',
+                'DELIVERED',
+                'PARTIALLY_DELIVERED',
+                'FAILED',
+              ],
+            },
+          },
           include,
         });
         if (!message) throw missing();
@@ -412,10 +475,15 @@ export class ScheduleService {
       this.version(m, version);
       if (m.status !== 'CANCELED') throw stateError();
       await tx.deliveryIntent.deleteMany({ where: { messageId: id } });
+      await tx.draftRecipient.updateMany({
+        where: { messageId: id, type: 'PHONE' },
+        data: { targetUserId: null },
+      });
       await tx.draftMessage.update({
         where: { id },
         data: {
           status: 'DRAFT',
+          deliveryEnabled: false,
           scheduledFor: null,
           scheduleTimezone: null,
           scheduleLocalDateTime: null,
@@ -456,6 +524,7 @@ export class ScheduleService {
         scheduleTimezone: true,
         scheduleLocalDateTime: true,
         canceledAt: true,
+        deliveryEnabled: true,
       },
     });
     const page = rows.slice(0, input.limit),

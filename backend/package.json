@@ -16,7 +16,10 @@
     "test": "tsx --test tests/*.test.ts",
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "test:integration": "tsx --test tests/integration/*.test.ts",
-    "attachments:cleanup": "tsx src/jobs/cleanupAttachments.ts"
+    "attachments:cleanup": "tsx src/jobs/cleanupAttachments.ts",
+    "delivery:worker": "tsx src/workers/runDeliveryWorker.ts",
+    "delivery:status": "tsx src/jobs/manageDelivery.ts",
+    "delivery:retry": "tsx src/jobs/manageDelivery.ts retry"
   },
   "keywords": [],
   "author": "",

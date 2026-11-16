@@ -158,7 +158,7 @@ test(
             c = choice(d),
             p = await preview(d.id, c);
           assert.equal(p.resolved.scheduledFor, '2027-01-01T18:45:00.000Z');
-          assert.equal(p.backgroundDelivery, false);
+          assert.equal(p.backgroundDelivery, true);
           const saved = (await confirm(d.id, c, p.reviewToken).expect(200)).body
             .data;
           assert.equal(saved.status, 'SCHEDULED');
@@ -237,7 +237,7 @@ test(
               .send({
                 text: 'phone',
                 recipients: [
-                  { type: 'PHONE', phone: '2025550166', country: 'US' },
+                  { type: 'PHONE', phone: '2025550179', country: 'US' },
                 ],
               })
               .expect(201)
@@ -267,7 +267,7 @@ test(
             ap = await preview(a.id, ac);
           await media(a.id);
           await confirm(a.id, ac, ap.reviewToken).expect(409);
-          let clock = new Date('2026-01-01T00:00:00Z');
+          let clock = new Date();
           const service = new ScheduleService(db, pepper, () => clock);
           const e = await create();
           const ec = scheduleChoice.parse(choice(e));

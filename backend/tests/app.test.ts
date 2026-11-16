@@ -17,7 +17,7 @@ test('root identifies the API and links to available health endpoints without qu
   assert.equal(response.body.success, true);
   assert.equal(response.body.data.name, 'Dearly API');
   assert.deepEqual(response.body.data.endpoints, {
-    health: '/health', databaseHealth: '/health/db', liveness: '/health/live', readiness: '/health/ready',
+    health: '/health', databaseHealth: '/health/db', liveness: '/health/live', readiness: '/health/ready', workerHealth: '/health/worker',
   });
   assert.equal(response.body.requestId, response.headers['x-request-id']);
   assert.equal(queries, 0);
