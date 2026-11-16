@@ -10,7 +10,8 @@ adds backend entry points and focused runtime files. Phase 3 adds Router, shared
 Paper themes/components, and the mobile API client while preserving SDK 58 and
 the NativeWind/Babel/Metro pipeline. Phase 4 replaces the generic user schema with
 phone identities, OTP challenges, durable phone budgets, sessions and refresh history.
-See [authentication contracts](authentication.md) for the development-only backend.
+Phase 6 adds owned draft/recipient models and an additive migration. See
+[authentication contracts](authentication.md) and [draft APIs](draft-api.md).
 
 ## Frontend
 
@@ -48,8 +49,8 @@ selects the environment; `src/services/health.js` and `src/hooks/useServiceHealt
 drive the service-status flow. Phase 5 adds `services/auth/`, `context/AuthContext.js`,
 `hooks/useAsyncAction.js`, login/profile screens and guarded Router routes. Native
 credentials use SecureStore; web sessions stay in memory. `navigation/` remains
-reserved; never create a competing navigation system. Message APIs remain later
-phases. See [mobile authentication](mobile-auth.md).
+reserved; never create a competing navigation system. Phase 6 provides draft APIs;
+the mobile composer follows in Phase 7. See [mobile authentication](mobile-auth.md).
 
 ## Backend
 
@@ -89,8 +90,9 @@ delivery.
 2. Phase 4 implements the phone/OTP account design and reviewed migration. Design
    messages, recipients, attachments, schedules and delivery records in their later
    phases, with separate traceable migrations.
-3. Implement phone authentication and navigation, preserving the existing styling
-   and Paper providers.
+3. Phase 5 implements mobile authentication and navigation with the existing styling
+   and Paper providers. Phase 6 implements draft/recipient APIs in layered routes,
+   controllers, validators and services, with shared session/phone helpers.
 4. Implement message creation, recipients, date/time/timezone, and message lists.
 5. Implement durable scheduling, delivery integrations, retries, status tracking,
    and notifications. Ensure received messages are accessible only to the intended

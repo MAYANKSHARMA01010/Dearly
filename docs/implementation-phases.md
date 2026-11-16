@@ -42,7 +42,7 @@ and a simulated delivery does not complete a real channel integration.
 | 3 | Mobile foundation, routing, theme, and API client | 1; 2 for connectivity | Complete — restored 16 November |
 | 4 | Phone OTP and session backend | 2 | Complete — development only |
 | 5 | Mobile login, session restoration, and profile | 3–4 | Complete — development only |
-| 6 | Draft message and recipient APIs | 4 | Not started |
+| 6 | Draft message and recipient APIs | 4 | Complete |
 | 7 | Mobile composer, recipients, and draft management | 5–6 | Not started |
 | 8 | Attachment storage and mobile media tools | 6–7 | Not started |
 | 9 | Schedule, reschedule, and cancellation | 7–8 | Not started |
@@ -748,3 +748,46 @@ including the read-only Neon check. No further feature routes were needed.
   route guards; `615b407` — expired-access sign-out; `87e1409` — task-specific loading
   accessibility label. A separate docs commit records setup and completion.
 - **Next:** Phase 6 — draft message and recipient APIs. Begin only when requested.
+
+
+### Phase 6 completion — 16 November 2026
+
+- **Status:** Complete. Phases 1–6 are complete for their recorded scope; login
+  remains development-only. Phase 7 is not started.
+- **Delivered:** Owned DRAFT records, text/subject/occasion fields, ordered recipient
+  records for SELF/USER/PHONE/EMAIL, authenticated create/read/update/delete/list
+  endpoints, safe response shapes, bounded cursor pagination and input validation.
+  Phone destinations normalize through the same full metadata validator as auth;
+  emails use an explicit case-insensitive destination policy. Canonical duplicates
+  collapse in first-entry order; SELF and the owner's USER alias are one account.
+- **Privacy:** Every draft operation is owner-scoped. Foreign and unknown draft IDs
+  share 404. Intended recipients cannot see drafts. Saved phone/email destinations
+  never discover/link account identities or grant access, even if profile contact
+  fields match. Deleted account targets become unavailable rather than reassigned.
+- **Concurrency/data:** Required versions protect update/delete; competing writes
+  cannot both win. Content and recipient replacement are transactional. Detail reads
+  use a repeatable snapshot; DB uniqueness, bounds and cascade constraints support
+  integrity. Empty/incomplete drafts can autosave without scheduling or delivery.
+- **Validation:** `npm run check` passed lint, source/test typechecking, all 31 standard
+  tests and build; audit reports zero vulnerabilities; Prisma validation passed.
+  Opt-in PostgreSQL integration passed 11 draft and 13 auth scenarios (26 runner
+  entries including two parents), including cross-account access, revoked sessions,
+  deduplication, rollback, concurrent edit/delete, equal-timestamp pagination,
+  forged cursors, deleted targets, response bounds and safe errors/logging.
+- **Migration/live check:** Additive `202611160002_draft_messages` creates the two
+  draft/recipient tables, enums, indexes, FKs and checks. Applied to Neon; migration
+  status is up to date. Live server health and draft create/list/read/update/conflict/
+  delete checks passed using a reserved-number simulated-login account.
+- **Cleanup/preservation:** Temporary PostgreSQL schemas and the live QA account,
+  drafts, recipients, OTP challenges, throttle and session records were removed.
+  Existing data/credentials, auth behavior and all frontend files are preserved.
+  Backend 8080 and Metro 8081 remain running. No simulator reset, Android launch,
+  visual/preview review, upload, schedule, queue job or provider send occurred.
+- **Contract:** See [draft API](draft-api.md). USER destinations require known account
+  UUIDs; no account directory/contact lookup is introduced. Cross-kind delivery
+  deduplication, attachments, schedules and received-message access remain later
+  work. POST creation has no idempotency guarantee; clients must not blindly retry.
+- **Commits:** `a598531` — schema/migration; `a76b661` — APIs, shared auth/phone helpers
+  and validation/security tests; a separate documentation commit records contracts.
+- **Next:** Phase 7 — mobile composer, recipients and draft management. Begin when
+  requested, using server versions and safe authenticated writes.

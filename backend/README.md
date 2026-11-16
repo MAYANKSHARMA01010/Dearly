@@ -4,7 +4,8 @@ Phase 2 provides a runnable Node.js/Express/TypeScript API with Prisma/PostgreSQ
 health checks, request safeguards, safe JSON logging, and focused automated tests.
 Phase 4 adds phone OTP, rotating sessions and own-profile APIs, explicitly for local
 development simulation only. See [authentication setup and contracts](../docs/authentication.md).
-Message APIs, scheduling and real channel delivery follow later.
+Phase 6 adds private versioned draft/recipient APIs; see [the draft contract](../docs/draft-api.md).
+Scheduling and real channel delivery follow later.
 
 ## Setup
 
@@ -56,6 +57,7 @@ DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/dearly_db?schema=public"
 No application tables are needed for the health probe. Phase 4 adds a reviewed
 initial phone-auth migration, applied with `npm run prisma:deploy`. It creates
 users, OTP challenges, durable phone budgets, sessions and refresh-token history.
+Phase 6 adds a separate additive migration for draft messages and recipients.
 Never reset a database or use `db push` to bypass migration history.
 
 ## Health endpoints and response contract
@@ -115,7 +117,8 @@ restart. Phase 4 phone budgets persist in PostgreSQL; shared IP limits remain a
 public-deployment requirement.
 
 Helmet sets baseline security headers. Only bounded JSON parsing is enabled; media
-uploads are designed in Phase 8. Logs include generated request ID, method, status,
+uploads are designed in Phase 8. Draft endpoints use owner filters, version
+preconditions and recipient validation; they do not send or schedule messages. Logs include generated request ID, method, status,
 and elapsed time, not URL/query strings, bodies, headers, raw errors, OTPs, or tokens.
 Logging goes to stdout as JSON; `logs/` is reserved, not an active file sink.
 

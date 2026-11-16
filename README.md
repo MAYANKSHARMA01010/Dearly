@@ -13,10 +13,12 @@ routing, a home/service-status shell, shared components, and frontend checks. Th
 foundations were restored after the frontend reset on 16 November 2026. Phase 4
 adds phone OTP/session/profile APIs with explicit local simulation; real OTP delivery
 is not configured. Phase 5 adds mobile phone login, secure session recovery and
-own-profile editing, with explicit test-code labeling. Message creation, scheduling
-and delivery follow later.
+own-profile editing, with explicit test-code labeling. Scheduling and delivery
+follow later. Phase 6 adds private, versioned draft and recipient
+APIs; the mobile composer follows in Phase 7.
 See [backend authentication](docs/authentication.md) and
 [mobile authentication](docs/mobile-auth.md) for setup and security limits.
+The [draft API contract](docs/draft-api.md) covers private message work and recipients.
 
 See [Project structure](docs/project-structure.md) for folder responsibilities,
 feature placement, and the next implementation steps.

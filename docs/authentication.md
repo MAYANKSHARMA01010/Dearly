@@ -136,7 +136,7 @@ Phone parsing uses [libphonenumber-js](https://github.com/catamphetamine/libphon
 
 ## Verification
 
-`npm run check` runs lint, source/test typechecking, 26 ordinary tests and the
+`npm run check` runs lint, source/test typechecking, 31 standard backend tests and the
 production build. It does not connect to Neon. `npm audit` reports zero vulnerabilities.
 
 `npm run test:integration` is an explicit opt-in requiring private
@@ -148,8 +148,12 @@ model queries but does not reliably change raw SQL search paths through the pool
 Never print or put the test URL on a shared command line. A crash/forced termination
 may require cleanup of the exact test schema; never drop `public` for cleanup.
 
-The 13 integration scenarios (14 test-runner entries including their parent) cover
+The 13 auth integration scenarios (14 test-runner entries including their parent) cover
 hashed storage/log redaction; wrong, expired, reused and concurrent OTPs; persisted
 request/failure budgets; replacement codes; access/refresh expiry; replay/concurrent
 refresh; logout isolation; profile ownership; rejected/uncertain/pending/stale dispatch;
 validation and auth-IP throttling. No real provider calls occur.
+
+Phase 6 reuses the same session middleware and phone normalization for
+[private draft APIs](draft-api.md). Its separate integration suite applies all
+migrations in a temporary schema and adds ownership/recipient/concurrency tests.
