@@ -9,7 +9,7 @@ Users manage created, scheduled, sent, received, draft, and failed messages, wit
 in-app, WhatsApp, SMS, and email delivery.
 
 This expanded roadmap replaces the earlier seven-phase outline with **16 phases**.
-Phase 1 remains complete; no implementation work is claimed for the other phases.
+Current completion status is tracked in the table and dated records below.
 Each phase delivers a bounded capability, with what to build, how to approach it,
 completion checks, and useful commit boundaries. Detailed rules live in
 [../AGENTS.md](../AGENTS.md); folder responsibilities are in
@@ -40,7 +40,7 @@ and a simulated delivery does not complete a real channel integration.
 | 1 | Project structure | — | Complete — scaffold only |
 | 2 | Backend runtime, database connection, and checks | 1 | Complete |
 | 3 | Mobile foundation, routing, theme, and API client | 1; 2 for connectivity | Complete |
-| 4 | Phone OTP and session backend | 2 | Not started |
+| 4 | Phone OTP and session backend | 2 | Complete — development only |
 | 5 | Mobile login, session restoration, and profile | 3–4 | Not started |
 | 6 | Draft message and recipient APIs | 4 | Not started |
 | 7 | Mobile composer, recipients, and draft management | 5–6 | Not started |
@@ -596,3 +596,49 @@ including the read-only Neon check. No further feature routes were needed.
   SDK-compatible dependencies and frontend checks; `31ca96d` — Router, themes,
   shared components, and the minimal mobile shell.
 - **Next:** Phase 4 — phone OTP/session backend. Begin when requested.
+
+
+### Phase 4 completion — 16 November 2026
+
+- **Status:** Complete for the development-only backend scope. No real OTP provider
+  has been selected/configured or tested. Public authentication remains blocked.
+- **Delivered:** Phone identities and optional profile destinations/timezone;
+  five-table initial Prisma migration; request/resend/verify, refresh, logout,
+  own-profile read/update APIs; explicit country/E.164 validation; random five-minute
+  OTPs stored as keyed hashes; durable per-phone resend/request/attempt budgets;
+  transaction locks preventing concurrent challenge reuse; 15-minute opaque access
+  tokens, absolute 30-day sessions, refresh rotation and replay-family revocation.
+- **Adapter/config:** Structured simulated/accepted/rejected/unknown outcomes,
+  pending/stale/failed dispatch protection, no automatic fallback or send retries.
+  Simulation is opt-in, loopback-only, and blocked in production. The ignored local
+  environment enables it with a private generated pepper; committed defaults disable
+  auth. Deprecated JWT placeholders were removed. No SMS/WhatsApp/email was sent.
+- **Validation:** `npm run check` passed lint, source/test typechecking, 26 ordinary
+  tests and build. Real PostgreSQL tests passed all 13 security scenarios (14 runner
+  entries with the parent), including concurrent OTP verification/refresh, consumed
+  code rejection, durable budgets, expiry, logout isolation, profile ownership,
+  provider failure/pending/replacement states and HTTP throttling/log redaction.
+  `npm audit` reported zero vulnerabilities. Prisma schema validation passed;
+  reviewed migration deployed to Neon and migration status is up to date.
+- **Setup correction:** The first integration-test setup revealed that raw SQL
+  through the pool uses the public search path despite Prisma's model schema URL
+  setting. It created five empty tables before its isolation assertion stopped.
+  Those exact empty tables were removed after checking table names and zero row
+  counts; no user data was present. Test SQL now explicitly qualifies the random
+  test schema. Subsequent integration tests passed and removed their schema.
+- **Live checks:** Running backend on port 8080: `/`, `/health`, `/health/db` return
+  200; unauthenticated `/auth/me` returns 401; invalid phone input returns 400.
+  Temporary schema and application-record cleanup were checked after testing.
+- **Preserved:** Existing uncommitted frontend rewrite/deletions and `docs/.gitkeep`
+  deletion were left untouched and excluded from commits. No mobile auth screens,
+  simulator reset, Android launch or native UI verification belongs to this phase.
+- **Limits:** Real possession verification awaits provider selection and consenting
+  recipient testing. IP throttles are per process; shared IP limits and retention
+  maintenance remain deployment work. No phone-change/logout-all/account-delete
+  flows, real channel delivery or mobile token storage is claimed. Full contracts
+  and local setup are in [authentication.md](authentication.md).
+- **Commits:** `49d1dce` — phone identities/challenges/session migration;
+  `b9ea4ac` — development OTP/session/profile APIs, configuration and security tests.
+  A separate documentation commit records contracts, setup and completion.
+- **Next:** Phase 5 — mobile login, secure session recovery and own profile. Inspect
+  the user's changed frontend before implementation. Begin only when requested.

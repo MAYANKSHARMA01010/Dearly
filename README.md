@@ -9,8 +9,10 @@ Schedule text, photos, video, voice, and attachments for yourself or others.
 
 Phase 1 established the folder structure. Phase 2 adds the backend runtime,
 database readiness, request safeguards, and automated checks. Phase 3 adds mobile
-routing, a home/service-status shell, shared components, and frontend checks. Authentication,
-message creation, scheduling, and delivery are not implemented yet.
+routing, a home/service-status shell, shared components, and frontend checks. Phase 4
+adds phone OTP/session/profile APIs with explicit local simulation; real OTP delivery
+is not configured. Message creation, scheduling, and delivery follow later.
+See [authentication setup](docs/authentication.md) for endpoints and security limits.
 
 See [Project structure](docs/project-structure.md) for folder responsibilities,
 feature placement, and the next implementation steps.

@@ -2,8 +2,9 @@
 
 Phase 2 provides a runnable Node.js/Express/TypeScript API with Prisma/PostgreSQL,
 health checks, request safeguards, safe JSON logging, and focused automated tests.
-Phone authentication, message APIs, scheduling, and channel delivery follow later.
-The generic Prisma user template is unchanged and is not an implemented login flow.
+Phase 4 adds phone OTP, rotating sessions and own-profile APIs, explicitly for local
+development simulation only. See [authentication setup and contracts](../docs/authentication.md).
+Message APIs, scheduling and real channel delivery follow later.
 
 ## Setup
 
@@ -52,10 +53,10 @@ such as the following in the private `.env` (replace the placeholders):
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/dearly_db?schema=public"
 ```
 
-No application tables are needed for `SELECT 1`. Phase 2 does not run migrations,
-`db push`, seeds, or database resets. Design/review the phone-auth schema in Phase 4
-before applying its migration. The existing Prisma commands remain available for
-future reviewed schema work; do not run them merely to make health checks pass.
+No application tables are needed for the health probe. Phase 4 adds a reviewed
+initial phone-auth migration, applied with `npm run prisma:deploy`. It creates
+users, OTP challenges, durable phone budgets, sessions and refresh-token history.
+Never reset a database or use `db push` to bypass migration history.
 
 ## Health endpoints and response contract
 
@@ -100,16 +101,18 @@ with `Retry-After`. Unexpected errors are safe `500` responses without raw stack
 | `RATE_LIMIT_MAX` | `100` requests/IP/window |
 | `TRUST_PROXY_HOPS` | `0`; review the actual proxy topology before changing |
 | `SHUTDOWN_TIMEOUT_MS` | `10000` |
+| `AUTH_MODE` | `disabled`; `development` enables loopback-only simulated OTP |
+| `OTP_PEPPER` | Required for development auth: private random 64 lowercase hex characters |
 
-Missing/invalid required settings fail startup with safe field names. Redis and
-JWT entries in the example are reserved for later phases and are not required by
-this runtime. Never expose `DATABASE_URL` or credentials via frontend variables.
+Missing/invalid required settings fail startup with safe field names. Redis remains
+optional. Opaque database-backed tokens replace the unused JWT placeholders. Never expose `DATABASE_URL` or credentials via frontend variables.
 
 CORS uses exact allowed origins; requests without `Origin` are accepted for native
 clients/tools. CORS is a browser policy, not authentication. Keep proxy trust at
 zero for direct local traffic; blindly trusting forwarded headers undermines IP
-limits. The baseline limiter uses per-process memory and resets on restart; shared
-limits and auth-specific abuse controls belong to later implementation/deployment.
+limits. The baseline and auth IP limiters use per-process memory and reset on
+restart. Phase 4 phone budgets persist in PostgreSQL; shared IP limits remain a
+public-deployment requirement.
 
 Helmet sets baseline security headers. Only bounded JSON parsing is enabled; media
 uploads are designed in Phase 8. Logs include generated request ID, method, status,
@@ -131,8 +134,11 @@ npm run build
 npm run check
 ```
 
-Tests use Node's test runner, tsx, and Supertest. They inject database availability
-instead of connecting to Neon; no messages are sent or database records changed.
+Standard tests use Node's test runner, tsx, and Supertest. They inject database
+availability instead of connecting to Neon. The separate, opt-in
+`npm run test:integration` requires `AUTH_TEST_DATABASE_URL`, creates a temporary
+PostgreSQL schema, and removes it after the auth security tests. No messages are
+sent. See [the test setup](../docs/authentication.md#verification).
 Coverage includes recovery from readiness failure, config validation, safe errors,
 body limits, CORS, request IDs/logging, rate limits, request validation, startup
 conflicts, and shutdown draining/deadlines. Typechecking includes source and tests;

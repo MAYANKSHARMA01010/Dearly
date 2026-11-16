@@ -8,7 +8,9 @@ delivery channels are in-app, WhatsApp, SMS, and email.
 Folders contain `.gitkeep` only until implementation needs a real file. Phase 2
 adds backend entry points and focused runtime files. Phase 3 adds Router, shared
 Paper themes/components, and the mobile API client while preserving SDK 58 and
-the NativeWind/Babel/Metro pipeline. The database schema remains unchanged.
+the NativeWind/Babel/Metro pipeline. Phase 4 replaces the generic user schema with
+phone identities, OTP challenges, durable phone budgets, sessions and refresh history.
+See [authentication contracts](authentication.md) for the development-only backend.
 
 ## Frontend
 
@@ -82,9 +84,9 @@ delivery.
    `src/server.ts` loads the environment, and `src/serverLifecycle.ts` manages
    listening and shutdown. See [backend setup](../backend/README.md) for health
    endpoints and checks. Mobile foundation follows in Phase 3.
-2. Replace the generic email/password Prisma user template with the agreed
-   phone/OTP account design; then design messages, recipients, attachments,
-   schedules, and per-channel delivery records before generating migrations.
+2. Phase 4 implements the phone/OTP account design and reviewed migration. Design
+   messages, recipients, attachments, schedules and delivery records in their later
+   phases, with separate traceable migrations.
 3. Implement phone authentication and navigation, preserving the existing styling
    and Paper providers.
 4. Implement message creation, recipients, date/time/timezone, and message lists.
@@ -92,6 +94,7 @@ delivery.
    and notifications. Ensure received messages are accessible only to the intended
    recipient and scheduled content is not exposed early.
 
-No empty controllers, screens, models, environment secrets, provider credentials,
-or migration files are generated in this phase. Add implementation files and
+Scaffolding uses placeholders only where no implementation is needed. Phase 4 adds
+real auth controllers, validators, services, a provider contract and a migration;
+no real provider credentials or message sends are introduced. Add implementation files and
 feature-specific subdivisions when the corresponding work begins.
