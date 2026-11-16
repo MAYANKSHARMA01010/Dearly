@@ -25,6 +25,8 @@ const environmentSchema = z.object({
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(10).default(0),
   SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().min(100).max(60000).default(10000),
   AUTH_MODE: z.enum(['disabled', 'development']).default('disabled'),
+  STORAGE_ROOT: z.string().trim().min(1).default('./data/attachments'),
+  FFPROBE_PATH: z.string().trim().min(1).default('ffprobe'),
   OTP_PEPPER: z.string().regex(/^[0-9a-f]{64}$/).optional(),
 }).superRefine((env, ctx) => {
   if (env.AUTH_MODE === 'development' && (env.NODE_ENV === 'production' ||
@@ -47,6 +49,8 @@ export interface AppConfig {
   shutdownTimeoutMs: number;
   authMode: 'disabled' | 'development';
   otpPepper?: string;
+  storageRoot: string;
+  ffprobePath: string;
 }
 
 export class EnvironmentError extends Error {}
@@ -74,5 +78,7 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     shutdownTimeoutMs: env.SHUTDOWN_TIMEOUT_MS,
     authMode: env.AUTH_MODE,
     otpPepper: env.OTP_PEPPER,
+    storageRoot: env.STORAGE_ROOT,
+    ffprobePath: env.FFPROBE_PATH,
   };
 }

@@ -1,4 +1,5 @@
 import express from 'express';
+import { createAttachmentRouter } from './routes/attachment.routes';
 import cors from 'cors';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
@@ -44,6 +45,7 @@ export function createApp(config: AppConfig, database: Database, logger: AppLogg
     ? new AuthService(database.prisma, config.otpPepper, developmentOtpProvider()) : undefined;
   const activeAuth = config.authMode === 'development' ? authOverride ?? auth : undefined;
   app.use('/auth', createAuthRouter(activeAuth));
+  app.use('/messages/drafts/:draftId/attachments', createAttachmentRouter(config, database.prisma, activeAuth));
   app.use('/messages/drafts', createDraftRouter(database.prisma, activeAuth));
   app.use(notFound);
   app.use(errorHandler(logger));

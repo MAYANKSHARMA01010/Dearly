@@ -6,12 +6,13 @@ import { createApp } from './app';
 
 export async function startServer(config: AppConfig, database: Database, logger: AppLogger) {
   const server = createServer(createApp(config, database, logger));
-  server.requestTimeout = 30000;
+  server.requestTimeout = 610000; // Bounded 50 MiB media transfers can exceed 30 seconds.
   server.headersTimeout = 15000;
   server.keepAliveTimeout = 5000;
   const responses = new Set<ServerResponse>();
   let stopping: Promise<void> | undefined;
-  server.on('request', (_req, res) => {
+  server.on('request', (req, res) => {
+    req.setTimeout(30000); // Reject stalled sockets even within the upload deadline.
     responses.add(res);
     res.once('close', () => { responses.delete(res); });
     res.once('finish', () => {

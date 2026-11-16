@@ -4,3 +4,6 @@ logs/*.log
 .env
 .env*.local
 .DS_Store
+
+# Private attachment objects and interrupted uploads
+/data/
