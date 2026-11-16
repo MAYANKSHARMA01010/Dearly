@@ -142,7 +142,7 @@ NativeWind's CSS side-effect import. No application type errors are suppressed.
 ESLint uses the SDK-compatible Expo flat config; ESLint 9 is retained to satisfy
 its React plugin's peer range. Tests exercise production URL isolation, safe errors,
 timeouts/cancellation, response parsing, no automatic retries, and health recovery.
-The 60 standard tests neither connect to Neon nor send messages. The separate
+The 62 standard tests neither connect to Neon nor send messages. The separate
 opt-in `npm run test:integration` requires a built backend and private
 `AUTH_TEST_DATABASE_URL`; it exercises the real client/auth/draft/schedule APIs in temporary
 PostgreSQL schemas. See [mobile auth verification](../docs/mobile-auth.md#verification-commands).
@@ -162,5 +162,6 @@ See [environment setup](../docs/environment-setup.md),
 Save a draft, then choose **Schedule this draft**. Review the server-resolved time,
 message and recipients before confirming. **Your schedules** supports edits,
 rescheduling, cancellation and returning canceled plans to drafts. The app labels
-automatic delivery as unavailable until Phase 10; SMS/WhatsApp/email choices are
-unavailable. See [schedule rules and API](../docs/scheduling.md).
+delivery-service availability and per-message dispatch/delivery states;
+SMS/WhatsApp/email choices remain unavailable. Existing paused plans require a new
+review to activate delivery. The full inbox/mailbox UI follows in Phase 11. See [schedule rules and API](../docs/scheduling.md).

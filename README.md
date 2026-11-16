@@ -20,7 +20,9 @@ Phase 8 adds private attachments, voice recording/playback, format validation an
 cleanup. See [attachments and storage](docs/attachments.md) for supported types,
 limits and the persistent-disk requirement.
 Phase 9 adds timezone-aware schedule review, confirmation, edits, rescheduling and
-cancellation. Automatic delivery starts in Phase 10. See [scheduling](docs/scheduling.md).
+cancellation. Phase 10 adds durable PostgreSQL work, a separate in-app delivery
+worker and private recipient inbox APIs; existing paused plans require a new review.
+The full mobile inbox arrives in Phase 11. See [worker operations](docs/delivery-workers.md). See [scheduling](docs/scheduling.md).
 See [backend authentication](docs/authentication.md) and
 [mobile authentication](docs/mobile-auth.md) for setup and security limits.
 The [draft API contract](docs/draft-api.md) covers private message work and recipients.

@@ -177,3 +177,10 @@ Owner-only reads/previews remain available through the same private endpoints.
 Reservations and removal acquire the message lock used by scheduling; pending or
 deleting attachments block confirmation. Cancel and return the message to drafts
 before changing attachments, then review a new schedule. See [scheduling](scheduling.md).
+
+Phase 10 adds private delivered-recipient content/range reads under
+`/messages/inbox/:id/attachments/:attachmentId/content`. These require the caller's
+own committed inbox item and a due message; draft/schedule recipient records alone
+never authorize reads. The worker verifies ready bytes/hashes before committing
+inbox records. API and worker must share the same persistent private volume.
+See [delivery contracts](delivery-workers.md).

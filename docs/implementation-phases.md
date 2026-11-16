@@ -46,7 +46,7 @@ and a simulated delivery does not complete a real channel integration.
 | 7 | Mobile composer, recipients, and draft management | 5–6 | Complete |
 | 8 | Attachment storage and mobile media tools | 6–7 | Complete |
 | 9 | Schedule, reschedule, and cancellation | 7–8 | Complete — saved plans; automatic delivery not enabled |
-| 10 | Durable workers and in-app delivery | 9 | Not started |
+| 10 | Durable workers and in-app delivery | 9 | Complete — native UI check unavailable |
 | 11 | Dashboard, mailboxes, message details, and tracking | 10 | Not started |
 | 12 | Email delivery and secure external content access | 10–11 | Not started |
 | 13 | WhatsApp message delivery | 10–12 | Not started |
@@ -967,3 +967,79 @@ including the read-only Neon check. No further feature routes were needed.
   timezone APIs, locking and tests; `a9f92f1` mobile schedule flows and tests.
   A separate documentation commit records contracts, setup and completion.
 - **Next:** Phase 10 — durable workers and in-app delivery. Start only when requested.
+
+
+### Phase 10 completion — 17 November 2026
+
+- **Status:** Complete for the durable in-app delivery and inbox API scope. Phases
+  1–10 are complete for their recorded scope. Phase 11 has not started. Phone
+  authentication remains a local development simulation, and external channels
+  remain disabled.
+- **Delivered:** Chose a PostgreSQL-backed queue using the existing database,
+  without Redis, a new dependency or a paid messaging/queue service. The additive
+  migration adds durable work, per-intent attempts, unique private inbox records,
+  heartbeat records, dispatch/outcome states and bounded-work constraints. All
+  existing Phase 9 plans remain paused (`deliveryEnabled=false`) until a new
+  explicit review/confirmation. New confirmations enable in-app delivery.
+- **Dispatch boundary/recovery:** The worker is a separate process. Due scans and
+  versioned work identities survive restarts. Claims serialize against edits and
+  cancellation on the shared message row; a committed DISPATCHING claim advances
+  the version and blocks further sender changes. Random lease tokens and database
+  time fence expired/replaced workers before and after inbox writes. Attachments
+  are streamed/hashed outside the transaction; the final metadata/recipient checks,
+  inbox writes, attempts and aggregate outcomes commit atomically. Retry backoff
+  is bounded to five attempts; explicit operator recovery is capped at 20 total.
+  Crashed attempts are abandoned/reclaimed; permanent recipient failures preserve
+  successful deliveries as PARTIALLY_DELIVERED instead of inventing full success.
+- **Recipient privacy:** Scheduling can bind a PHONE destination to its verified
+  current Dearly account, with that binding in the signed review fingerprint.
+  Dispatch checks the same account and exact phone again. A recycled number never
+  redirects an old message. Reopening clears PHONE bindings. Inbox APIs and private
+  file-range reads require the caller's own delivered record and due time, omit
+  other recipients, and never grant early access through draft/media routes.
+- **Mobile scope:** Existing schedule screens identify paused plans, show delivery
+  service availability and accurate dispatch/delivery/partial/failure states, and
+  remove edit/cancel/reopen actions after dispatch. Confirmation copy explicitly
+  enables delivery; uncertain writes retain the existing manual-check/retry rules.
+  Full inbox/mailbox/dashboard/history screens remain Phase 11 work.
+- **Verification:** Backend `npm run check` passed lint, strict source/test checking,
+  45 standard tests and production compilation. Frontend `npm run check` passed
+  lint, strict JavaScript/JSDoc checking and 62 standard tests. All 50 backend
+  integration runner entries passed (45 scenarios plus five parent tests) against
+  disposable PostgreSQL schemas, including existing auth/draft/media/schedule
+  regression coverage. Both real mobile client/API/PostgreSQL integration tests
+  passed. The new delivery cases verify future/paused-plan access, early queued
+  work, canceled/stale versions, competing claims/cancellation, private attachment
+  ranges, duplicate execution, expired-token fencing, rollback when a lease expires
+  during commit, retry exhaustion/recovery and its cap, phone binding changes
+  before confirmation, recycled/deleted recipients, partial outcomes and independent
+  processes recovering a claim left by an exited worker. Shutdown draining and
+  recovery after a failed poll are covered. Temporary schemas/storage were removed.
+- **Migration/runtime:** `202611160005_in_app_delivery` applied successfully without
+  resetting the configured database. Backend liveness/database readiness, worker
+  heartbeat and Metro status are healthy. The API (8080), Metro (8081) and separate
+  local delivery worker were restarted after the pause and left running. An iOS
+  production export succeeded in a temporary directory; Expo SDK 58, NativeWind,
+  Paper and native configuration/dependency versions are preserved.
+- **Native limitation:** The existing iPhone 17 Pro Max simulator was booted, but
+  desktop access repeatedly returned `cgWindowNotFound`, including after rebinding
+  and resetting the connection. No Phase 10 native UI/self-delivery check could be
+  completed, and no native synthetic message/account was created. Native outcome
+  controls therefore remain unverified on-device; client/API contracts and bundle
+  checks passed. No visual/design review, microphone capture, device reset,
+  additional simulator, Android launch or external send was performed.
+- **Operations/limits:** `delivery:worker`, `delivery:status`, `delivery:retry` and
+  `/health/worker` are documented in [delivery operations](delivery-workers.md).
+  SIGTERM drains current work with a 45-second hard deadline; a killed worker's
+  expired lease is recoverable. Delivery is at/after the requested instant, subject
+  to worker/database/storage availability and the 15-second polling interval.
+  Heartbeats show recent process activity, not a delivery guarantee. Polling and
+  retained work consume existing database quotas; no billing/upgrades were enabled.
+  Hosting/supervision, retention policy and real OTP/provider delivery remain later
+  work. Delivered means an inbox record, not opened/read or an external receipt.
+- **Commits:** `dd5fc95` durable schema and isolated migration fixtures;
+  `0ceb299` fenced worker, inbox APIs, diagnostics and recovery tests;
+  `125e664` mobile delivery availability/outcomes and contract tests. A separate
+  documentation commit records the contracts, operations and completion evidence.
+- **Next:** Phase 11 — dashboard, mailboxes, message details and tracking. Start
+  only when requested.

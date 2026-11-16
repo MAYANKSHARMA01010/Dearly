@@ -62,7 +62,11 @@ contracts in `services/schedules/`. Backend schedule routes/controllers/validato
 services use `utils/scheduleTime.ts` for server timezone conversion and
 `utils/lockMessage.ts` for schema-aware transaction locking. The additive migration
 persists message schedule metadata and per-recipient delivery intents. See
-[scheduling](scheduling.md); no delivery worker exists yet.
+[scheduling](scheduling.md) and [delivery operations](delivery-workers.md).
+Phase 10 adds `jobs/enqueueDeliveries.ts`, `workers/deliveryWorker.ts` and a separate
+`workers/runDeliveryWorker.ts` process. Inbox routes/controllers/services enforce
+recipient-owned delivered content and attachment reads. `jobs/manageDelivery.ts`
+provides bounded operator diagnostics/recovery.
 
 ## Backend
 
@@ -86,10 +90,9 @@ Retain the existing layered structure and naming, including plural `configs/`:
 | `prisma/` | Schema and migration history |
 | `logs/` | Runtime logs, subject to existing ignore rules |
 
-Keep business rules in services and vendor-specific calls in providers. Jobs and
-workers are placeholders: no queue library, recurring timer, or delivery process
-has been configured. Redis remains optional until cache/queue requirements are
-decided. Store attachments through the eventual storage provider; no local upload
+Keep business rules in services and vendor-specific calls in providers. Phase 10
+uses a PostgreSQL work table with bounded polling in a separate worker process.
+Database state survives process restarts; Redis is not required. Store attachments through the eventual storage provider; no local upload
 directory was needed until Phase 8. Phase 8 selects a private filesystem adapter
 with metadata and tombstones in PostgreSQL. `jobs/cleanupAttachments.ts` is an
 explicit cleanup command; it is not a delivery scheduler. Hosting requires persistent

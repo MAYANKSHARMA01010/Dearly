@@ -174,5 +174,16 @@ contracts and verification. No public media URLs or paid storage service is enab
 
 Phase 9 adds owner-only `/messages/schedules` APIs for timezone-aware review,
 confirmation, text edits, rescheduling, cancellation and return to drafts. Apply
-the additive migration with `npm run prisma:deploy`. Only planned in-app choices
-are accepted; no worker or provider sends messages. See [schedule contracts](../docs/scheduling.md).
+the additive migration with `npm run prisma:deploy`. Only in-app choices are accepted. Phase 10 delivers through a separate durable
+worker; external providers remain unavailable. See [schedule contracts](../docs/scheduling.md).
+
+## In-app delivery worker
+
+After applying migrations and building, run `npm run delivery:worker` in a separate
+terminal from backend/. PostgreSQL stores the work queue; Redis is not required.
+New confirmations enable delivery; Phase 9 plans stay paused until explicitly
+reviewed again. Run `npm run delivery:status` for safe queue diagnostics and
+`npm run delivery:retry -- <work-UUID>` for bounded operator recovery after fixing
+a failure. `/health/worker` reports recent worker activity separately from API
+liveness and database readiness. Inbox APIs enforce delivered-recipient access,
+including private attachment ranges. See [delivery rules and operations](../docs/delivery-workers.md).

@@ -1,15 +1,16 @@
 # Scheduling and cancellation
 
-Phase 9 saves private delivery plans. **Automatic delivery is not running.**
-No queue, worker, provider call, recipient inbox access or external send is enabled.
-Phase 10 will claim due messages and implement in-app delivery. Phone login still
+Phase 9 introduced private delivery plans. Phase 10 enables durable in-app delivery
+through a separate worker. Existing plans remain paused until explicitly reviewed
+and confirmed again. See [delivery rules and operations](delivery-workers.md).
+External SMS/WhatsApp/email sends remain unavailable. Phone login still
 uses the explicit development OTP adapter; public authentication is unavailable.
 
 ## Mobile flow
 
 Save a draft and finish or remove pending uploads. Choose **Schedule this draft**,
 enter a calendar date, 24-hour time and IANA timezone, and select an in-app choice
-for every recipient. The profile timezone is the initial default; changing the
+for every recipient. Confirmation now explicitly enables delivery. The profile timezone is the initial default; changing the
 profile later does not move an existing schedule.
 
 **Review schedule** resolves the actual instant on the server and shows its local
@@ -43,17 +44,20 @@ an explicit reload/discard. Cached draft editors are discarded on schedule/reope
   Server runtime timezone data remains an operational dependency. The resolved
   instant is included in the review fingerprint, so a rules change between review
   and confirmation requires a new review.
-- Only **IN_APP, planned** is available, for SELF or USER recipients whose Dearly
-  account still exists. Every recipient needs exactly one supported choice.
-  PHONE/EMAIL destinations remain valid in drafts but cannot be scheduled yet.
-  SMS, WhatsApp and email capabilities explicitly report unavailable. No provider
-  is selected or contacted, and Meta/WhatsApp Cloud API is not introduced.
+- Only **IN_APP** is available, for SELF/USER verified accounts and PHONE
+  destinations bound to an existing verified Dearly account during confirmation.
+  The signed review binds the resolved account, and dispatch rechecks it without
+  redirecting recycled numbers. Repeated aliases of one account are rejected.
+  EMAIL destinations remain valid drafts but cannot be scheduled. SMS, WhatsApp
+  and email capabilities report unavailable; Meta/WhatsApp Cloud API is not introduced.
 - Messages require text or at least one ready attachment and at least one valid
   recipient. Every attachment must be READY. Scheduled/canceled attachment reads
   remain owner-only; reservations, uploads, finalization and removal are frozen.
-- Until a dispatcher exists, even overdue plans remain SCHEDULED and editable.
-  The detail screen says when its loaded schedule is overdue and states delivery
-  has not run. Passing the due time does not mark anything sent or delivered.
+- Due enabled plans are claimed by the separate worker. SCHEDULED remains editable
+  until a claim commits DISPATCHING and increments its version. Editing/canceling
+  is then blocked, including during retries. DELIVERED means committed inbox records;
+  PARTIALLY_DELIVERED/FAILED retain explicit outcomes. Passing the due time alone
+  never marks a message delivered. Paused plans remain SCHEDULED until reviewed again.
 
 ## API
 
@@ -65,9 +69,9 @@ Base: `/messages/schedules`.
 
 | Method/path | Behavior |
 | --- | --- |
-| GET `/capabilities` | IN_APP intent-only availability; external channels unavailable; `backgroundDelivery: false` |
-| GET `?status=SCHEDULED&limit=20&cursor=…` | Scheduled/canceled summaries, ascending UTC time/ID; default 20, max 50 |
-| GET `/:id` | Current scheduled/canceled content, recipients, ready manifest, choices and version |
+| GET `/capabilities` | IN_APP database delivery support; external channels unavailable; `backgroundDelivery: true` plus worker status |
+| GET `?status=SCHEDULED&limit=20&cursor=…` | Filter by SCHEDULED/CANCELED/DISPATCHING/DELIVERED/PARTIALLY_DELIVERED/FAILED; default 20/max 50 |
+| GET `/:id` | Current owner-only plan/outcome, recipients, ready manifest, choices and version |
 | POST `/:id/preview` | Review a DRAFT using version, localDateTime, timezone and deliveries |
 | POST `/:id/confirm` | Confirm the same choices plus reviewToken |
 | PATCH `/:id` | Versioned scheduled subject/text/occasion edits only |
@@ -105,8 +109,8 @@ idempotent only while the immediately resulting state/version remains current.
 `202611160004_schedules` is additive: it extends MessageStatus, adds UTC/local/zone
 metadata, a due-time index and a `delivery_intents` table. It preserves existing
 drafts, recipients and attachments. Apply with `npm run prisma:deploy` in backend;
-never reset the database. Future states such as dispatching/sent must deliberately
-update the schedule-shape constraint in a new migration.
+never reset the database. Phase 10 adds `202611160005_in_app_delivery`, extending the state constraint,
+adding paused-plan enablement and durable work/attempt/inbox/heartbeat tables.
 
 Run both packages' `npm run check`. Backend standard tests cover date boundaries,
 quarter-hour offsets, New York and Lord Howe DST transitions, invalid input and
@@ -119,8 +123,6 @@ and return to drafts. They clean up only their temporary schemas. Use private
 `AUTH_TEST_DATABASE_URL` as documented in [auth verification](authentication.md#verification);
 never put credentials on a command line or in frontend configuration.
 
-Phase 10 must recheck the current status/version, due instant, target account and
-ready attachments when claiming work. It must coordinate cancellation/edits with
-the same authoritative row, establish a dispatch boundary, persist per-recipient
-outcomes and prevent duplicate in-app delivery. This phase has no queue records,
-provider acceptance, delivery confirmations or sent/opened claims.
+Phase 10 rechecks current status/version, due time, bound target and ready
+attachments. Atomic inbox records provide in-app delivery uniqueness; no external
+provider acceptance, receipt or opened claim is made. See [delivery operations](delivery-workers.md).
