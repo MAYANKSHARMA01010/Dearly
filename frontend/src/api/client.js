@@ -9,6 +9,8 @@ export class ApiError extends Error {
     this.name = 'ApiError';
     this.kind = kind;
     this.status = status;
+    this.code = /** @type {string | null} */ (null);
+    this.retryAfterSeconds = /** @type {number | null} */ (null);
   }
 }
 
@@ -41,9 +43,25 @@ export function createApiClient({ getBaseUrl = getApiBaseUrl, fetcher = fetch, t
         headers.set('Accept', 'application/json');
         const response = await fetcher(`${baseUrl}${path}`, { ...options, headers, signal: controller.signal });
         if (!response.ok) {
-          throw new ApiError(response.status === 429
+          const failure = new ApiError(response.status === 429
             ? 'Too many attempts. Please wait a moment and try again.'
             : 'The service is temporarily unavailable. Please try again.', 'http', response.status);
+          const messages = /** @type {Record<string, string>} */ ({
+            INVALID_OTP: 'That code is incorrect, expired, or already used. Check it or request a new code.',
+            UNAUTHORIZED: 'Your session ended. Please sign in again.',
+            AUTH_RATE_LIMITED: 'Too many attempts. Please wait before trying again.',
+            AUTH_DISABLED: 'Sign-in is not enabled on this server yet.',
+            OTP_UNAVAILABLE: 'A new code could not be confirmed. Wait a minute before trying again.',
+            VALIDATION_ERROR: 'Check the entered details and try again.',
+          });
+          try {
+            const body = await response.json();
+            const code = body?.error?.code;
+            if (typeof code === 'string' && Object.hasOwn(messages, code)) { failure.code = code; failure.message = messages[code]; }
+          } catch { /* Raw server error bodies are intentionally discarded. */ }
+          const wait = Number(response.headers.get('Retry-After'));
+          if (Number.isInteger(wait) && wait > 0 && wait <= 3600) failure.retryAfterSeconds = wait;
+          throw failure;
         }
         let payload;
         try { payload = await response.json(); }

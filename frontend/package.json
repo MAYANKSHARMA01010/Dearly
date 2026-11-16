@@ -13,8 +13,11 @@
     "expo-font": "~58.0.12",
     "expo-linking": "~58.0.17",
     "expo-router": "~58.0.31",
+    "expo-secure-store": "~58.0.3",
     "expo-status-bar": "~58.0.5",
     "expo-system-ui": "~58.0.7",
+    "i18n-iso-countries": "^7.14.0",
+    "libphonenumber-js": "^1.13.16",
     "nativewind": "^4.2.7",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -38,7 +41,8 @@
     "lint": "expo lint -- --max-warnings 0",
     "typecheck": "tsc -p jsconfig.json --noEmit",
     "test": "node --experimental-default-type=module --test tests/*.test.mjs",
-    "check": "npm run lint && npm run typecheck && npm test"
+    "check": "npm run lint && npm run typecheck && npm test",
+    "test:integration": "node --experimental-default-type=module --test tests/integration/*.test.mjs"
   },
   "private": true,
   "devDependencies": {
