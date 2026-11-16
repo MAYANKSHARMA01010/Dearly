@@ -1,3 +1,4 @@
+import { recordMessageEvent } from './messageEvent.service';
 import { lockMessage } from '../utils/lockMessage';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
@@ -388,6 +389,7 @@ export class ScheduleService {
             channel: 'IN_APP',
           })),
         });
+      await recordMessageEvent(tx,id,reschedule?'RESCHEDULED':'SCHEDULED','SCHEDULED',message.version+1);
       return publicSchedule(
         await tx.draftMessage.findUniqueOrThrow({ where: { id }, include }),
       );
@@ -441,6 +443,7 @@ export class ScheduleService {
           version: { increment: 1 },
         },
       });
+      await recordMessageEvent(tx,id,'EDITED','SCHEDULED',message.version+1);
       return publicSchedule(
         await tx.draftMessage.findUniqueOrThrow({ where: { id }, include }),
       );
@@ -462,6 +465,7 @@ export class ScheduleService {
           version: { increment: 1 },
         },
       });
+      await recordMessageEvent(tx,id,'CANCELED','CANCELED',m.version+1);
       return publicSchedule(
         await tx.draftMessage.findUniqueOrThrow({ where: { id }, include }),
       );
@@ -492,6 +496,7 @@ export class ScheduleService {
           version: { increment: 1 },
         },
       });
+      await recordMessageEvent(tx,id,'REOPENED','DRAFT',m.version+1);
       return publicDraft(
         await tx.draftMessage.findUniqueOrThrow({ where: { id }, include }),
       );

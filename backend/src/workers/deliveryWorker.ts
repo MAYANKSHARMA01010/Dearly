@@ -1,3 +1,4 @@
+import { recordMessageEvent } from '../services/messageEvent.service';
 import { Prisma, type PrismaClient, type Attachment } from '@prisma/client';
 import { randomUUID, createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
@@ -161,6 +162,13 @@ export class DeliveryWorker {
               scheduleRequestHash: null,
             },
           });
+          await recordMessageEvent(
+            tx,
+            message.id,
+            'FAILED',
+            delivered ? 'PARTIALLY_DELIVERED' : 'FAILED',
+            message.version + (fresh ? 1 : 0),
+          );
           return null;
         }
         if (fresh)
@@ -176,6 +184,13 @@ export class DeliveryWorker {
           where: { id: c.id },
           data: { attempts: { increment: 1 }, lastError: null },
         });
+        await recordMessageEvent(
+          tx,
+          message.id,
+          'DISPATCH_STARTED',
+          'DISPATCHING',
+          message.version + (fresh ? 1 : 0),
+        );
         const intents = message.deliveryIntents.filter((i) => !i.inboxItem);
         if (intents.length)
           await tx.deliveryAttempt.createMany({
@@ -363,6 +378,18 @@ export class DeliveryWorker {
               : 'DELIVERED',
           },
         });
+        const finalState = failed
+          ? delivered
+            ? 'PARTIALLY_DELIVERED'
+            : 'FAILED'
+          : 'DELIVERED';
+        await recordMessageEvent(
+          tx,
+          message.id,
+          finalState,
+          finalState,
+          message.version,
+        );
         return true;
       });
     } catch (error) {
@@ -410,6 +437,14 @@ export class DeliveryWorker {
           finishedAt: now,
         },
       });
+      if (!exhausted)
+        await recordMessageEvent(
+          tx,
+          claim.messageId,
+          'RETRY_SCHEDULED',
+          'DISPATCHING',
+          work.scheduleVersion + 1,
+        );
       if (exhausted) {
         const delivered = await tx.inboxItem.count({
           where: { messageId: claim.messageId },
@@ -422,6 +457,13 @@ export class DeliveryWorker {
           },
           data: { status: delivered ? 'PARTIALLY_DELIVERED' : 'FAILED' },
         });
+        await recordMessageEvent(
+          tx,
+          claim.messageId,
+          'FAILED',
+          delivered ? 'PARTIALLY_DELIVERED' : 'FAILED',
+          work.scheduleVersion + 1,
+        );
       }
     });
   }
@@ -458,6 +500,13 @@ export class DeliveryWorker {
         where: { id: message.id },
         data: { status: 'DISPATCHING' },
       });
+      await recordMessageEvent(
+        tx,
+        message.id,
+        'RETRY_REQUESTED',
+        'DISPATCHING',
+        message.version,
+      );
       return true;
     });
   }

@@ -37,6 +37,7 @@ export function createInboxRouter(
   );
   r.get('/', c.list);
   r.get('/:id', c.read);
+  r.post('/:id/open', c.open);
   r.get('/:id/attachments/:attachmentId/content', c.content);
   return r;
 }

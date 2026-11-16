@@ -1,3 +1,4 @@
+import { recordMessageEvent } from './messageEvent.service';
 import { Prisma, type DraftMessage, type DraftRecipient, type PrismaClient } from '@prisma/client';
 import type { CreateDraftInput, UpdateDraftInput, ListDraftsInput, RecipientInput } from '../validators/draft.validators';
 import { ApiError } from '../utils/ApiError';
@@ -74,6 +75,7 @@ export class DraftService {
         ownerId, subject: input.subject ?? null, text: input.text ?? '', occasion: input.occasion ?? null,
         recipients: { createMany: { data: rows } },
       }, include: includeRecipients });
+      await recordMessageEvent(tx,message.id,'CREATED','DRAFT',message.version);
       return publicDraft(message);
     });
   }
@@ -123,6 +125,7 @@ export class DraftService {
         if (rows.length) await tx.draftRecipient.createMany({ data: rows.map((r) => ({ ...r, messageId: id })) });
       }
       const message = await tx.draftMessage.findFirstOrThrow({ where: { id, ownerId }, include: includeRecipients });
+      await recordMessageEvent(tx,message.id,'EDITED','DRAFT',message.version);
       return publicDraft(message);
     });
   }

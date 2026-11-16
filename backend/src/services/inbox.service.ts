@@ -1,3 +1,6 @@
+import { Prisma } from '@prisma/client';
+import { lockMessage } from '../utils/lockMessage';
+import { recordMessageEvent } from './messageEvent.service';
 import type { PrismaClient } from '@prisma/client';
 import type { z } from 'zod';
 import type { inboxList } from '../validators/inbox.validators';
@@ -17,12 +20,14 @@ export class InboxService {
       where: {
         id,
         userId,
+        intent: { channel: 'IN_APP' },
         deliveredAt: { lte: now },
         message: { scheduledFor: { lte: now } },
       },
       include: {
         message: {
           include: {
+            owner: { select: { name: true } },
             attachments: { where: { state: 'READY' }, orderBy: { id: 'asc' } },
           },
         },
@@ -36,6 +41,9 @@ export class InboxService {
     return {
       id: item.id,
       deliveredAt: item.deliveredAt,
+      openedAt: item.openedAt,
+      senderName: item.message.owner.name,
+      senderIsSelf: item.message.ownerId === userId,
       subject: item.message.subject,
       text: item.message.text,
       occasion: item.message.occasion,
@@ -43,6 +51,63 @@ export class InboxService {
       timezone: item.message.scheduleTimezone,
       attachments: item.message.attachments.map(publicAttachment),
     };
+  }
+  async open(userId: string, id: string) {
+    return this.db.$transaction(
+      async (tx) => {
+        const time = await databaseTime(tx);
+        const item = await tx.inboxItem.findFirst({
+          where: {
+            id,
+            userId,
+            intent: { channel: 'IN_APP' },
+            deliveredAt: { lte: time },
+            message: { scheduledFor: { lte: time } },
+          },
+          include: { message: { select: { id: true, ownerId: true } } },
+        });
+        if (
+          !item ||
+          !(await lockMessage(tx, item.message.ownerId, item.messageId))
+        )
+          throw missing();
+        const message = await tx.draftMessage.findUniqueOrThrow({
+          where: { id: item.messageId },
+          select: { status: true, version: true },
+        });
+        const now = await databaseTime(tx);
+        const changed = await tx.inboxItem.updateMany({
+          where: {
+            id,
+            userId,
+            intent: { channel: 'IN_APP' },
+            openedAt: null,
+            deliveredAt: { lte: now },
+            message: { scheduledFor: { lte: now } },
+          },
+          data: { openedAt: now },
+        });
+        if (changed.count)
+          await recordMessageEvent(
+            tx,
+            item.messageId,
+            'OPENED',
+            message.status,
+            message.version,
+          );
+        const saved = await tx.inboxItem.findFirst({
+          where: { id, userId },
+          select: { id: true, openedAt: true },
+        });
+        if (!saved) throw missing();
+        return saved;
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        maxWait: 15000,
+        timeout: 15000,
+      },
+    );
   }
   async content(userId: string, id: string, attachmentId: string) {
     const item = await this.owned(userId, id);
@@ -60,6 +125,7 @@ export class InboxService {
     const rows = await this.db.inboxItem.findMany({
       where: {
         userId,
+        intent: { channel: 'IN_APP' },
         deliveredAt: { lte: now },
         message: { scheduledFor: { lte: now } },
         ...(c && {
