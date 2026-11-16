@@ -39,7 +39,7 @@ and a simulated delivery does not complete a real channel integration.
 | --- | --- | --- | --- |
 | 1 | Project structure | — | Complete — scaffold only |
 | 2 | Backend runtime, database connection, and checks | 1 | Complete |
-| 3 | Mobile foundation, routing, theme, and API client | 1; 2 for connectivity | Previously complete; frontend reset to starter on 16 November |
+| 3 | Mobile foundation, routing, theme, and API client | 1; 2 for connectivity | Complete — restored 16 November |
 | 4 | Phone OTP and session backend | 2 | Complete — development only |
 | 5 | Mobile login, session restoration, and profile | 3–4 | Not started |
 | 6 | Draft message and recipient APIs | 4 | Not started |
@@ -667,3 +667,32 @@ including the read-only Neon check. No further feature routes were needed.
 - Backend port 8080 and Metro port 8081 are left running for interactive use.
   Startup/runtime logs were monitored during this session; continued unattended
   monitoring or automatic repairs after the session are not configured.
+
+
+### Phase 3 restoration — 16 November 2026
+
+- **Status:** Complete again. Phases 1–4 are now complete for their recorded scope;
+  Phase 4 remains development-only. Phase 5 has not started.
+- **Restored:** Previously verified Router home/status/not-found shell, Paper/Safe
+  Area providers, shared themes/components, NativeWind v4 Babel/Metro/CSS pipeline,
+  safe environment-aware API client, health service/hook, lint/typecheck tooling,
+  16 tests, environment example and mobile setup documentation. The blank `App.js`
+  root is removed. Empty future-feature placeholders were not recreated.
+- **Preserved:** Original SDK 58, React, React Native and library versions; patched
+  minimatch overrides; backend auth implementation, migrated schema and credentials.
+  Dependencies were reinstalled through Expo without incidental upgrades.
+- **Validation:** Frontend `npm run check` passed lint, strict JS checking and all
+  16 tests; dependency compatibility passed, Expo Doctor passed 20/20, audit found
+  zero vulnerabilities, and production exports passed for iOS/Android/web.
+- **Native functional check:** Existing iPhone 17 Pro Max loaded the restored app;
+  home-to-status navigation succeeded and both backend/server and real Neon storage
+  reported available. No visual/design review, preview capture or additional
+  device testing was performed, per the user's preference. Android stayed closed.
+  The prior physical-device/gesture/deep-link limitations still apply.
+- **Runtime:** Backend 8080 and Metro 8081 remain running with iOS open. A dependency
+  ImageBackground deprecation warning is present; no startup/runtime error was
+  observed. This warning does not prevent bundling or the health flow.
+- **Commits:** `6cc7000` — API, styling pipeline and checks; `4354b97` — Router,
+  shared components and screens; separate documentation commit records restoration.
+- **Next:** Phase 5 — mobile phone login, session restoration and own profile.
+  Begin when requested; no mobile authentication screens are included here.
