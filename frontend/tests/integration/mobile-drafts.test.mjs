@@ -27,7 +27,7 @@ test('mobile draft editor and real API/PostgreSQL: compose, reopen, conflict, up
     const migrations = new URL('../../../backend/prisma/migrations/', import.meta.url);
     for (const folder of readdirSync(migrations).filter((name) => /^\d/.test(name)).sort()) {
       const sql = readFileSync(new URL(`${folder}/migration.sql`, migrations), 'utf8')
-        .replace(/"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|MessageStatus|RecipientType)"/g, `"${schema}"."$1"`);
+        .replace(/"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|MessageStatus|RecipientType|AttachmentState)"/g, `"${schema}"."$1"`);
       for (const statement of sql.split(';').filter((s) => s.trim())) await db.$executeRawUnsafe(statement);
     }
     stage = 'server';

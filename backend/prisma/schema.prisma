@@ -19,6 +19,7 @@ model User {
   sessions        Session[]
   drafts          DraftMessage[]   @relation("OwnedDrafts")
   draftTargets    DraftRecipient[] @relation("DraftTargets")
+  attachments     Attachment[]
 
   @@map("users")
 }
@@ -101,6 +102,7 @@ model DraftMessage {
   version    Int              @default(1)
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
+  attachments Attachment[]
   recipients DraftRecipient[]
 
   @@index([ownerId, status, createdAt, id])
@@ -125,4 +127,34 @@ model DraftRecipient {
   @@index([messageId, position])
   @@index([targetUserId])
   @@map("draft_recipients")
+}
+
+
+enum AttachmentState {
+  PENDING
+  UPLOADING
+  UPLOADED
+  READY
+  DELETING
+}
+
+model Attachment {
+  id         String          @id
+  ownerId    String
+  owner      User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  draftId    String?
+  draft      DraftMessage?   @relation(fields: [draftId], references: [id], onDelete: SetNull)
+  name       String          @db.VarChar(120)
+  mime       String          @db.VarChar(80)
+  bytes      Int
+  state      AttachmentState @default(PENDING)
+  attemptId  String?
+  sha256     String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  expiresAt  DateTime
+
+  @@index([ownerId, draftId, state])
+  @@index([state, expiresAt])
+  @@map("attachments")
 }
