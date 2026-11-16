@@ -1,5 +1,5 @@
 import { MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
-import { DarkTheme, DefaultTheme } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme } from 'expo-router/react-navigation';
 
 // Keep Paper's established Material 3 colors and platform font defaults.
 export const lightTheme = { ...MD3LightTheme, roundness: 12 };

@@ -8,7 +8,7 @@ export default function Screen({ children }) {
   const theme = useTheme();
   return (
     <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ flexGrow: 1 }} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
         <View className="flex-1 w-full self-center" style={{ maxWidth: layout.contentWidth, padding: spacing.lg, gap: spacing.lg }}>
           {children}
         </View>
