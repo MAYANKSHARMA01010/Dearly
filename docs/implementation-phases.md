@@ -39,7 +39,7 @@ and a simulated delivery does not complete a real channel integration.
 | --- | --- | --- | --- |
 | 1 | Project structure | — | Complete — scaffold only |
 | 2 | Backend runtime, database connection, and checks | 1 | Complete |
-| 3 | Mobile foundation, routing, theme, and API client | 1; 2 for connectivity | Complete |
+| 3 | Mobile foundation, routing, theme, and API client | 1; 2 for connectivity | Previously complete; frontend reset to starter on 16 November |
 | 4 | Phone OTP and session backend | 2 | Complete — development only |
 | 5 | Mobile login, session restoration, and profile | 3–4 | Not started |
 | 6 | Draft message and recipient APIs | 4 | Not started |
@@ -642,3 +642,28 @@ including the read-only Neon check. No further feature routes were needed.
   A separate documentation commit records contracts, setup and completion.
 - **Next:** Phase 5 — mobile login, secure session recovery and own profile. Inspect
   the user's changed frontend before implementation. Begin only when requested.
+
+
+### Frontend reset and runtime follow-up — 16 November 2026
+
+- At the user's request, committed all remaining working-tree changes in focused
+  groups. The user-provided reset replaces Router with a blank `App.js` Expo
+  starter and removes NativeWind/Paper/navigation/API services, frontend checking
+  configuration/tests, the frontend README/environment example and empty scaffold
+  placeholders. The backend and its auth implementation remain unchanged.
+- The earlier Phase 3 completion record is historical. Its mobile foundation is
+  no longer present in the current frontend and must be restored before Phase 5.
+  No login or API-connected mobile screen is claimed for this starter.
+- Backend `npm run check` passed all 26 tests, lint/typechecking/build. Live root,
+  health and database health pass. Expo dependency compatibility and Doctor 20/20
+  pass, and the current starter bundles on iPhone 17 Pro Max. Android remains closed.
+- Frontend `npm run lint` and `npm run typecheck` cannot run: the reset removed
+  their scripts, configurations and dependencies. They were not silently restored.
+  No visual/design review or preview capture was performed, as requested.
+- Restored only the narrow `@expo/fingerprint` minimatch override removed by the
+  reset; no Expo downgrade or unrelated dependency upgrade. The audit now reports
+  zero vulnerabilities. The override addresses
+  [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
+- Backend port 8080 and Metro port 8081 are left running for interactive use.
+  Startup/runtime logs were monitored during this session; continued unattended
+  monitoring or automatic repairs after the session are not configured.
