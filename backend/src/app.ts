@@ -13,6 +13,7 @@ import type { AppLogger } from './utils/logger';
 import { AuthService } from './services/auth.service';
 import { developmentOtpProvider } from './providers/otp/otp.provider';
 import { createAuthRouter } from './routes/auth.routes';
+import { createDraftRouter } from './routes/draft.routes';
 
 export function createApp(config: AppConfig, database: Database, logger: AppLogger, authOverride?: AuthService) {
   const app = express();
@@ -41,7 +42,9 @@ export function createApp(config: AppConfig, database: Database, logger: AppLogg
   app.use('/health', createHealthRouter(database));
   const auth = config.authMode === 'development' && database.prisma && config.otpPepper
     ? new AuthService(database.prisma, config.otpPepper, developmentOtpProvider()) : undefined;
-  app.use('/auth', createAuthRouter(config.authMode === 'development' ? authOverride ?? auth : undefined));
+  const activeAuth = config.authMode === 'development' ? authOverride ?? auth : undefined;
+  app.use('/auth', createAuthRouter(activeAuth));
+  app.use('/messages/drafts', createDraftRouter(database.prisma, activeAuth));
   app.use(notFound);
   app.use(errorHandler(logger));
   return app;

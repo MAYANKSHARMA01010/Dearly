@@ -1,16 +1,17 @@
 import { z } from 'zod';
-import { isSupportedCountry, parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js/max';
+import { isSupportedCountry } from 'libphonenumber-js/max';
+import { normalizePhone } from '../utils/phone';
 
 const phoneInput = z.object({
   phone: z.string().trim().min(3).max(32),
   country: z.string().regex(/^[A-Z]{2}$/).refine(isSupportedCountry),
 }).strict().transform((input, ctx) => {
-  const parsed = parsePhoneNumberFromString(input.phone, { defaultCountry: input.country as CountryCode, extract: false });
-  if (!parsed?.isValid() || parsed.ext || parsed.country !== input.country) {
+  const phone = normalizePhone(input.phone, input.country);
+  if (!phone) {
     ctx.addIssue({ code: 'custom', path: ['phone'], message: 'Invalid phone number for country.' });
     return z.NEVER;
   }
-  return { phone: parsed.number };
+  return { phone };
 });
 export const requestOtpSchema = phoneInput;
 export const resendOtpSchema = z.object({ challengeId: z.string().uuid() }).strict();
