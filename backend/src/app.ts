@@ -1,4 +1,5 @@
 import express from 'express';
+import { createScheduleRouter } from './routes/schedule.routes';
 import { createAttachmentRouter } from './routes/attachment.routes';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -45,6 +46,7 @@ export function createApp(config: AppConfig, database: Database, logger: AppLogg
     ? new AuthService(database.prisma, config.otpPepper, developmentOtpProvider()) : undefined;
   const activeAuth = config.authMode === 'development' ? authOverride ?? auth : undefined;
   app.use('/auth', createAuthRouter(activeAuth));
+  app.use('/messages/schedules', createScheduleRouter(database.prisma, activeAuth, config.otpPepper));
   app.use('/messages/drafts/:draftId/attachments', createAttachmentRouter(config, database.prisma, activeAuth));
   app.use('/messages/drafts', createDraftRouter(database.prisma, activeAuth));
   app.use(notFound);

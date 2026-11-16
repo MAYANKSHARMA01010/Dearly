@@ -1,3 +1,4 @@
+import { lockMessage } from '../utils/lockMessage';
 import { Prisma, type PrismaClient, type Attachment } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import type { Readable } from 'node:stream';
@@ -12,8 +13,10 @@ export const publicAttachment = (row: Attachment) => ({ id: row.id, name: row.na
 
 export class AttachmentService {
   constructor(private readonly db: PrismaClient, readonly store: ObjectStore, private readonly ffprobe = 'ffprobe') {}
-  private async owned(ownerId: string, draftId: string, id?: string) {
-    if (!await this.db.draftMessage.findFirst({ where: { id: draftId, ownerId, status: 'DRAFT' }, select: { id: true } })) throw missing();
+  private async owned(ownerId: string, draftId: string, id?: string, editable = false) {
+    const message = await this.db.draftMessage.findFirst({ where: { id: draftId, ownerId }, select: { status: true } });
+    if (!message) throw missing();
+    if (editable && message.status !== 'DRAFT') throw new ApiError(409, 'MESSAGE_LOCKED', 'Return this message to drafts before changing attachments.');
     if (id) {
       const row = await this.db.attachment.findFirst({ where: { id, ownerId, draftId, state: { not: 'DELETING' } } });
       if (!row) throw missing(); return row;
@@ -28,7 +31,9 @@ export class AttachmentService {
     return this.db.$transaction(async (tx) => {
       // Serialize reservations across processes before evaluating global/account quotas.
       await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(582817)`;
-      if (!await tx.draftMessage.findFirst({ where: { id: draftId, ownerId, status: 'DRAFT' } })) throw missing();
+      if (!await lockMessage(tx, ownerId, draftId)) throw missing();
+      const message = await tx.draftMessage.findUniqueOrThrow({where: {id: draftId}, select: {status: true}});
+      if (message.status !== 'DRAFT') throw new ApiError(409, 'MESSAGE_LOCKED', 'Return this message to drafts before changing attachments.');
       const existing = await tx.attachment.findUnique({ where: { id: input.id } });
       if (existing) {
         if (existing.ownerId !== ownerId || existing.draftId !== draftId) throw missing();
@@ -44,7 +49,7 @@ export class AttachmentService {
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, maxWait: 15000, timeout: 15000 });
   }
   async upload(ownerId: string, draftId: string, id: string, input: Readable, signal?: AbortSignal) {
-    const row = (await this.owned(ownerId, draftId, id))!;
+    const row = (await this.owned(ownerId, draftId, id, true))!;
     if (row.expiresAt.getTime() <= Date.now() || row.state !== 'PENDING') throw conflict();
     const attemptId = randomUUID();
     const claimed = await this.db.attachment.updateMany({ where: { id, ownerId, draftId, state: 'PENDING', expiresAt: { gt: new Date() } }, data: { state: 'UPLOADING', attemptId } });
@@ -59,7 +64,7 @@ export class AttachmentService {
     }
   }
   async finalize(ownerId: string, draftId: string, id: string) {
-    const row = (await this.owned(ownerId, draftId, id))!;
+    const row = (await this.owned(ownerId, draftId, id, true))!;
     if (row.state === 'READY') return publicAttachment(row);
     if (row.state !== 'UPLOADED' || row.expiresAt.getTime() <= Date.now()) throw conflict();
     await inspectFile(this.store.path(id), row.mime, this.ffprobe);
@@ -75,13 +80,18 @@ export class AttachmentService {
     if (row.state !== 'READY') throw conflict(); return { path: this.store.path(id), mime: row.mime };
   }
   async remove(ownerId: string, draftId: string, id: string) {
-    await this.owned(ownerId, draftId);
-    const row = await this.db.attachment.findFirst({ where: { id, draftId, ownerId } });
-    // Idempotent owner-scoped remove also reconciles an unknown deletion response.
-    if (!row) return { id, deleted: true };
-    if (row.state === 'UPLOADING' && Date.now() - row.updatedAt.getTime() < limits.leaseMs) throw conflict();
-    const marked = await this.db.attachment.updateMany({ where: { id, ownerId, draftId, state: row.state, updatedAt: row.updatedAt }, data: { state: 'DELETING' } });
-    if (!marked.count) throw conflict();
+    const removed = await this.db.$transaction(async (tx) => {
+      if (!await lockMessage(tx, ownerId, draftId)) throw missing();
+      const message = await tx.draftMessage.findUniqueOrThrow({where: {id: draftId}, select: {status: true}});
+      if (message.status !== 'DRAFT') throw new ApiError(409, 'MESSAGE_LOCKED', 'Return this message to drafts before changing attachments.');
+      const row = await tx.attachment.findFirst({ where: { id, draftId, ownerId } });
+      if (!row) return false;
+      if (row.state === 'UPLOADING' && Date.now() - row.updatedAt.getTime() < limits.leaseMs) throw conflict();
+      const marked = await tx.attachment.updateMany({ where: { id, ownerId, draftId, state: row.state, updatedAt: row.updatedAt }, data: { state: 'DELETING' } });
+      if (!marked.count) throw conflict();
+      return true;
+    }, {maxWait:15000,timeout:15000});
+    if (!removed) return {id,deleted:true};
     await this.erase(id); return { id, deleted: true };
   }
   private async erase(id: string) {

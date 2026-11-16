@@ -27,7 +27,7 @@ export function canonicalRecipients(ownerId: string, input: RecipientInput[]) {
   return rows;
 }
 
-function publicDraft(message: WithRecipients) {
+export function publicDraft(message: WithRecipients) {
   return {
     id: message.id, status: message.status, subject: message.subject, text: message.text,
     occasion: message.occasion, version: message.version, createdAt: message.createdAt, updatedAt: message.updatedAt,
