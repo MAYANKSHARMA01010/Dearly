@@ -7,6 +7,7 @@ import StateView from '../../components/common/StateView';
 import AppButton from '../../components/common/AppButton';
 import AppTextField from '../../components/forms/AppTextField';
 import RecipientEditor from '../../components/recipients/RecipientEditor';
+import AttachmentPanel from '../../components/media/AttachmentPanel';
 import OccasionPicker from '../../components/messages/OccasionPicker';
 import { useAuth } from '../../context/AuthContext';
 import { useDraftWorkspace } from '../../context/DraftWorkspaceContext';
@@ -19,8 +20,9 @@ export default function DraftEditorScreen({ draftId }) {
   const [repeat, setRepeat] = useState(/** @type {{ run: () => void }|null} */ (null));
   const [confirm, setConfirm] = useState(/** @type {'reload'|'delete'|null} */ (null));
   const [recipientPending, setRecipientPending] = useState(false);
-  const busy = state.saving || state.loading || state.deleting;
-  const dirty = state.dirty || state.uncertain || recipientPending;
+  const [mediaGuard, setMediaGuard] = useState({ pending:false, busy:false });
+  const busy = mediaGuard.busy || state.saving || state.loading || state.deleting;
+  const dirty = state.dirty || state.uncertain || recipientPending || mediaGuard.pending;
   usePreventRemove(Boolean(user) && !state.deleted && (dirty || busy), (event) => { setRepeat({ run: event.repeat }); });
   useEffect(() => { void model.open(); }, [model]);
   const save = async () => {
@@ -47,12 +49,13 @@ export default function DraftEditorScreen({ draftId }) {
     {state.uncertain ? <><Text>We couldn’t confirm the save or deletion. Check saved drafts before creating another copy or trying again.</Text><AppButton disabled={busy} onPress={() => router.push('/drafts')}>Check saved drafts</AppButton>{state.id ? <AppButton disabled={busy} onPress={() => setConfirm('reload')}>Reload saved version</AppButton> : null}</> : null}
     <AppButton mode="contained" loading={state.saving} disabled={recipientPending || busy || state.uncertain || state.conflict || Boolean(state.id && !state.dirty)} onPress={() => { void save(); }}>Save draft</AppButton>
     {state.id ? <AppButton mode="outlined" disabled={busy || state.conflict || state.uncertain} onPress={() => setConfirm('delete')}>Delete draft</AppButton> : null}
-    <Text variant="bodyMedium">This is a private draft. Attachments, scheduling and sending will be available in later updates.</Text>
+    {state.id ? <AttachmentPanel draftId={state.id} disabled={state.saving || state.loading || state.deleting || state.uncertain || state.conflict} onGuardChange={setMediaGuard} /> : <Text>Save this draft first to add photos, videos, voice or files.</Text>}
+    <Text variant="bodyMedium">This is a private draft. Scheduling and sending will be available in later updates.</Text>
     <Portal>
       <Dialog visible={Boolean(repeat)} onDismiss={() => setRepeat(null)}>
         <Dialog.Title>{busy ? 'Please wait' : 'Discard local changes?'}</Dialog.Title>
-        <Dialog.Content><Text>{busy ? 'Wait for the current request to finish before leaving.' : state.uncertain ? 'The server may already have a copy. Leave to check your drafts and discard these local edits?' : 'Your unsaved changes will be lost.'}</Text></Dialog.Content>
-        <Dialog.Actions><AppButton onPress={() => setRepeat(null)}>Keep editing</AppButton>{!busy ? <AppButton onPress={() => { const next = repeat; model.discard(); setRecipientPending(false); setRepeat(null); next?.run(); }}>Discard and leave</AppButton> : null}</Dialog.Actions>
+        <Dialog.Content><Text>{busy ? 'Wait for the current request to finish before leaving.' : state.uncertain ? 'The server may already have a copy. Leave to check your drafts and discard these local edits?' : 'Your unsaved changes and selected file will be lost. Uploaded attachments stay saved.'}</Text></Dialog.Content>
+        <Dialog.Actions><AppButton onPress={() => setRepeat(null)}>Keep editing</AppButton>{!busy ? <AppButton onPress={() => { const next = repeat; model.discard(); setRecipientPending(false); setMediaGuard({pending:false,busy:false}); setRepeat(null); next?.run(); }}>Discard and leave</AppButton> : null}</Dialog.Actions>
       </Dialog>
       <Dialog visible={confirm !== null} onDismiss={() => setConfirm(null)}>
         <Dialog.Title>{confirm === 'delete' ? 'Delete this draft?' : 'Reload saved version?'}</Dialog.Title>

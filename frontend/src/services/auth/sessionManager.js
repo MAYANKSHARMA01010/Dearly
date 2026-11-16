@@ -56,14 +56,14 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
       throw error;
     }
   }
-  /** @param {string} path @param {RequestInit} options @param {number} expected */
-  async function authorized(path, options, expected) {
+  /** @param {string} path @param {RequestInit} options @param {number} expected @param {typeof client.request} [transport] */
+  async function authorized(path, options, expected, transport = client.request) {
     current(expected);
     if (!saved || saved.scope !== getScope()) { await clear('Please sign in again.'); throw expired(); }
     if (Date.parse(saved.tokens.accessExpiresAt) <= now() + 15_000) await refresh(expected);
     const used = saved;
     if (!used) throw expired();
-    const send = () => client.request(path, { ...options, headers: { ...options.headers, Authorization: `Bearer ${saved?.tokens.accessToken}` } });
+    const send = () => transport(path, { ...options, headers: { ...options.headers, Authorization: `Bearer ${saved?.tokens.accessToken}` } });
     try { const value = await send(); current(expected); return value; }
     catch (error) {
       if (!(error instanceof ApiError) || error.status !== 401 || epoch !== expected) throw error;
@@ -125,12 +125,12 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
         current(expected); publish({ status: 'authenticated', user, message: '' }); return user;
       });
     },
-    /** @param {string} path @param {RequestInit} [options] */
-    request(path, options = {}) {
+    /** @param {string} path @param {RequestInit} [options] @param {typeof client.request} [transport] */
+    request(path, options = {}, transport = client.request) {
       const expected = epoch;
       return serial(async () => {
         if (state.status !== 'authenticated') throw expired();
-        try { return await authorized(path, options, expected); }
+        try { return await authorized(path, options, expected, transport); }
         catch (error) {
           // Foreground restoration can invalidate a response after a write was
           // accepted. Treat its outcome as unknown instead of allowing replay.

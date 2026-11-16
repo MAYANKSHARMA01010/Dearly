@@ -189,3 +189,14 @@ test('foreground restoration makes an in-flight write uncertain and never replay
   await assert.rejects(saving, (error) => error.kind === 'aborted');
   await restoring; assert.equal(writes, 1); assert.equal(s.getSnapshot().status, 'authenticated');
 });
+
+test('file transports use the current session without persisting content or replaying writes', async () => {
+  let transfers=0; let refreshes=0;
+  const store=memory();const s=manager(store,async(path)=>{assert.equal(path,'/auth/refresh');refreshes++;return rotated;});
+  await s.establish({...tokens(),user});
+  const transfer=async(_path,options)=>{transfers++;assert.equal(options.headers.Authorization,`Bearer ${tokens().accessToken}`);throw unauthorized();};
+  await assert.rejects(s.request('/messages/drafts/media/content',{method:'PUT'},transfer),(error)=>error.status===409);
+  assert.equal(transfers,1);assert.equal(refreshes,1);assert.equal(store.value.includes('media/content'),false);
+  await s.request('/messages/drafts/media/content',{method:'PUT'},async(_path,options)=>{assert.equal(options.headers.Authorization,`Bearer ${rotated.accessToken}`);transfers++;return {state:'UPLOADED'};});
+  assert.equal(transfers,2);
+});

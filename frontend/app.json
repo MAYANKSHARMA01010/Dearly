@@ -24,7 +24,32 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Dearly to record a voice note when you choose Record voice.",
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": false,
+          "supportsPictureInPicture": false
+        }
+      ],
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Dearly to select a photo or video for your private draft.",
+          "cameraPermission": false,
+          "microphonePermission": "Allow Dearly to record a voice note when you choose Record voice."
+        }
+      ],
+      "expo-asset"
     ],
     "scheme": "dearly"
   }
