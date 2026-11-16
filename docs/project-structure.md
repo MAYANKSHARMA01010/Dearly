@@ -45,9 +45,11 @@ Router and necessary compatible peers were added through Expo install.
 `src/theme/` holds Paper light/dark themes and spacing/touch-size tokens.
 `src/api/client.js` handles safe requests and cancellation; `src/config/api.js`
 selects the environment; `src/services/health.js` and `src/hooks/useServiceHealth.js`
-drive the service-status flow. `navigation/` remains reserved; never create a
-competing navigation system. Feature APIs and authenticated navigation remain in
-later phases.
+drive the service-status flow. Phase 5 adds `services/auth/`, `context/AuthContext.js`,
+`hooks/useAsyncAction.js`, login/profile screens and guarded Router routes. Native
+credentials use SecureStore; web sessions stay in memory. `navigation/` remains
+reserved; never create a competing navigation system. Message APIs remain later
+phases. See [mobile authentication](mobile-auth.md).
 
 ## Backend
 

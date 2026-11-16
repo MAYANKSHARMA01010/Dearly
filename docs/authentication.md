@@ -67,8 +67,8 @@ Profile fields: immutable `id` and `phone`, `phoneVerifiedAt`, optional `name`
 (max 80), optional delivery `email` (max 254), IANA `timezone` (default UTC),
 `createdAt`. Name/email may be cleared with null. Email is an unverified delivery
 destination, never an alternative login. Phone-change, account deletion, logout-all,
-and session-management UI are outside this phase. Phase 5 adds mobile flows and
-secure on-device credential storage.
+and session-management UI are outside the backend phase. Phase 5 implements
+[mobile login/profile/session recovery](mobile-auth.md) with secure native storage.
 
 ## Security behavior
 

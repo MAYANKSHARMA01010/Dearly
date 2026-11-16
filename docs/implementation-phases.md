@@ -41,7 +41,7 @@ and a simulated delivery does not complete a real channel integration.
 | 2 | Backend runtime, database connection, and checks | 1 | Complete |
 | 3 | Mobile foundation, routing, theme, and API client | 1; 2 for connectivity | Complete — restored 16 November |
 | 4 | Phone OTP and session backend | 2 | Complete — development only |
-| 5 | Mobile login, session restoration, and profile | 3–4 | Not started |
+| 5 | Mobile login, session restoration, and profile | 3–4 | Complete — development only |
 | 6 | Draft message and recipient APIs | 4 | Not started |
 | 7 | Mobile composer, recipients, and draft management | 5–6 | Not started |
 | 8 | Attachment storage and mobile media tools | 6–7 | Not started |
@@ -696,3 +696,55 @@ including the read-only Neon check. No further feature routes were needed.
   shared components and screens; separate documentation commit records restoration.
 - **Next:** Phase 5 — mobile phone login, session restoration and own profile.
   Begin when requested; no mobile authentication screens are included here.
+
+
+### Phase 5 completion — 16 November 2026
+
+- **Status:** Complete for the development-only authentication scope. Phases 1–5
+  are complete; Phase 6 is not started. Real OTP delivery/public login remains
+  blocked until a provider is selected and verified.
+- **Delivered:** Searchable country/calling-code and phone entry, six-digit OTP,
+  safe errors, server-driven resend/expiry countdown, replacement codes, duplicate
+  submission latch and cancellation. First login requires profile name/timezone;
+  optional email is an unverified destination. Protected profile editing and logout
+  use the existing API. No auth/OTP data is placed in route parameters or logs.
+- **Sessions:** Secure native credential persistence, web memory only, startup and
+  foreground validation, protected-route gating, serialized refresh/profile work,
+  scope binding, atomic token-pair writes and a refresh-intent journal. Uncertain or
+  interrupted rotations require login rather than replay. Offline restoration
+  hides protected data and offers retry/sign-out. Logout clears local credentials,
+  revokes the server session when reachable, and reports unconfirmed revocation.
+  Expired access can renew solely for revocation without persisting the new pair.
+- **Verification:** Frontend lint, strict JS checking and all 34 tests pass. The
+  opt-in real mobile-client/PostgreSQL integration test passes login, wrong code,
+  profile update, restart, access expiry/refresh, concurrent reads, logout and
+  revoked-session recovery. It uses a temporary schema and removes it afterward.
+  Expo compatibility and Doctor 20/20 pass; audit reports zero vulnerabilities;
+  final production exports pass for iOS, Android and web.
+- **Native evidence:** iPhone 17 Pro Max/Expo Go 58: country search/selection,
+  phone/code entry, incorrect-code recovery, resend countdown/replacement, initial
+  profile save, returning-user login, secure session recovery after restart,
+  server-forced access expiry and successful rotation, offline protected-content
+  gate, backend restart/retry recovery, profile read, sign-out and signed-out state
+  after reload. Field labels/focus, text entry, submit-time keyboard dismissal and
+  disabled/busy controls were exercised. Server data confirmed profile persistence,
+  refresh rotation and latest-session revocation.
+- **Runtime recovery:** Desktop access temporarily failed while the Mac was not
+  available; the user restored it and checks resumed. A transient database request
+  timeout was handled safely; restarting the local backend restored successful
+  auth. Safe diagnostics found no retained advisory locks. The checks were repeated
+  successfully with no backend source/schema change.
+- **Cleanup:** Reserved-number QA account/challenges/throttles and cascading session
+  records were removed; temporary integration schemas were removed. Private env
+  credentials stayed private. Backend 8080, Metro 8081 and the existing iPhone are
+  left running, signed out. Android was not launched and no new simulator created.
+- **Scope/limits:** Local OTP is explicitly simulated; no message was sent. No
+  screenshots/preview/design review were performed, as requested. Android native
+  gestures, physical-device behavior, software-keyboard layout variants, VoiceOver
+  navigation and development-build deep links remain later device/release checks.
+  Browser persistence is intentionally absent; secure-store errors block/retry
+  rather than falling back to plaintext. See [mobile auth](mobile-auth.md).
+- **Commits:** `c0c963d` — secure sessions/API/tests; `893b05d` — forms/profile and
+  route guards; `615b407` — expired-access sign-out; `87e1409` — task-specific loading
+  accessibility label. A separate docs commit records setup and completion.
+- **Next:** Phase 6 — draft message and recipient APIs. Begin only when requested.

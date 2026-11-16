@@ -1,9 +1,9 @@
 # Dearly mobile app
 
 Expo SDK 58, JavaScript, Expo Router, NativeWind v4, and React Native Paper (MD3).
-Phase 3 provides the mobile foundation and was restored on 16 November 2026 after
-the starter reset. Phase 4 implements the development-only auth backend; mobile
-login/session integration and messaging flows remain later work.
+Phase 3 provides the mobile foundation. Phase 5 adds phone login, first-login
+profile setup and secure session recovery against the development-only Phase 4 API.
+See [mobile auth](../docs/mobile-auth.md) for behavior and verification limits.
 
 ## Run locally
 
@@ -33,14 +33,17 @@ Expo Go uses its own `exp://` URL. Do not generate native folders just to edit U
 
 ## Implemented screens
 
-- `/`: Dearly home with an honest future-feature notice and working navigation.
+- `/`: Dearly home, sign-in/profile navigation, and an honest future-feature notice.
+- `/login`: country/phone entry, simulated OTP, resend countdown and recovery.
+- `/profile`: protected first-login setup, own profile editing and sign-out.
 - `/status`: checks the real `/health` and `/health/db` endpoints, shows loading,
   available/unavailable states, and offers retry. Server/database results are
   separate, and the last check time is visible.
 - Unmatched paths: a clear message and a working return-home action.
 
-The native Stack supplies navigation/back behavior. There is no login, fake inbox,
-message composer, or placeholder feature tab pretending to work.
+The native Stack supplies navigation/back behavior and protected-route guards.
+Session recovery gates protected content; first login requires a name. Inbox and
+message composition remain later phases. OTP is explicitly simulated, not sent.
 
 ## Structure and styling
 
@@ -100,11 +103,11 @@ query secrets, or the PostgreSQL connection string.
   the default frontend origin is `http://localhost:8081`.
 
 The client has a 10-second request deadline and supports caller cancellation.
-`ApiError.kind` distinguishes configuration, network, timeout, aborted, HTTP, and
-invalid-response failures. HTTP status is retained without showing raw server
-errors. Requests do not retry automatically, to avoid duplicating later OTP/write
-operations. The development-only auth backend is implemented in Phase 4. Mobile login, secure
-token storage and refresh integration remain reserved for Phase 5.
+`ApiError.kind` distinguishes configuration, network, timeout, aborted, HTTP and
+invalid-response failures. HTTP status, allowlisted auth codes and bounded retry
+metadata are retained without showing raw server errors. OTP/write operations do
+not retry automatically; session recovery can renew and retry one protected read. Phase 5 implements mobile login, secure native storage, serialized refresh and own
+profile integration. Browser sessions use memory only. See [mobile auth](../docs/mobile-auth.md).
 
 ## Checks
 
@@ -126,7 +129,10 @@ NativeWind's CSS side-effect import. No application type errors are suppressed.
 ESLint uses the SDK-compatible Expo flat config; ESLint 9 is retained to satisfy
 its React plugin's peer range. Tests exercise production URL isolation, safe errors,
 timeouts/cancellation, response parsing, no automatic retries, and health recovery.
-They neither connect to Neon nor send messages.
+The 34 standard tests neither connect to Neon nor send messages. The separate
+opt-in `npm run test:integration` requires a built backend and private
+`AUTH_TEST_DATABASE_URL`; it exercises the real client/auth API in a temporary
+PostgreSQL schema. See [mobile auth verification](../docs/mobile-auth.md#verification-commands).
 
 Narrow minimatch overrides for Expo Fingerprint and TypeScript ESLint use a patched
 range for [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249)

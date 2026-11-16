@@ -12,8 +12,11 @@ database readiness, request safeguards, and automated checks. Phase 3 adds mobil
 routing, a home/service-status shell, shared components, and frontend checks. Those
 foundations were restored after the frontend reset on 16 November 2026. Phase 4
 adds phone OTP/session/profile APIs with explicit local simulation; real OTP delivery
-is not configured. Message creation, scheduling, and delivery follow later.
-See [authentication setup](docs/authentication.md) for endpoints and security limits.
+is not configured. Phase 5 adds mobile phone login, secure session recovery and
+own-profile editing, with explicit test-code labeling. Message creation, scheduling
+and delivery follow later.
+See [backend authentication](docs/authentication.md) and
+[mobile authentication](docs/mobile-auth.md) for setup and security limits.
 
 See [Project structure](docs/project-structure.md) for folder responsibilities,
 feature placement, and the next implementation steps.
