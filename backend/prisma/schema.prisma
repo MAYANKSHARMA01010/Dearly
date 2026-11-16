@@ -8,15 +8,17 @@ datasource db {
 }
 
 model User {
-  id              String    @id @default(uuid())
-  phone           String    @unique
+  id              String           @id @default(uuid())
+  phone           String           @unique
   phoneVerifiedAt DateTime
   name            String?
   email           String?
-  timezone        String    @default("UTC")
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  timezone        String           @default("UTC")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   sessions        Session[]
+  drafts          DraftMessage[]   @relation("OwnedDrafts")
+  draftTargets    DraftRecipient[] @relation("DraftTargets")
 
   @@map("users")
 }
@@ -75,4 +77,52 @@ model RefreshToken {
 
   @@index([sessionId])
   @@map("refresh_tokens")
+}
+
+enum MessageStatus {
+  DRAFT
+}
+
+enum RecipientType {
+  SELF
+  USER
+  PHONE
+  EMAIL
+}
+
+model DraftMessage {
+  id         String           @id @default(uuid())
+  ownerId    String
+  owner      User             @relation("OwnedDrafts", fields: [ownerId], references: [id], onDelete: Cascade)
+  status     MessageStatus    @default(DRAFT)
+  subject    String?          @db.VarChar(160)
+  text       String           @default("")
+  occasion   String?          @db.VarChar(80)
+  version    Int              @default(1)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  recipients DraftRecipient[]
+
+  @@index([ownerId, status, createdAt, id])
+  @@map("draft_messages")
+}
+
+model DraftRecipient {
+  id             String        @id @default(uuid())
+  messageId      String
+  message        DraftMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  type           RecipientType
+  destinationKey String
+  position       Int
+  label          String?       @db.VarChar(80)
+  targetUserId   String?
+  targetUser     User?         @relation("DraftTargets", fields: [targetUserId], references: [id], onDelete: SetNull)
+  phone          String?       @db.VarChar(16)
+  country        String?       @db.Char(2)
+  email          String?       @db.VarChar(254)
+
+  @@unique([messageId, destinationKey])
+  @@index([messageId, position])
+  @@index([targetUserId])
+  @@map("draft_recipients")
 }
