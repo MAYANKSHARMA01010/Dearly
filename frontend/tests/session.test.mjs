@@ -100,9 +100,9 @@ test('profile writes are not automatically repeated after a 401', async () => {
 });
 
 test('logout invalidates an in-flight refresh and late results cannot resurrect a session', async () => {
-  const store = memory(); let finish; let entered = false; let expired = false;
+  const store = memory(); let finish; let entered = false; let expired = false; let refreshCalls = 0;
   const s = manager(store, async (path) => {
-    if (path === '/auth/refresh') { entered = true; return await new Promise((resolve) => { finish = resolve; }); }
+    if (path === '/auth/refresh') { if (++refreshCalls > 1) throw unauthorized(); entered = true; return await new Promise((resolve) => { finish = resolve; }); }
     return user;
   }, { now: () => expired ? clock + 900001 : clock });
   await s.establish({ ...tokens(), user }); expired = true;
@@ -154,4 +154,15 @@ test('logout never sends old credentials to a different API scope', async () => 
   const s = manager(store, async () => assert.fail('Wrong-scope credential dispatch'), { getScope: () => current });
   await s.establish({ ...tokens(), user }); current = 'https://other.example';
   await s.logout(); assert.equal(store.value, null); assert.equal(s.getSnapshot().status, 'anonymous');
+});
+
+test('logout after local access expiry renews only to revoke, without saving new tokens', async () => {
+  const store = memory(); let expired = false; const calls = [];
+  const s = manager(store, async (path, options) => {
+    assert.equal(store.value, null); calls.push(path);
+    if (path === '/auth/refresh') return rotated;
+    assert.equal(options.headers.Authorization, `Bearer ${rotated.accessToken}`); return { loggedOut: true };
+  }, { now: () => expired ? clock + 900001 : clock });
+  await s.establish({ ...tokens(), user }); expired = true; await s.logout();
+  assert.deepEqual(calls, ['/auth/refresh', '/auth/logout']); assert.equal(store.value, null); assert.equal(s.getSnapshot().status, 'anonymous');
 });

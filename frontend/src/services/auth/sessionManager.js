@@ -141,7 +141,16 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
         await clear('');
         if (old) {
           if (old.scope !== getScope()) return;
-          try { await client.request('/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${old.tokens.accessToken}` } }); }
+          try {
+            let accessToken = old.tokens.accessToken;
+            if (Date.parse(old.tokens.accessExpiresAt) <= now() && Date.parse(old.tokens.sessionExpiresAt) > now()) {
+              // Local credentials are already erased. Renew only to revoke the
+              // expired session; never persist or publish this temporary pair.
+              const fresh = parseTokens(await client.request('/auth/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: old.tokens.refreshToken }) }));
+              accessToken = fresh.accessToken;
+            }
+            await client.request('/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } });
+          }
           catch { publish({ status: 'anonymous', user: null, message: 'Signed out on this device. Server sign-out could not be confirmed.' }); }
         }
       });
