@@ -67,6 +67,6 @@ Platform exports validate bundling; they do not establish native hardware parity
 See the dated completion record in [the phase plan](implementation-phases.md) for
 native verification and remaining limits.
 
-Attachments, recording, uploads, scheduling, delivery and inbox access remain
-later phases. OTP is still a local development simulation; no provider messages
+Phase 8 adds [attachments, recording and uploads](attachments.md) to saved drafts.
+Scheduling, delivery and inbox access remain later phases. OTP is still a local development simulation; no provider messages
 are sent by these checks.

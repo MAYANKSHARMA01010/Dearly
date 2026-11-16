@@ -3,7 +3,9 @@
 Expo SDK 58, JavaScript, Expo Router, NativeWind v4, and React Native Paper (MD3).
 Phase 3 provides the mobile foundation. Phase 5 adds phone login, first-login
 profile setup and secure session recovery against the development-only Phase 4 API.
-Phase 7 adds private draft composition and management. See [mobile drafts](../docs/mobile-drafts.md).
+Phase 7 adds private draft composition and management. Phase 8 adds photo/video/file
+selection, voice recording, private streamed transfers and media previews. See
+[attachments](../docs/attachments.md) for formats, limits and permission behavior. See [mobile drafts](../docs/mobile-drafts.md).
 See [mobile auth](../docs/mobile-auth.md) for behavior and verification limits.
 
 ## Run locally
@@ -38,7 +40,8 @@ Expo Go uses its own `exp://` URL. Do not generate native folders just to edit U
 - `/login`: country/phone entry, simulated OTP, resend countdown and recovery.
 - `/drafts`: protected saved-draft list with refresh/pagination.
 - `/drafts/new` and `/drafts/[id]`: compose/reopen, review recipients, save/edit/delete,
-  and unsaved/conflict/uncertain-outcome recovery.
+  and unsaved/conflict/uncertain-outcome recovery. Saved drafts also support private
+  attachments and voice notes.
 - `/profile`: protected first-login setup, own profile editing and sign-out.
 - `/status`: checks the real `/health` and `/health/db` endpoints, shows loading,
   available/unavailable states, and offers retry. Server/database results are
@@ -63,6 +66,8 @@ delivery remain later phases. Draft composition is implemented. OTP is explicitl
 | `src/components/forms/AppTextField.js` | Labeled Paper field and accessible error text for future forms |
 | `src/config/api.js` | Local/hosted URL selection and validation |
 | `src/api/client.js` | Fetch, deadline/cancellation, envelope validation, safe typed errors |
+| `src/services/attachments/` | Attachment contracts, idempotent reservation recovery and native/web file transports |
+| `src/components/media/` | Pickers, transfer progress, recorder and media/document previews |
 | `src/services/drafts/` | Draft contracts, authenticated API and account-scoped in-memory editor models |
 | `src/context/DraftWorkspaceContext.js` | Scope binding and private workspace lifecycle |
 | `src/screens/messages/` | Draft list and composer |
@@ -137,7 +142,7 @@ NativeWind's CSS side-effect import. No application type errors are suppressed.
 ESLint uses the SDK-compatible Expo flat config; ESLint 9 is retained to satisfy
 its React plugin's peer range. Tests exercise production URL isolation, safe errors,
 timeouts/cancellation, response parsing, no automatic retries, and health recovery.
-The 48 standard tests neither connect to Neon nor send messages. The separate
+The 55 standard tests neither connect to Neon nor send messages. The separate
 opt-in `npm run test:integration` requires a built backend and private
 `AUTH_TEST_DATABASE_URL`; it exercises the real client/auth/draft APIs in temporary
 PostgreSQL schemas. See [mobile auth verification](../docs/mobile-auth.md#verification-commands).

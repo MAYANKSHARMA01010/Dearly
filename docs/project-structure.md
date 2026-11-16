@@ -52,7 +52,9 @@ credentials use SecureStore; web sessions stay in memory. `navigation/` remains
 reserved; never create a competing navigation system. Phase 6 provides draft APIs;
 Phase 7 implements the mobile composer/list, recipient review and account-scoped
 in-memory editor models in `services/drafts/`, with guarded `app/drafts/` routes.
-See [mobile authentication](mobile-auth.md) and [mobile drafts](mobile-drafts.md).
+Phase 8 adds `services/attachments/` and `components/media/` for selection, private
+transfers, recording and playback. See [mobile authentication](mobile-auth.md),
+[mobile drafts](mobile-drafts.md) and [attachments](attachments.md).
 
 ## Backend
 
@@ -80,7 +82,10 @@ Keep business rules in services and vendor-specific calls in providers. Jobs and
 workers are placeholders: no queue library, recurring timer, or delivery process
 has been configured. Redis remains optional until cache/queue requirements are
 decided. Store attachments through the eventual storage provider; no local upload
-directory is needed yet. Provider folders do not choose a vendor or guarantee free
+directory was needed until Phase 8. Phase 8 selects a private filesystem adapter
+with metadata and tombstones in PostgreSQL. `jobs/cleanupAttachments.ts` is an
+explicit cleanup command; it is not a delivery scheduler. Hosting requires persistent
+storage. Provider folders do not choose a vendor or guarantee free
 delivery.
 
 ## Next implementation steps

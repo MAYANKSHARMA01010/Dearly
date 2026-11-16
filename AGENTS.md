@@ -56,6 +56,12 @@ within a phase does not authorize the entire phase.
   the mobile app staying open or a process-local timer for reliable delivery.
 - Track delivery per recipient and channel. Distinguish provider acceptance,
   delivery confirmation, and opening; only claim statuses supported by evidence.
+- Phase 8 uses private filesystem attachments with owner-only APIs, bounded
+  reservations and an explicit cleanup job. Follow [attachment contracts](docs/attachments.md);
+  keep objects out of public/static serving and require persistent storage when hosted.
+  Media validation needs ffprobe. Pass the full Expo recording preset when overriding
+  a recording filename; filename-only preparation can silently change the container.
+  Use synthetic media for checks and ask before capturing the user’s microphone.
 - Validate media type/size and authorize attachment access. Keep message content,
   OTPs, tokens, and credentials out of logs.
 - Suggest only services with a usable free plan or open-source tools that are

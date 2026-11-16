@@ -5,6 +5,9 @@ backend APIs only. It does not attach files, schedule work, send messages, notif
 recipients, or expose drafts to their intended recipients. The mobile composer is
 implemented in Phase 7; see [mobile drafts](mobile-drafts.md). Authentication still uses the development-only Phase 4/5 OTP setup.
 
+Phase 8 adds separate [attachment APIs and storage](attachments.md) for saved drafts;
+the text/recipient draft-version contract below remains unchanged.
+
 ## Setup and endpoints
 
 From `backend/`, apply the reviewed additive migration with

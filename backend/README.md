@@ -158,3 +158,14 @@ these overrides when upgrading either tool. Express remains v4 and Prisma v5.
 See [environment setup](../docs/environment-setup.md),
 [project structure](../docs/project-structure.md), and
 [implementation phases](../docs/implementation-phases.md) for remaining work.
+
+## Private attachments
+
+Phase 8 adds owner-only reservation/upload/finalization/content/removal endpoints
+under `/messages/drafts/:draftId/attachments`. Apply the additive migration with
+`npm run prisma:deploy`. File bytes stay outside PostgreSQL in a private ignored
+directory. Install ffprobe, preserve the private environment, and use a persistent
+volume when hosting. Run `npm run attachments:cleanup` explicitly in development;
+configure an external hourly cleanup job when hosted. See
+[attachments and storage](../docs/attachments.md) for exact limits, retention, API
+contracts and verification. No public media URLs or paid storage service is enabled.

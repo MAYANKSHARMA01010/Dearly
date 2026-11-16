@@ -834,3 +834,74 @@ including the read-only Neon check. No further feature routes were needed.
   semantics and recovery limits. POST creation still has no server idempotency key.
 - **Next:** Phase 8 — attachments, voice and private storage. Begin only when
   requested, after choosing a free-to-use storage option and defining limits.
+
+
+### Phase 8 completion — 16 November 2026
+
+- **Status:** Complete. Phases 1–8 are complete for their recorded scope. Phase 9
+  has not started; OTP remains a local development simulation.
+- **Delivered:** Private attachment metadata and additive migration; owner-only
+  reservation, streamed upload, finalization, state/list, range content and removal
+  APIs. Native photo/video/file pickers, voice recording, local review, explicit
+  uploads, progress/cancel/retry, private downloads and photo/audio/video/text
+  previews plus a PDF viewer/share handoff. Media saves separately from draft text.
+- **Storage:** Free-to-use local filesystem adapter, private UUID paths, exclusive
+  partial files, atomic publication, SHA-256, reserved count/byte quotas and low-disk
+  protection. No paid/hosted provider or public object URL is configured. Hosting
+  needs persistent private disk and consistent DB/object backups.
+- **Validation/access:** Exact byte lengths, type/signature checks, bounded ffprobe
+  media inspection, pixel/codec/duration limits, UTF-8 validation and isolated PDF
+  parsing. At most two inspections per backend process. Only READY objects can be
+  downloaded, with fresh ownership/session checks; recipients cannot read drafts.
+- **Recovery/retention:** Reservation retries reuse an immutable UUID and reconcile
+  state before sending bytes. Active uploads cannot be overwritten/removed. A
+  retryable cleanup command handles expired reservations, stale leases, deleted
+  drafts/accounts and old orphan files while preserving referenced READY media.
+  It is manual locally; configure an external hourly job when hosted. Managed
+  device previews/selections and Dearly-prefixed recordings clear on disposal,
+  sign-out/startup. Picker-only inactivity no longer discards the composer session.
+- **Checks:** Backend lint/typecheck/build and all 35 standard tests passed; frontend
+  lint/strict JS checking and all 55 standard tests passed. The backend PostgreSQL
+  integration suite passed all 31 runner entries (auth, drafts and attachments).
+  Both mobile auth/draft integration scenarios passed. Attachment integration used
+  real files for JPEG/PNG/WebP, MP4/MOV/WebM, M4A/MP3/WAV/audio WebM, PDF and text;
+  it covered ownership, unready denial, ranges, length/MIME failures, retry, quotas,
+  active-transfer protection and orphan/deleted-draft cleanup. Dedicated tests also
+  verify mid-transfer cancellation, bounded inspections and safe retry behavior.
+  Expo Doctor passed 20/20; final iOS/Android/web exports passed. Package installs
+  reported zero vulnerabilities. Migration `202611160003_attachments` is applied.
+- **iPhone functional evidence:** iPhone 17 Pro Max, SDK 58 Expo Go: selected a
+  generated photo, uploaded/validated it, reopened its private preview; approved
+  short voice capture, preview/playback, upload and downloaded playback; native
+  video playback with elapsed-position controls; text-file preview; PDF menu open
+  and dismiss without sharing; attachment removal confirmation/cancel. Video/text/
+  PDF fixtures were seeded through the authenticated API for playback/view checks;
+  complete native file-picker selection and video-picker completion were not
+  verified because the desktop connection could not reliably click those system
+  dialogs. API tests cover all supported format families and actual removal.
+- **Permission/recording check:** Microphone grant and denied-access recovery were
+  exercised. A filename-only recording override produced PCM under an M4A name;
+  passing the full AAC/container preset fixed it and was verified by native
+  playback and server finalization. Test captures were capped at one second;
+  the normal 299-second native cap and early size/duration stop are restored.
+  Microphone permission was reset to its initial prompt state afterward. Long
+  recording sessions, physical-device behavior, Android runtime and browser media
+  interactions were not manually exercised. No design/visual review was performed;
+  system-picker screenshots were used only to locate functional controls.
+- **Cleanup/runtime:** Temporary DB schemas were dropped by tests. The reserved QA
+  account, its five attachments/objects, draft, OTP/throttle/session records and
+  managed Simulator media cache were removed; zero QA records/objects remain.
+  The simulator was cold-reopened after revoking the QA account; its final screen
+  was not rechecked after the desktop window connection failed. Generated photo/
+  video fixtures remain in the Simulator's Photos library. No device reset, Android
+  launch, external sharing, provider send, scheduling, push or deployment occurred.
+  Backend 8080 and Metro 8081 are running locally.
+- **Commits:** `75ecdac` — metadata/migration; `0df544a` — streaming/storage APIs,
+  validation and integration tests; `3fa00eb` — bounded inspection/cancellation
+  coverage; `2aeadb3` — mobile media/voice flow and session/cache integration;
+  a separate documentation commit records setup, contracts and completion.
+- **Guide/limits:** [Attachments and storage](attachments.md) records exact supported
+  formats, quotas, file retention, free storage choice, ffprobe requirement and
+  cleanup operation. Format validation is not antivirus scanning or sanitization.
+- **Next:** Phase 9 — schedule, reschedule and cancel, with timezone-aware review
+  and durable schedule intent. Begin only when requested.

@@ -17,6 +17,9 @@ own-profile editing, with explicit test-code labeling. Scheduling and delivery
 follow later. Phase 6 adds private, versioned draft and recipient
 APIs. Phase 7 adds the mobile composer, manual recipients, draft list, explicit
 save/edit/delete, and unsaved/conflict recovery. See [mobile drafts](docs/mobile-drafts.md).
+Phase 8 adds private attachments, voice recording/playback, format validation and
+cleanup. See [attachments and storage](docs/attachments.md) for supported types,
+limits and the persistent-disk requirement.
 See [backend authentication](docs/authentication.md) and
 [mobile authentication](docs/mobile-auth.md) for setup and security limits.
 The [draft API contract](docs/draft-api.md) covers private message work and recipients.
