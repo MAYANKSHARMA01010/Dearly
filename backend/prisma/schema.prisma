@@ -7,20 +7,72 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model template
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String    @id @default(uuid())
+  phone           String    @unique
+  phoneVerifiedAt DateTime
+  name            String?
+  email           String?
+  timezone        String    @default("UTC")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  sessions        Session[]
 
   @@map("users")
 }
 
-enum Role {
-  USER
-  ADMIN
+// Persist throttles independently of individual challenges and process restarts.
+model PhoneAuthState {
+  phone           String   @id
+  requestWindowAt DateTime
+  requestCount    Int      @default(0)
+  lastRequestedAt DateTime
+  failureWindowAt DateTime
+  failureCount    Int      @default(0)
+
+  @@map("phone_auth_states")
+}
+
+model OtpChallenge {
+  id                String    @id @default(uuid())
+  phone             String
+  codeHash          String
+  attempts          Int       @default(0)
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  dispatchStatus    String    @default("pending")
+  providerMessageId String?
+  createdAt         DateTime  @default(now())
+
+  @@index([phone, createdAt])
+  @@index([expiresAt])
+  @@map("otp_challenges")
+}
+
+model Session {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessHash      String         @unique
+  accessExpiresAt DateTime
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime       @default(now())
+  refreshTokens   RefreshToken[]
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// Keep consumed refresh hashes until the session expires to detect replay.
+model RefreshToken {
+  hash      String    @id
+  sessionId String
+  session   Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([sessionId])
+  @@map("refresh_tokens")
 }
