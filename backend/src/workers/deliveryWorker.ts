@@ -1,4 +1,4 @@
-import type { EmailDelivery } from './emailDelivery';
+import type { ExternalDelivery } from './externalDelivery';
 import { recordMessageEvent } from '../services/messageEvent.service';
 import { Prisma, type PrismaClient, type Attachment } from '@prisma/client';
 import { randomUUID, createHash } from 'node:crypto';
@@ -39,7 +39,7 @@ export class DeliveryWorker {
     private readonly store: ObjectStore,
     private readonly clock?: () => Date,
     private readonly inspect?: (files: Attachment[]) => Promise<void>,
-    private readonly email?: EmailDelivery,
+    private readonly external?: ExternalDelivery,
   ) {}
   private now(tx: Prisma.TransactionClient | PrismaClient = this.db) {
     return this.clock ? Promise.resolve(this.clock()) : databaseTime(tx);
@@ -101,7 +101,7 @@ export class DeliveryWorker {
           where: { id: c.messageId },
           include: {
             deliveryIntents: {
-              include: { inboxItem: true, emailDelivery: true },
+              include: { inboxItem: true, externalDelivery: true },
             },
           },
         });
@@ -202,7 +202,7 @@ export class DeliveryWorker {
         const intents = message.deliveryIntents.filter(
           (i) =>
             !i.inboxItem &&
-            (!i.emailDelivery || i.emailDelivery.state === 'RETRYABLE'),
+            (!i.externalDelivery || i.externalDelivery.state === 'RETRYABLE'),
         );
         if (intents.length)
           await tx.deliveryAttempt.createMany({
@@ -256,9 +256,13 @@ export class DeliveryWorker {
       });
       if (!snapshot) return false;
       await this.verifyFiles(snapshot.attachments);
-      if (snapshot.deliveryIntents.some((i) => i.channel === 'EMAIL')) {
-        if (!this.email) throw new DeliveryFault('INTERNAL');
-        return await this.email.execute(claim);
+      if (
+        snapshot.deliveryIntents.some((i) =>
+          ['EMAIL', 'WHATSAPP'].includes(i.channel),
+        )
+      ) {
+        if (!this.external) throw new DeliveryFault('INTERNAL');
+        return await this.external.execute(claim);
       }
       return await this.tx(async (tx) => {
         if (!(await lockMessage(tx, snapshot.ownerId, snapshot.id)))
@@ -489,20 +493,20 @@ export class DeliveryWorker {
   private async terminal(tx: Prisma.TransactionClient, messageId: string) {
     const intents = await tx.deliveryIntent.findMany({
       where: { messageId },
-      include: { inboxItem: true, emailDelivery: true },
+      include: { inboxItem: true, externalDelivery: true },
     });
     const delivered = intents.filter((i) => i.inboxItem).length,
       accepted = intents.filter(
-        (i) => i.emailDelivery?.state === 'ACCEPTED',
+        (i) => i.externalDelivery?.state === 'ACCEPTED',
       ).length;
     if (
       intents.some((i) =>
-        ['SUBMITTING', 'UNKNOWN'].includes(i.emailDelivery?.state ?? ''),
+        ['SUBMITTING', 'UNKNOWN'].includes(i.externalDelivery?.state ?? ''),
       )
     ) {
-      await tx.emailDelivery.updateMany({
+      await tx.externalDelivery.updateMany({
         where: { intent: { messageId }, state: 'SUBMITTING' },
-        data: { state: 'UNKNOWN', errorCode: 'SMTP_UNCERTAIN' },
+        data: { state: 'UNKNOWN', errorCode: 'EXTERNAL_UNCERTAIN' },
       });
       return 'DELIVERY_UNKNOWN' as const;
     }

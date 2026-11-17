@@ -37,3 +37,6 @@ next-env.d.ts
 
 # Local simulator/emulator review captures
 /.impeccable/review/
+
+# Private WhatsApp pairing artifacts and runtime files
+/backend/.runtime/

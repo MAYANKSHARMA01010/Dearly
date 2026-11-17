@@ -199,7 +199,7 @@ model DeliveryIntent {
   channel DeliveryChannel
   consentAt DateTime? @db.Timestamptz(3)
   attempts DeliveryAttempt[]
-  emailDelivery EmailDelivery?
+  externalDelivery ExternalDelivery?
   inboxItem InboxItem?
 
   @@unique([messageId, recipientId, channel])
@@ -335,7 +335,7 @@ enum EmailState {
   UNKNOWN
 }
 
-model EmailDelivery {
+model ExternalDelivery {
   id String @id @default(uuid())
   intentId String @unique
   intent DeliveryIntent @relation(fields: [intentId], references: [id], onDelete: Cascade)
@@ -357,7 +357,7 @@ model EmailDelivery {
   @@map("email_deliveries")
 }
 
-model EmailBudget {
+model SenderBudget {
   id String @id
   count Int @default(0)
   resetsAt DateTime @db.Timestamptz(3)

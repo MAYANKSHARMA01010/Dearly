@@ -1,3 +1,4 @@
+import { createWahaWebhookRouter } from './routes/wahaWebhook.routes';
 import { createExternalAccessRouter } from './routes/externalAccess.routes';
 import { createMailboxRouter } from './routes/mailbox.routes';
 import { createInboxRouter } from './routes/inbox.routes';
@@ -38,7 +39,7 @@ export function createApp(
         if (
           !origin ||
           config.allowedOrigins.includes(origin) ||
-          config.emailAccess?.publicUrl === origin
+          config.externalAccess?.publicUrl === origin
         )
           return callback(null, true);
         callback(
@@ -71,6 +72,10 @@ export function createApp(
         ),
     }),
   );
+  app.use(
+    '/webhooks/waha',
+    createWahaWebhookRouter(database.prisma, config.whatsapp),
+  );
   app.use(express.json({ limit: config.bodyLimitBytes }));
   app.use('/', createRootRouter());
   app.use('/health', createHealthRouter(database));
@@ -100,13 +105,15 @@ export function createApp(
       database.prisma,
       activeAuth,
       config.otpPepper,
-      Boolean(config.email && config.emailAccess),
+      Boolean(config.email && config.externalAccess),
       Boolean(
-        config.emailAccess &&
+        config.externalAccess &&
         ['localhost', '127.0.0.1', '[::1]'].includes(
-          new URL(config.emailAccess.publicUrl).hostname,
+          new URL(config.externalAccess.publicUrl).hostname,
         ),
       ),
+      config.whatsapp,
+      Boolean(config.externalAccess),
     ),
   );
   app.use(

@@ -2,17 +2,21 @@ import { Prisma, type PrismaClient } from '@prisma/client';
 import { createHash } from 'node:crypto';
 import type { AppConfig } from '../configs/env';
 import type { Claim } from './deliveryWorker';
-import type { EmailSender } from '../providers/email/email.provider';
+import type {
+  ExternalProvider,
+  ExternalChannel,
+} from '../providers/external.provider';
 import { databaseTime } from '../utils/databaseTime';
 import { lockMessage } from '../utils/lockMessage';
 import { recordMessageEvent } from '../services/messageEvent.service';
 import { accessToken } from '../services/externalAccess.service';
-export class EmailDelivery {
+export class ExternalDelivery {
   constructor(
     private readonly db: PrismaClient,
-    private readonly access: NonNullable<AppConfig['emailAccess']>,
-    private readonly senderKey: string,
-    private readonly send: EmailSender,
+    private readonly access: NonNullable<AppConfig['externalAccess']>,
+    private readonly providers: Partial<
+      Record<ExternalChannel, ExternalProvider>
+    >,
     private readonly clock?: () => Date,
   ) {}
   private now(tx: Prisma.TransactionClient) {
@@ -102,95 +106,129 @@ export class EmailDelivery {
         });
         continue;
       }
-      if (intent.channel !== 'EMAIL') continue;
+      if (!['EMAIL', 'WHATSAPP'].includes(intent.channel)) continue;
+      const channel = intent.channel as ExternalChannel,
+        provider = this.providers[channel];
       const prepared = await this.tx(async (tx) => {
         const { now } = await this.held(tx, c);
-        const old = await tx.emailDelivery.findUnique({
+        const old = await tx.externalDelivery.findUnique({
           where: { intentId: intent.id },
         });
         if (old && old.state !== 'RETRYABLE') {
           if (old.state === 'SUBMITTING')
-            await tx.emailDelivery.update({
+            await tx.externalDelivery.update({
               where: { id: old.id },
-              data: { state: 'UNKNOWN', errorCode: 'SMTP_UNCERTAIN' },
+              data: {
+                state: 'UNKNOWN',
+                errorCode:
+                  channel === 'EMAIL' ? 'SMTP_UNCERTAIN' : 'WAHA_UNCERTAIN',
+              },
             });
           return null;
         }
         const id = createHash('sha256')
-          .update(this.senderKey.toLowerCase())
+          .update(
+            (provider?.senderKey ?? `unconfigured:${channel}`).toLowerCase(),
+          )
           .digest('hex');
         // A no-op upsert takes the sender-budget row lock before reading its count.
-        await tx.emailBudget.upsert({
+        await tx.senderBudget.upsert({
           where: { id },
           create: { id, resetsAt: new Date(now.getTime() + 86400000) },
           update: { id },
         });
-        let budget = await tx.emailBudget.findUniqueOrThrow({ where: { id } });
+        let budget = await tx.senderBudget.findUniqueOrThrow({ where: { id } });
         if (budget.resetsAt <= now)
-          budget = await tx.emailBudget.update({
+          budget = await tx.senderBudget.update({
             where: { id },
             data: { count: 0, resetsAt: new Date(now.getTime() + 86400000) },
           });
-        const quota = budget.count >= this.access.dailyLimit;
-        const row = await tx.emailDelivery.upsert({
+        const quota = budget.count >= (provider?.dailyLimit ?? 0);
+        const row = await tx.externalDelivery.upsert({
           where: { intentId: intent.id },
           create: {
             intentId: intent.id,
+            providerScope: provider?.scope,
             state: quota ? 'RETRYABLE' : 'SUBMITTING',
-            errorCode: quota ? 'EMAIL_QUOTA' : null,
+            errorCode: quota
+              ? channel === 'EMAIL'
+                ? 'EMAIL_QUOTA'
+                : 'WHATSAPP_QUOTA'
+              : null,
             expiresAt: new Date(now.getTime() + 7 * 86400000),
           },
           update: {
+            providerScope: provider?.scope,
             state: quota ? 'RETRYABLE' : 'SUBMITTING',
-            errorCode: quota ? 'EMAIL_QUOTA' : null,
+            errorCode: quota
+              ? channel === 'EMAIL'
+                ? 'EMAIL_QUOTA'
+                : 'WHATSAPP_QUOTA'
+              : null,
           },
         });
         if (quota) return null;
         if (row.revokedAt || row.expiresAt <= now) {
-          await tx.emailDelivery.update({
+          await tx.externalDelivery.update({
             where: { id: row.id },
             data: { state: 'REJECTED', errorCode: 'LINK_UNAVAILABLE' },
           });
           return null;
         }
-        if (intent.recipient.type !== 'EMAIL' || !intent.recipient.email) {
-          await tx.emailDelivery.update({
+        if (
+          !provider ||
+          (channel === 'EMAIL'
+            ? intent.recipient.type !== 'EMAIL' || !intent.recipient.email
+            : intent.recipient.type !== 'PHONE' ||
+              !intent.recipient.phone ||
+              !intent.consentAt)
+        ) {
+          await tx.externalDelivery.update({
             where: { id: row.id },
             data: { state: 'REJECTED', errorCode: 'INVALID_RECIPIENT' },
           });
           return null;
         }
-        await tx.emailBudget.update({
+        await tx.senderBudget.update({
           where: { id },
           data: { count: { increment: 1 } },
         });
-        return { id: row.id, to: intent.recipient.email };
+        return {
+          id: row.id,
+          to:
+            channel === 'EMAIL'
+              ? intent.recipient.email!
+              : intent.recipient.phone!,
+        };
       });
       if (!prepared) continue;
       // A durable SUBMITTING marker exists before network activity. Never blindly resend it.
-      const result = await this.send(
+      const result = await provider!.send(
         prepared.to,
         `${this.access.publicUrl}/external/#${accessToken(prepared.id, this.access.secret)}`,
         prepared.id,
       );
       await this.tx(async (tx) => {
         const { now } = await this.held(tx, c);
-        await tx.emailDelivery.updateMany({
+        await tx.externalDelivery.updateMany({
           where: { id: prepared.id, state: 'SUBMITTING' },
           data: {
             state: result.state,
             errorCode: result.code,
-            providerMessageId: result.providerMessageId,
+            providerMessageId:
+              result.state === 'ACCEPTED' ? result.providerMessageId : null,
             submittedAt: result.state === 'ACCEPTED' ? now : null,
           },
         });
       });
+      if (result.state === 'ACCEPTED' && result.providerMessageId)
+        await provider?.reconcile?.(result.providerMessageId);
     }
     return this.tx(async (tx) => {
       const { m, now, w } = await this.held(tx, c);
       const all = await tx.deliveryIntent.findMany({
         where: { messageId: c.messageId },
-        include: { inboxItem: true, emailDelivery: true },
+        include: { inboxItem: true, externalDelivery: true },
       });
       let delivered = 0,
         accepted = 0,
@@ -203,15 +241,19 @@ export class EmailDelivery {
           else failed++;
           continue;
         }
-        const e = i.emailDelivery;
-        if (i.channel !== 'EMAIL' || !e) {
+        const e = i.externalDelivery;
+        if (!['EMAIL', 'WHATSAPP'].includes(i.channel) || !e) {
           failed++;
           continue;
         }
         if (e.state === 'SUBMITTING')
-          await tx.emailDelivery.update({
+          await tx.externalDelivery.update({
             where: { id: e.id },
-            data: { state: 'UNKNOWN', errorCode: 'SMTP_UNCERTAIN' },
+            data: {
+              state: 'UNKNOWN',
+              errorCode:
+                i.channel === 'EMAIL' ? 'SMTP_UNCERTAIN' : 'WAHA_UNCERTAIN',
+            },
           });
         if (e.state === 'ACCEPTED') accepted++;
         else if (e.state === 'UNKNOWN' || e.state === 'SUBMITTING') uncertain++;
@@ -262,11 +304,11 @@ export class EmailDelivery {
           leaseToken: null,
           leaseExpiresAt: null,
           lastError: uncertain
-            ? 'SMTP_UNCERTAIN'
+            ? 'EXTERNAL_UNCERTAIN'
             : failed
-              ? 'EMAIL_FAILED'
+              ? 'EXTERNAL_FAILED'
               : retry
-                ? 'EMAIL_RETRY'
+                ? 'EXTERNAL_RETRY'
                 : null,
         },
       });

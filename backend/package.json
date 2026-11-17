@@ -20,7 +20,13 @@
     "delivery:worker": "tsx src/workers/runDeliveryWorker.ts",
     "delivery:status": "tsx src/jobs/manageDelivery.ts",
     "delivery:retry": "tsx src/jobs/manageDelivery.ts retry",
-    "email:verify": "tsx src/jobs/checkEmail.ts"
+    "email:verify": "tsx src/jobs/checkEmail.ts",
+    "whatsapp:status": "tsx src/jobs/manageWhatsapp.ts status",
+    "whatsapp:init": "tsx src/jobs/manageWhatsapp.ts init",
+    "whatsapp:qr": "tsx src/jobs/manageWhatsapp.ts qr",
+    "whatsapp:cleanup": "tsx src/jobs/manageWhatsapp.ts cleanup",
+    "whatsapp:start": "tsx src/jobs/manageWhatsapp.ts start",
+    "whatsapp:pair": "tsx src/jobs/manageWhatsapp.ts pair"
   },
   "keywords": [],
   "author": "",

@@ -38,7 +38,7 @@ export class ExternalAccessService {
   ) {
     const id = accessId(token, this.secret);
     if (!id) throw missing();
-    const row = await tx.emailDelivery.findUnique({
+    const row = await tx.externalDelivery.findUnique({
       where: { id },
       include: {
         intent: { include: { message: { include: { attachments: true } } } },
@@ -50,7 +50,7 @@ export class ExternalAccessService {
       row.revokedAt ||
       row.expiresAt <= now ||
       !['SUBMITTING', 'ACCEPTED', 'UNKNOWN'].includes(row.state) ||
-      row.intent.channel !== 'EMAIL' ||
+      !['EMAIL', 'WHATSAPP'].includes(row.intent.channel) ||
       !row.intent.message.deliveryEnabled ||
       !row.intent.message.scheduledFor ||
       row.intent.message.scheduledFor > now
@@ -68,7 +68,7 @@ export class ExternalAccessService {
         const { row, now } = await this.authorized(tx, token);
         const message = row.intent.message;
         if (!row.openedAt) {
-          await tx.emailDelivery.update({
+          await tx.externalDelivery.update({
             where: { id: row.id },
             data: { openedAt: now },
           });
@@ -110,16 +110,20 @@ export class ExternalAccessService {
   async revoke(ownerId: string, intentId: string) {
     return this.db.$transaction(async (tx) => {
       const intent = await tx.deliveryIntent.findFirst({
-        where: { id: intentId, channel: 'EMAIL', message: { ownerId } },
-        include: { emailDelivery: true, message: true },
+        where: {
+          id: intentId,
+          channel: { in: ['EMAIL', 'WHATSAPP'] },
+          message: { ownerId },
+        },
+        include: { externalDelivery: true, message: true },
       });
       if (
-        !intent?.emailDelivery ||
+        !intent?.externalDelivery ||
         !(await lockMessage(tx, ownerId, intent.messageId))
       )
         throw missing();
-      const revoked = await tx.emailDelivery.updateMany({
-        where: { id: intent.emailDelivery.id, revokedAt: null },
+      const revoked = await tx.externalDelivery.updateMany({
+        where: { id: intent.externalDelivery.id, revokedAt: null },
         data: { revokedAt: await databaseTime(tx) },
       });
       const current = await tx.draftMessage.findUniqueOrThrow({
@@ -129,7 +133,9 @@ export class ExternalAccessService {
         await recordMessageEvent(
           tx,
           intent.messageId,
-          'EMAIL_LINK_REVOKED',
+          intent.channel === 'EMAIL'
+            ? 'EMAIL_LINK_REVOKED'
+            : 'WHATSAPP_LINK_REVOKED',
           current.status,
           current.version,
         );

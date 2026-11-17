@@ -73,6 +73,7 @@ export class ScheduleService {
     secret: string,
     private readonly now: () => Date = () => new Date(),
     private readonly emailEnabled = false,
+    private readonly whatsappEnabled = false,
   ) {
     this.key = createHmac('sha256', secret)
       .update('dearly.schedule.review.v1')
@@ -142,8 +143,10 @@ export class ScheduleService {
           d.channels.length !== 1 ||
           (recipient.type === 'EMAIL'
             ? !this.emailEnabled || d.channels[0] !== 'EMAIL'
-            : !['SELF', 'USER', 'PHONE'].includes(recipient.type) ||
-              d.channels[0] !== 'IN_APP')
+            : recipient.type === 'PHONE' && d.channels[0] === 'WHATSAPP'
+              ? !this.whatsappEnabled || !recipient.phone
+              : !['SELF', 'USER', 'PHONE'].includes(recipient.type) ||
+                d.channels[0] !== 'IN_APP')
         );
       })
     )
@@ -177,7 +180,11 @@ export class ScheduleService {
       select: { id: true, phone: true },
     });
     const bindings = message.recipients
-      .filter((r) => r.type !== 'EMAIL')
+      .filter((r) =>
+        deliveries.some(
+          (d) => d.recipientId === r.id && d.channels[0] === 'IN_APP',
+        ),
+      )
       .map((r) => {
         const user =
           r.type === 'PHONE'
@@ -224,6 +231,7 @@ export class ScheduleService {
         message: publicDraft(message),
         ownerId: message.ownerId,
         deliveryEnabled: message.deliveryEnabled,
+        whatsappConsent: choice.whatsappConsent === true,
         bindings,
         attachments: message.attachments.map((a) => ({
           id: a.id,
@@ -293,6 +301,15 @@ export class ScheduleService {
       const deliveries = reschedule
         ? this.choices(message)
         : (choice as ScheduleChoice).deliveries;
+      if (
+        deliveries.some((d) => d.channels.includes('WHATSAPP')) &&
+        choice.whatsappConsent !== true
+      )
+        throw new ApiError(
+          400,
+          'RECIPIENT_CONSENT_REQUIRED',
+          'Confirm that these recipients agreed to WhatsApp messages.',
+        );
       const bindings = await this.ready(tx, message, deliveries);
       const resolved = resolveScheduleTime(
         choice.localDateTime,
@@ -334,6 +351,7 @@ export class ScheduleService {
         version: choice.version,
         localDateTime: choice.localDateTime,
         timezone: choice.timezone,
+        whatsappConsent: choice.whatsappConsent === true,
         deliveries: 'deliveries' in choice ? choice.deliveries : null,
         reviewToken: choice.reviewToken,
       }),
@@ -351,6 +369,15 @@ export class ScheduleService {
       const deliveries = reschedule
         ? this.choices(message)
         : (choice as ScheduleChoice).deliveries;
+      if (
+        deliveries.some((d) => d.channels.includes('WHATSAPP')) &&
+        choice.whatsappConsent !== true
+      )
+        throw new ApiError(
+          400,
+          'RECIPIENT_CONSENT_REQUIRED',
+          'Confirm that these recipients agreed to WhatsApp messages.',
+        );
       const bindings = await this.ready(tx, message, deliveries);
       this.verify(
         choice.reviewToken,
@@ -385,8 +412,8 @@ export class ScheduleService {
           await tx.draftRecipient.update({
             where: { id: r.id },
             data: {
-              targetUserId: bindings.find((b) => b.recipientId === r.id)!
-                .userId,
+              targetUserId:
+                bindings.find((b) => b.recipientId === r.id)?.userId ?? null,
             },
           });
       }
@@ -396,6 +423,7 @@ export class ScheduleService {
             messageId: id,
             recipientId: d.recipientId,
             channel: d.channels[0],
+            consentAt: d.channels[0] === 'WHATSAPP' ? this.now() : null,
           })),
         });
       await recordMessageEvent(

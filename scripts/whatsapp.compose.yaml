@@ -1,0 +1,31 @@
+name: dearly-whatsapp
+services:
+  waha:
+    image: ${WAHA_IMAGE:?Set a pinned free WAHA Core image in backend/.env}
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:3100:3000'
+    environment:
+      WAHA_API_KEY: ${WAHA_API_KEY:?Set a private WAHA API key}
+      WHATSAPP_DEFAULT_ENGINE: ${WAHA_ENGINE:-GOWS}
+      WAHA_NOWEB_WA_VERSION: auto-web
+      WAHA_GOWS_DEVICE_REQUIRE_FULL_SYNC: 'false'
+      WAHA_GOWS_DEVICE_HISTORY_SYNC_FULL_SYNC_DAYS_LIMIT: '1'
+      WAHA_GOWS_DEVICE_HISTORY_SYNC_RECENT_SYNC_DAYS_LIMIT: '1'
+      WAHA_GOWS_DEVICE_HISTORY_SYNC_INITIAL_SYNC_MAX_MESSAGES_PER_CHAT: '1'
+      WHATSAPP_RESTART_ALL_SESSIONS: 'true'
+      WAHA_DASHBOARD_ENABLED: 'false'
+      WHATSAPP_SWAGGER_ENABLED: 'false'
+      WAHA_LOG_LEVEL: error
+      WAHA_HTTP_LOG_LEVEL: error
+      WAHA_PRINT_QR: 'False'
+    volumes:
+      - sessions:/app/.sessions
+    shm_size: 512mb
+    logging:
+      driver: local
+      options:
+        max-size: '5m'
+        max-file: '2'
+volumes:
+  sessions:

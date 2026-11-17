@@ -1,3 +1,5 @@
+import type { WahaConfig } from '../configs/env';
+import { WahaProvider } from '../providers/whatsapp/waha.provider';
 import { workerStatus } from '../services/workerStatus.service';
 import { Router } from 'express';
 import type { PrismaClient } from '@prisma/client';
@@ -16,6 +18,8 @@ export function createScheduleRouter(
   secret?: string,
   emailEnabled = false,
   emailLocalOnly = false,
+  whatsapp?: WahaConfig,
+  externalAccessEnabled = false,
 ) {
   const router = Router();
   router.use((_r, res, next) => {
@@ -36,20 +40,39 @@ export function createScheduleRouter(
     return router;
   }
   const c = scheduleController(
-    new ScheduleService(prisma, secret, undefined, emailEnabled),
+    new ScheduleService(
+      prisma,
+      secret,
+      undefined,
+      emailEnabled,
+      Boolean(whatsapp && externalAccessEnabled),
+    ),
   );
   router.get('/capabilities', (req, res, next) => {
-    void workerStatus(prisma)
-      .then((worker) =>
+    void Promise.all([
+      workerStatus(prisma),
+      whatsapp
+        ? new WahaProvider(whatsapp).readiness()
+        : Promise.resolve('DISABLED'),
+    ])
+      .then(([worker, whatsappStatus]) =>
         sendSuccess(
           res,
           {
             ...scheduleCapabilities,
             emailLocalOnly,
+            externalLocalOnly: emailLocalOnly,
+            whatsappStatus,
             channels: scheduleCapabilities.channels.map((c) =>
               c.channel === 'EMAIL'
                 ? { channel: 'EMAIL', available: emailEnabled, mode: 'SMTP' }
-                : c,
+                : c.channel === 'WHATSAPP'
+                  ? {
+                      channel: 'WHATSAPP',
+                      available: Boolean(whatsapp && externalAccessEnabled),
+                      mode: 'WAHA_CORE',
+                    }
+                  : c,
             ),
             worker,
           },

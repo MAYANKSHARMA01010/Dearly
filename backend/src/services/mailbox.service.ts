@@ -14,13 +14,41 @@ const sent: Prisma.DraftMessageWhereInput = {
   OR: [
     {
       deliveryIntents: {
-        some: { channel: 'EMAIL', emailDelivery: { state: 'ACCEPTED' } },
+        some: {
+          channel: { in: ['EMAIL', 'WHATSAPP'] },
+          externalDelivery: { state: 'ACCEPTED' },
+        },
       },
     },
     { inboxItems: { some: { intent: { channel: 'IN_APP' } } } },
     {
       deliveryIntents: {
         some: { channel: 'IN_APP', attempts: { some: { state: 'SUCCEEDED' } } },
+      },
+    },
+  ],
+};
+const failedScope: Prisma.DraftMessageWhereInput = {
+  OR: [
+    {
+      status: {
+        in: [
+          'FAILED',
+          'PARTIALLY_DELIVERED',
+          'PARTIALLY_SUBMITTED',
+          'DELIVERY_UNKNOWN',
+        ],
+      },
+    },
+    {
+      deliveryIntents: {
+        some: {
+          channel: 'WHATSAPP',
+          externalDelivery: {
+            notificationErrorAt: { not: null },
+            notificationDeliveredAt: null,
+          },
+        },
       },
     },
   ],
@@ -43,16 +71,19 @@ export class MailboxService {
         deliveredAt: { lte: now },
         message: { scheduledFor: { lte: now } },
       };
-      const [states, sentCount, received, unopened] = await Promise.all([
-        tx.draftMessage.groupBy({
-          by: ['status'],
-          where: { ownerId },
-          _count: true,
-        }),
-        tx.draftMessage.count({ where: { ownerId, ...sent } }),
-        tx.inboxItem.count({ where: due }),
-        tx.inboxItem.count({ where: { ...due, openedAt: null } }),
-      ]);
+      const [states, sentCount, received, unopened, failed] = await Promise.all(
+        [
+          tx.draftMessage.groupBy({
+            by: ['status'],
+            where: { ownerId },
+            _count: true,
+          }),
+          tx.draftMessage.count({ where: { ownerId, ...sent } }),
+          tx.inboxItem.count({ where: due }),
+          tx.inboxItem.count({ where: { ...due, openedAt: null } }),
+          tx.draftMessage.count({ where: { ownerId, ...failedScope } }),
+        ],
+      );
       const count = (s: string) =>
         states.find((r) => r.status === s)?._count ?? 0;
       return {
@@ -63,11 +94,7 @@ export class MailboxService {
           sent: sentCount,
           received,
           drafts: count('DRAFT'),
-          failed:
-            count('FAILED') +
-            count('PARTIALLY_DELIVERED') +
-            count('PARTIALLY_SUBMITTED') +
-            count('DELIVERY_UNKNOWN'),
+          failed,
         },
         unopened,
       };
@@ -148,16 +175,7 @@ export class MailboxService {
           : input.box === 'drafts'
             ? { status: 'DRAFT' }
             : input.box === 'failed'
-              ? {
-                  status: {
-                    in: [
-                      'FAILED',
-                      'PARTIALLY_DELIVERED',
-                      'PARTIALLY_SUBMITTED',
-                      'DELIVERY_UNKNOWN',
-                    ],
-                  },
-                }
+              ? failedScope
               : input.box === 'sent'
                 ? sent
                 : {};
@@ -277,7 +295,7 @@ export class MailboxService {
           attachments: { where: { state: 'READY' }, orderBy: { id: 'asc' } },
           deliveryIntents: {
             include: {
-              emailDelivery: true,
+              externalDelivery: true,
               inboxItem: { select: { deliveredAt: true, openedAt: true } },
               attempts: {
                 orderBy: [{ startedAt: 'desc' }, { id: 'desc' }],
@@ -308,30 +326,44 @@ export class MailboxService {
             supported = i.channel === 'IN_APP';
           const confirmed =
             supported && (Boolean(i.inboxItem) || a?.state === 'SUCCEEDED');
-          if (i.channel === 'EMAIL') {
-            const e = i.emailDelivery;
+          if (['EMAIL', 'WHATSAPP'].includes(i.channel)) {
+            const e = i.externalDelivery;
             return {
               recipientId: i.recipientId,
-              channel: 'EMAIL',
+              channel: i.channel,
               intentId: i.id,
               outcome: !e
                 ? 'PENDING'
-                : e.state === 'ACCEPTED'
-                  ? 'SUBMITTED'
-                  : e.state === 'SUBMITTING'
-                    ? 'DISPATCHING'
-                    : e.state === 'UNKNOWN'
-                      ? 'UNKNOWN'
-                      : e.state === 'RETRYABLE' &&
-                        message.status === 'DISPATCHING'
-                      ? 'RETRYING'
-                      : 'FAILED',
+                : i.channel === 'WHATSAPP' && e.notificationDeliveredAt
+                  ? 'DELIVERED'
+                  : i.channel === 'WHATSAPP' && e.notificationErrorAt
+                    ? 'FAILED'
+                    : e.state === 'ACCEPTED'
+                      ? 'SUBMITTED'
+                      : e.state === 'SUBMITTING'
+                        ? 'DISPATCHING'
+                        : e.state === 'UNKNOWN'
+                          ? 'UNKNOWN'
+                          : e.state === 'RETRYABLE' &&
+                              message.status === 'DISPATCHING'
+                            ? 'RETRYING'
+                            : 'FAILED',
               submittedAt: e?.submittedAt ?? null,
-              deliveredAt: null,
+              deliveredAt:
+                i.channel === 'WHATSAPP'
+                  ? (e?.notificationDeliveredAt ?? null)
+                  : null,
+              notificationReadAt:
+                i.channel === 'WHATSAPP'
+                  ? (e?.notificationReadAt ?? null)
+                  : null,
               openedAt: e?.openedAt ?? null,
               expiresAt: e?.expiresAt ?? null,
               revokedAt: e?.revokedAt ?? null,
-              errorCode: e?.errorCode ?? null,
+              errorCode:
+                e?.notificationErrorAt && !e.notificationDeliveredAt
+                  ? 'WAHA_DELIVERY_ERROR'
+                  : (e?.errorCode ?? null),
               attempt: null,
             };
           }

@@ -24,7 +24,7 @@ export function createExternalAccessRouter(
     });
     if (
       req.headers.origin &&
-      req.headers.origin !== config.emailAccess?.publicUrl &&
+      req.headers.origin !== config.externalAccess?.publicUrl &&
       !(
         req.path.startsWith('/deliveries/') &&
         config.allowedOrigins.includes(req.headers.origin)
@@ -41,7 +41,7 @@ export function createExternalAccessRouter(
   });
   router.get('/', (_req, res) => res.type('html').send(externalViewer));
   router.get('/viewer.js', (_req, res) => res.type('js').send(externalScript));
-  if (!db || !config.emailAccess) {
+  if (!db || !config.externalAccess) {
     router.use((_req, _res, next) =>
       next(
         new ApiError(503, 'EMAIL_UNAVAILABLE', 'Email access is unavailable.'),
@@ -50,7 +50,7 @@ export function createExternalAccessRouter(
     return router;
   }
   const c = externalAccessController(
-    new ExternalAccessService(db, config.emailAccess.secret),
+    new ExternalAccessService(db, config.externalAccess.secret),
     new LocalStorage(config.storageRoot),
   );
   router.post('/open', c.open);

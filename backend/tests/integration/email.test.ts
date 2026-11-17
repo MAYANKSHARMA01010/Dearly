@@ -16,7 +16,7 @@ import { ScheduleService } from '../../src/services/schedule.service';
 import { scheduleChoice } from '../../src/validators/schedule.validators';
 import { enqueueDeliveries } from '../../src/jobs/enqueueDeliveries';
 import { DeliveryWorker } from '../../src/workers/deliveryWorker';
-import { EmailDelivery } from '../../src/workers/emailDelivery';
+import { ExternalDelivery } from '../../src/workers/externalDelivery';
 import { LocalStorage } from '../../src/providers/storage/local.storage';
 import {
   accessToken,
@@ -82,7 +82,7 @@ test(
           `prisma/migrations/${folder}/migration.sql`,
           'utf8',
         ).replace(
-          /"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|delivery_intents|delivery_work|delivery_attempts|inbox_items|worker_heartbeats|message_events|email_deliveries|email_budgets|EmailState|MessageEventKind|WorkState|AttemptState|MessageStatus|RecipientType|AttachmentState|DeliveryChannel)"/g,
+          /"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|delivery_intents|delivery_work|delivery_attempts|inbox_items|worker_heartbeats|message_events|email_deliveries|email_budgets|waha_receipts|EmailState|MessageEventKind|WorkState|AttemptState|MessageStatus|RecipientType|AttachmentState|DeliveryChannel)"/g,
           `"${schema}"."$1"`,
         );
         for (const statement of sql.split(';').filter((s) => s.trim()))
@@ -119,7 +119,18 @@ test(
         store,
         () => now,
         undefined,
-        new EmailDelivery(db, access, 'synthetic@gmail.com', sender, () => now),
+        new ExternalDelivery(
+          db,
+          access,
+          {
+            EMAIL: {
+              senderKey: 'synthetic@gmail.com',
+              dailyLimit: access.dailyLimit,
+              send: sender,
+            },
+          },
+          () => now,
+        ),
       );
       async function scheduled(mixed = false) {
         const draft = await drafts.create(owner.id, {
@@ -168,7 +179,7 @@ test(
           assert.ok(claim);
           assert.equal(await worker.execute(claim), true);
           assert.equal(sends, 1);
-          const email = await db.emailDelivery.findFirstOrThrow({
+          const email = await db.externalDelivery.findFirstOrThrow({
             where: { intent: { messageId } },
           });
           intentId = email.intentId;
@@ -197,7 +208,7 @@ test(
       await scenario(
         'bearer access is due-only, scoped, escaped by client, private-file authorized and explicit-open idempotent',
         async () => {
-          const row = await db.emailDelivery.findUniqueOrThrow({
+          const row = await db.externalDelivery.findUniqueOrThrow({
             where: { intentId },
           });
           const bytes = Buffer.from('synthetic private attachment'),
@@ -221,7 +232,7 @@ test(
             where: { id: messageId },
             data: { scheduledFor: new Date('2020-01-01') },
           });
-          await db.emailDelivery.update({
+          await db.externalDelivery.update({
             where: { id: row.id },
             data: { expiresAt: new Date(Date.now() + 600000) },
           });
@@ -246,7 +257,7 @@ test(
           await request(app).get('/external/').expect(200);
           assert.equal(
             (
-              await db.emailDelivery.findUniqueOrThrow({
+              await db.externalDelivery.findUniqueOrThrow({
                 where: { id: row.id },
               })
             ).openedAt,
@@ -295,12 +306,12 @@ test(
             where: { id: messageId },
             data: { scheduledFor: new Date('2020-01-01') },
           });
-          await db.emailDelivery.update({
+          await db.externalDelivery.update({
             where: { id: row.id },
             data: { expiresAt: new Date('2020-01-01') },
           });
           await assert.rejects(() => external.file(token, handle));
-          await db.emailDelivery.update({
+          await db.externalDelivery.update({
             where: { id: row.id },
             data: { expiresAt: new Date(Date.now() + 600000) },
           });
@@ -412,7 +423,7 @@ test(
           const i = await db.deliveryIntent.findFirstOrThrow({
             where: { messageId: id },
           });
-          await db.emailDelivery.create({
+          await db.externalDelivery.create({
             data: { intentId: i.id, expiresAt: new Date('2035-01-08') },
           });
           const before = sends;
@@ -420,7 +431,7 @@ test(
           assert.equal(sends, before);
           assert.equal(
             (
-              await db.emailDelivery.findUniqueOrThrow({
+              await db.externalDelivery.findUniqueOrThrow({
                 where: { intentId: i.id },
               })
             ).state,
@@ -442,11 +453,16 @@ test(
             store,
             () => now,
             undefined,
-            new EmailDelivery(
+            new ExternalDelivery(
               db,
-              { ...access, dailyLimit: 1 },
-              'synthetic@gmail.com',
-              sender,
+              access,
+              {
+                EMAIL: {
+                  senderKey: 'synthetic@gmail.com',
+                  dailyLimit: 1,
+                  send: sender,
+                },
+              },
               () => now,
             ),
           );
@@ -455,7 +471,7 @@ test(
           assert.equal(sends, before);
           assert.equal(
             (
-              await db.emailDelivery.findFirstOrThrow({
+              await db.externalDelivery.findFirstOrThrow({
                 where: { intent: { messageId: id } },
               })
             ).errorCode,
@@ -476,7 +492,7 @@ test(
             const intent = await db.deliveryIntent.findFirstOrThrow({
               where: { messageId: id },
             });
-            await db.emailDelivery.create({
+            await db.externalDelivery.create({
               data: {
                 intentId: intent.id,
                 state,

@@ -1,4 +1,10 @@
-import { EmailDelivery } from './emailDelivery';
+import { WahaProvider } from '../providers/whatsapp/waha.provider';
+import { WahaReceiptService } from '../services/wahaReceipt.service';
+import type {
+  ExternalProvider,
+  ExternalChannel,
+} from '../providers/external.provider';
+import { ExternalDelivery } from './externalDelivery';
 import { createEmailSender } from '../providers/email/email.provider';
 import { setTimeout as delay } from 'node:timers/promises';
 import { randomUUID } from 'node:crypto';
@@ -73,18 +79,31 @@ async function main() {
     db = createDatabase(config.databaseUrl),
     log = createLogger(config.logLevel),
     id = randomUUID();
+  const providers: Partial<Record<ExternalChannel, ExternalProvider>> = {};
+  if (config.email && config.externalAccess)
+    providers.EMAIL = {
+      senderKey: config.email.user,
+      dailyLimit: config.externalAccess.dailyLimit,
+      send: createEmailSender(config.email),
+    };
+  if (config.whatsapp && config.externalAccess) {
+    const waha = new WahaProvider(config.whatsapp),
+      receipts = new WahaReceiptService(db.prisma!, config.whatsapp);
+    providers.WHATSAPP = {
+      senderKey: `whatsapp:${waha.scope}`,
+      scope: waha.scope,
+      dailyLimit: config.whatsapp.dailyLimit,
+      send: (to, link) => waha.send(to, link),
+      reconcile: (id) => receipts.reconcile(id),
+    };
+  }
   const worker = new DeliveryWorker(
     db.prisma!,
     new LocalStorage(config.storageRoot),
     undefined,
     undefined,
-    config.email && config.emailAccess
-      ? new EmailDelivery(
-          db.prisma!,
-          config.emailAccess,
-          config.email.user,
-          createEmailSender(config.email),
-        )
+    config.externalAccess
+      ? new ExternalDelivery(db.prisma!, config.externalAccess, providers)
       : undefined,
   );
   const stop = new AbortController();

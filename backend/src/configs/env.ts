@@ -67,6 +67,36 @@ const environmentSchema = z
       .regex(/^[0-9a-f]{64}$/)
       .optional(),
     EMAIL_PUBLIC_URL: origin.optional(),
+    CONTENT_PUBLIC_URL: origin.optional(),
+    WHATSAPP_MODE: z.enum(['disabled', 'waha']).default('disabled'),
+    WAHA_LOCAL_API_URL: origin.optional(),
+    WAHA_SERVER_API_URL: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      origin.optional(),
+    ),
+    WAHA_API_KEY: z.string().min(16).max(256).optional(),
+    WAHA_WEBHOOK_SECRET: z
+      .string()
+      .regex(/^[0-9a-f]{64}$/)
+      .optional(),
+    WAHA_CALLBACK_URL: z
+      .string()
+      .url()
+      .refine((v) => {
+        const u = new URL(v);
+        return (
+          ['http:', 'https:'].includes(u.protocol) &&
+          !u.username &&
+          !u.password &&
+          !u.search &&
+          !u.hash &&
+          u.pathname === '/webhooks/waha'
+        );
+      })
+      .optional(),
+    WAHA_ENGINE: z.enum(['NOWEB', 'WEBJS', 'GOWS']).default('GOWS'),
+    WAHA_SESSION: z.literal('default').default('default'),
+    WAHA_DAILY_LIMIT: z.coerce.number().int().min(1).max(500).default(20),
     EXTERNAL_ACCESS_SECRET: z
       .string()
       .regex(/^[0-9a-f]{64}$/)
@@ -126,7 +156,8 @@ const environmentSchema = z
 
 export interface AppConfig {
   email?: SmtpConfig;
-  emailAccess?: { publicUrl: string; secret: string; dailyLimit: number };
+  whatsapp?: WahaConfig;
+  externalAccess?: { publicUrl: string; secret: string; dailyLimit: number };
   nodeEnv: 'development' | 'test' | 'production';
   port: number;
   host: string;
@@ -144,6 +175,15 @@ export interface AppConfig {
   ffprobePath: string;
 }
 
+export interface WahaConfig {
+  engine: 'NOWEB' | 'WEBJS' | 'GOWS';
+  baseUrl: string;
+  apiKey: string;
+  webhookSecret: string;
+  session: 'default';
+  dailyLimit: number;
+  callbackUrl?: string;
+}
 export interface SmtpConfig {
   host: string;
   port: 465 | 587;
@@ -166,19 +206,57 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     );
   }
   const env = result.data;
+  const contentUrl = env.CONTENT_PUBLIC_URL ?? env.EMAIL_PUBLIC_URL;
+  const wahaUrl =
+    env.NODE_ENV === 'production'
+      ? env.WAHA_SERVER_API_URL
+      : env.WAHA_LOCAL_API_URL;
   if (
-    env.EMAIL_PUBLIC_URL &&
+    contentUrl &&
     env.NODE_ENV === 'production' &&
-    !env.EMAIL_PUBLIC_URL.startsWith('https://')
+    !contentUrl.startsWith('https://')
   )
     throw new EnvironmentError(
-      'Invalid environment settings: EMAIL_PUBLIC_URL',
+      'Invalid environment settings: CONTENT_PUBLIC_URL',
+    );
+  if (
+    env.WHATSAPP_MODE === 'waha' &&
+    (!wahaUrl || !env.WAHA_API_KEY || !env.WAHA_WEBHOOK_SECRET)
+  )
+    throw new EnvironmentError(
+      'Invalid environment settings: WAHA configuration',
+    );
+  if (
+    wahaUrl &&
+    !wahaUrl.startsWith('https://') &&
+    !['localhost', '127.0.0.1', '[::1]'].includes(new URL(wahaUrl).hostname)
+  )
+    throw new EnvironmentError('Invalid environment settings: WAHA API URL');
+  if (
+    env.NODE_ENV === 'production' &&
+    env.WAHA_CALLBACK_URL &&
+    !env.WAHA_CALLBACK_URL.startsWith('https://')
+  )
+    throw new EnvironmentError(
+      'Invalid environment settings: WAHA_CALLBACK_URL',
     );
   return {
-    emailAccess:
-      env.EMAIL_PUBLIC_URL && env.EXTERNAL_ACCESS_SECRET
+    whatsapp:
+      env.WHATSAPP_MODE === 'waha'
         ? {
-            publicUrl: new URL(env.EMAIL_PUBLIC_URL).origin,
+            engine: env.WAHA_ENGINE,
+            baseUrl: wahaUrl!,
+            callbackUrl: env.WAHA_CALLBACK_URL,
+            apiKey: env.WAHA_API_KEY!,
+            webhookSecret: env.WAHA_WEBHOOK_SECRET!,
+            session: env.WAHA_SESSION,
+            dailyLimit: env.WAHA_DAILY_LIMIT,
+          }
+        : undefined,
+    externalAccess:
+      contentUrl && env.EXTERNAL_ACCESS_SECRET
+        ? {
+            publicUrl: new URL(contentUrl).origin,
             secret: env.EXTERNAL_ACCESS_SECRET,
             dailyLimit: env.EMAIL_DAILY_LIMIT,
           }
