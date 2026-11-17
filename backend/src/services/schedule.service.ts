@@ -72,6 +72,7 @@ export class ScheduleService {
     private readonly db: PrismaClient,
     secret: string,
     private readonly now: () => Date = () => new Date(),
+    private readonly emailEnabled = false,
   ) {
     this.key = createHmac('sha256', secret)
       .update('dearly.schedule.review.v1')
@@ -133,17 +134,23 @@ export class ScheduleService {
         'Choose a delivery channel for every recipient exactly once.',
       );
     if (
-      deliveries.some(
-        (d) => d.channels.length !== 1 || d.channels[0] !== 'IN_APP',
-      ) ||
-      message.recipients.some(
-        (r) => !['SELF', 'USER', 'PHONE'].includes(r.type),
-      )
+      deliveries.some((d) => {
+        const recipient = message.recipients.find(
+          (r) => r.id === d.recipientId,
+        )!;
+        return (
+          d.channels.length !== 1 ||
+          (recipient.type === 'EMAIL'
+            ? !this.emailEnabled || d.channels[0] !== 'EMAIL'
+            : !['SELF', 'USER', 'PHONE'].includes(recipient.type) ||
+              d.channels[0] !== 'IN_APP')
+        );
+      })
     )
       throw new ApiError(
         400,
         'CHANNEL_UNAVAILABLE',
-        'Only in-app delivery to verified Dearly accounts is available. SMS, WhatsApp and email are not enabled.',
+        'Choose an available channel for every recipient.',
       );
     // A phone is resolved only to a verified current account. Confirmation binds
     // that account permanently; dispatch never redirects a recycled number.
@@ -169,23 +176,25 @@ export class ScheduleService {
       },
       select: { id: true, phone: true },
     });
-    const bindings = message.recipients.map((r) => {
-      const user =
-        r.type === 'PHONE'
-          ? users.find(
-              (u) =>
-                u.phone === r.phone &&
-                (message.status === 'DRAFT' || u.id === r.targetUserId),
-            )
-          : users.find((u) => u.id === r.targetUserId);
-      if (!user)
-        throw new ApiError(
-          400,
-          'INVALID_RECIPIENTS',
-          'An in-app recipient is unavailable. Update recipients in drafts.',
-        );
-      return { recipientId: r.id, userId: user.id };
-    });
+    const bindings = message.recipients
+      .filter((r) => r.type !== 'EMAIL')
+      .map((r) => {
+        const user =
+          r.type === 'PHONE'
+            ? users.find(
+                (u) =>
+                  u.phone === r.phone &&
+                  (message.status === 'DRAFT' || u.id === r.targetUserId),
+              )
+            : users.find((u) => u.id === r.targetUserId);
+        if (!user)
+          throw new ApiError(
+            400,
+            'INVALID_RECIPIENTS',
+            'An in-app recipient is unavailable. Update recipients in drafts.',
+          );
+        return { recipientId: r.id, userId: user.id };
+      });
     if (new Set(bindings.map((b) => b.userId)).size !== bindings.length)
       throw new ApiError(
         400,
@@ -386,10 +395,16 @@ export class ScheduleService {
           data: deliveries.map((d) => ({
             messageId: id,
             recipientId: d.recipientId,
-            channel: 'IN_APP',
+            channel: d.channels[0],
           })),
         });
-      await recordMessageEvent(tx,id,reschedule?'RESCHEDULED':'SCHEDULED','SCHEDULED',message.version+1);
+      await recordMessageEvent(
+        tx,
+        id,
+        reschedule ? 'RESCHEDULED' : 'SCHEDULED',
+        'SCHEDULED',
+        message.version + 1,
+      );
       return publicSchedule(
         await tx.draftMessage.findUniqueOrThrow({ where: { id }, include }),
       );
@@ -443,7 +458,13 @@ export class ScheduleService {
           version: { increment: 1 },
         },
       });
-      await recordMessageEvent(tx,id,'EDITED','SCHEDULED',message.version+1);
+      await recordMessageEvent(
+        tx,
+        id,
+        'EDITED',
+        'SCHEDULED',
+        message.version + 1,
+      );
       return publicSchedule(
         await tx.draftMessage.findUniqueOrThrow({ where: { id }, include }),
       );
@@ -465,7 +486,7 @@ export class ScheduleService {
           version: { increment: 1 },
         },
       });
-      await recordMessageEvent(tx,id,'CANCELED','CANCELED',m.version+1);
+      await recordMessageEvent(tx, id, 'CANCELED', 'CANCELED', m.version + 1);
       return publicSchedule(
         await tx.draftMessage.findUniqueOrThrow({ where: { id }, include }),
       );
@@ -496,7 +517,7 @@ export class ScheduleService {
           version: { increment: 1 },
         },
       });
-      await recordMessageEvent(tx,id,'REOPENED','DRAFT',m.version+1);
+      await recordMessageEvent(tx, id, 'REOPENED', 'DRAFT', m.version + 1);
       return publicDraft(
         await tx.draftMessage.findUniqueOrThrow({ where: { id }, include }),
       );

@@ -46,7 +46,19 @@ const cursor = z
   .strict();
 export const scheduleList = z
   .object({
-    status: z.enum(['SCHEDULED', 'CANCELED', 'DISPATCHING', 'DELIVERED', 'PARTIALLY_DELIVERED', 'FAILED']).default('SCHEDULED'),
+    status: z
+      .enum([
+        'SCHEDULED',
+        'CANCELED',
+        'DISPATCHING',
+        'DELIVERED',
+        'PARTIALLY_DELIVERED',
+        'SUBMITTED',
+        'PARTIALLY_SUBMITTED',
+        'DELIVERY_UNKNOWN',
+        'FAILED',
+      ])
+      .default('SCHEDULED'),
     limit: z
       .string()
       .regex(/^[1-9]\d?$/)

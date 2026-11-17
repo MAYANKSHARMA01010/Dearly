@@ -14,6 +14,9 @@ export const messageState = z.enum([
   'DISPATCHING',
   'DELIVERED',
   'PARTIALLY_DELIVERED',
+  'SUBMITTED',
+  'PARTIALLY_SUBMITTED',
+  'DELIVERY_UNKNOWN',
   'FAILED',
 ]);
 const reading = z.enum(['all', 'opened', 'unopened']);

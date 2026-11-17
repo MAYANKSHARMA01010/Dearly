@@ -1,3 +1,4 @@
+import type { EmailDelivery } from './emailDelivery';
 import { recordMessageEvent } from '../services/messageEvent.service';
 import { Prisma, type PrismaClient, type Attachment } from '@prisma/client';
 import { randomUUID, createHash } from 'node:crypto';
@@ -38,6 +39,7 @@ export class DeliveryWorker {
     private readonly store: ObjectStore,
     private readonly clock?: () => Date,
     private readonly inspect?: (files: Attachment[]) => Promise<void>,
+    private readonly email?: EmailDelivery,
   ) {}
   private now(tx: Prisma.TransactionClient | PrismaClient = this.db) {
     return this.clock ? Promise.resolve(this.clock()) : databaseTime(tx);
@@ -97,7 +99,11 @@ export class DeliveryWorker {
         if (!grabbed.count) return null;
         const message = await tx.draftMessage.findUniqueOrThrow({
           where: { id: c.messageId },
-          include: { deliveryIntents: { include: { inboxItem: true } } },
+          include: {
+            deliveryIntents: {
+              include: { inboxItem: true, emailDelivery: true },
+            },
+          },
         });
         const fresh =
           message.status === 'SCHEDULED' &&
@@ -142,22 +148,24 @@ export class DeliveryWorker {
           },
         });
         if (c.attempts >= c.attemptLimit) {
-          const delivered = message.deliveryIntents.filter(
-            (i) => i.inboxItem,
-          ).length;
+          const finalState = await this.terminal(tx, message.id);
           await tx.deliveryWork.update({
             where: { id: c.id },
             data: {
-              state: 'FAILED',
+              state: ['DELIVERED', 'SUBMITTED'].includes(finalState)
+                ? 'SUCCEEDED'
+                : 'FAILED',
               leaseToken: null,
               leaseExpiresAt: null,
-              lastError: 'ATTEMPTS_EXHAUSTED',
+              lastError: ['DELIVERED', 'SUBMITTED'].includes(finalState)
+                ? null
+                : 'ATTEMPTS_EXHAUSTED',
             },
           });
           await tx.draftMessage.update({
             where: { id: message.id },
             data: {
-              status: delivered ? 'PARTIALLY_DELIVERED' : 'FAILED',
+              status: finalState,
               ...(fresh && { version: { increment: 1 } }),
               scheduleRequestHash: null,
             },
@@ -165,8 +173,8 @@ export class DeliveryWorker {
           await recordMessageEvent(
             tx,
             message.id,
-            'FAILED',
-            delivered ? 'PARTIALLY_DELIVERED' : 'FAILED',
+            finalState,
+            finalState,
             message.version + (fresh ? 1 : 0),
           );
           return null;
@@ -191,7 +199,11 @@ export class DeliveryWorker {
           'DISPATCHING',
           message.version + (fresh ? 1 : 0),
         );
-        const intents = message.deliveryIntents.filter((i) => !i.inboxItem);
+        const intents = message.deliveryIntents.filter(
+          (i) =>
+            !i.inboxItem &&
+            (!i.emailDelivery || i.emailDelivery.state === 'RETRYABLE'),
+        );
         if (intents.length)
           await tx.deliveryAttempt.createMany({
             data: intents.map((i) => ({
@@ -240,10 +252,14 @@ export class DeliveryWorker {
     try {
       const snapshot = await this.db.draftMessage.findUnique({
         where: { id: claim.messageId },
-        include: { attachments: true },
+        include: { attachments: true, deliveryIntents: true },
       });
       if (!snapshot) return false;
       await this.verifyFiles(snapshot.attachments);
+      if (snapshot.deliveryIntents.some((i) => i.channel === 'EMAIL')) {
+        if (!this.email) throw new DeliveryFault('INTERNAL');
+        return await this.email.execute(claim);
+      }
       return await this.tx(async (tx) => {
         if (!(await lockMessage(tx, snapshot.ownerId, snapshot.id)))
           return false;
@@ -446,26 +462,56 @@ export class DeliveryWorker {
           work.scheduleVersion + 1,
         );
       if (exhausted) {
-        const delivered = await tx.inboxItem.count({
-          where: { messageId: claim.messageId },
-        });
+        const finalState = await this.terminal(tx, claim.messageId);
+        if (['DELIVERED', 'SUBMITTED'].includes(finalState))
+          await tx.deliveryWork.update({
+            where: { id: work.id },
+            data: { state: 'SUCCEEDED', lastError: null },
+          });
         await tx.draftMessage.updateMany({
           where: {
             id: claim.messageId,
             status: 'DISPATCHING',
             version: work.scheduleVersion + 1,
           },
-          data: { status: delivered ? 'PARTIALLY_DELIVERED' : 'FAILED' },
+          data: { status: finalState },
         });
         await recordMessageEvent(
           tx,
           claim.messageId,
-          'FAILED',
-          delivered ? 'PARTIALLY_DELIVERED' : 'FAILED',
+          finalState,
+          finalState,
           work.scheduleVersion + 1,
         );
       }
     });
+  }
+  private async terminal(tx: Prisma.TransactionClient, messageId: string) {
+    const intents = await tx.deliveryIntent.findMany({
+      where: { messageId },
+      include: { inboxItem: true, emailDelivery: true },
+    });
+    const delivered = intents.filter((i) => i.inboxItem).length,
+      accepted = intents.filter(
+        (i) => i.emailDelivery?.state === 'ACCEPTED',
+      ).length;
+    if (
+      intents.some((i) =>
+        ['SUBMITTING', 'UNKNOWN'].includes(i.emailDelivery?.state ?? ''),
+      )
+    ) {
+      await tx.emailDelivery.updateMany({
+        where: { intent: { messageId }, state: 'SUBMITTING' },
+        data: { state: 'UNKNOWN', errorCode: 'SMTP_UNCERTAIN' },
+      });
+      return 'DELIVERY_UNKNOWN' as const;
+    }
+    if (accepted)
+      return accepted + delivered === intents.length
+        ? ('SUBMITTED' as const)
+        : ('PARTIALLY_SUBMITTED' as const);
+    if (delivered === intents.length && delivered) return 'DELIVERED' as const;
+    return delivered ? ('PARTIALLY_DELIVERED' as const) : ('FAILED' as const);
   }
   async retry(id: string) {
     const w = await this.db.deliveryWork.findUnique({

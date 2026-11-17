@@ -1,3 +1,5 @@
+import { EmailDelivery } from './emailDelivery';
+import { createEmailSender } from '../providers/email/email.provider';
 import { setTimeout as delay } from 'node:timers/promises';
 import { randomUUID } from 'node:crypto';
 import { loadEnvironment } from '../configs/loadEnvironment';
@@ -20,6 +22,20 @@ export async function runWorkerLoop(
   pollMs = deliveryPolicy.pollMs,
   onError: () => void = () => {},
 ) {
+  let pulse: Promise<unknown> | undefined;
+  const timer = setInterval(
+    () => {
+      if (!signal.aborted && !pulse)
+        pulse = worker
+          .heartbeat()
+          .catch(onError)
+          .finally(() => {
+            pulse = undefined;
+          });
+    },
+    Math.min(pollMs, 30000),
+  );
+  timer.unref();
   try {
     while (!signal.aborted) {
       try {
@@ -43,6 +59,8 @@ export async function runWorkerLoop(
         }
     }
   } finally {
+    clearInterval(timer);
+    await pulse;
     try {
       await worker.heartbeat(true);
     } catch {
@@ -58,6 +76,16 @@ async function main() {
   const worker = new DeliveryWorker(
     db.prisma!,
     new LocalStorage(config.storageRoot),
+    undefined,
+    undefined,
+    config.email && config.emailAccess
+      ? new EmailDelivery(
+          db.prisma!,
+          config.emailAccess,
+          config.email.user,
+          createEmailSender(config.email),
+        )
+      : undefined,
   );
   const stop = new AbortController();
   let deadline: NodeJS.Timeout | undefined;

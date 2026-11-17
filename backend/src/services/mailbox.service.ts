@@ -12,6 +12,11 @@ const unavailable = () =>
   new ApiError(404, 'MESSAGE_NOT_FOUND', 'Message is unavailable.');
 const sent: Prisma.DraftMessageWhereInput = {
   OR: [
+    {
+      deliveryIntents: {
+        some: { channel: 'EMAIL', emailDelivery: { state: 'ACCEPTED' } },
+      },
+    },
     { inboxItems: { some: { intent: { channel: 'IN_APP' } } } },
     {
       deliveryIntents: {
@@ -58,7 +63,11 @@ export class MailboxService {
           sent: sentCount,
           received,
           drafts: count('DRAFT'),
-          failed: count('FAILED') + count('PARTIALLY_DELIVERED'),
+          failed:
+            count('FAILED') +
+            count('PARTIALLY_DELIVERED') +
+            count('PARTIALLY_SUBMITTED') +
+            count('DELIVERY_UNKNOWN'),
         },
         unopened,
       };
@@ -139,7 +148,16 @@ export class MailboxService {
           : input.box === 'drafts'
             ? { status: 'DRAFT' }
             : input.box === 'failed'
-              ? { status: { in: ['FAILED', 'PARTIALLY_DELIVERED'] } }
+              ? {
+                  status: {
+                    in: [
+                      'FAILED',
+                      'PARTIALLY_DELIVERED',
+                      'PARTIALLY_SUBMITTED',
+                      'DELIVERY_UNKNOWN',
+                    ],
+                  },
+                }
               : input.box === 'sent'
                 ? sent
                 : {};
@@ -259,6 +277,7 @@ export class MailboxService {
           attachments: { where: { state: 'READY' }, orderBy: { id: 'asc' } },
           deliveryIntents: {
             include: {
+              emailDelivery: true,
               inboxItem: { select: { deliveredAt: true, openedAt: true } },
               attempts: {
                 orderBy: [{ startedAt: 'desc' }, { id: 'desc' }],
@@ -289,6 +308,33 @@ export class MailboxService {
             supported = i.channel === 'IN_APP';
           const confirmed =
             supported && (Boolean(i.inboxItem) || a?.state === 'SUCCEEDED');
+          if (i.channel === 'EMAIL') {
+            const e = i.emailDelivery;
+            return {
+              recipientId: i.recipientId,
+              channel: 'EMAIL',
+              intentId: i.id,
+              outcome: !e
+                ? 'PENDING'
+                : e.state === 'ACCEPTED'
+                  ? 'SUBMITTED'
+                  : e.state === 'SUBMITTING'
+                    ? 'DISPATCHING'
+                    : e.state === 'UNKNOWN'
+                      ? 'UNKNOWN'
+                      : e.state === 'RETRYABLE' &&
+                        message.status === 'DISPATCHING'
+                      ? 'RETRYING'
+                      : 'FAILED',
+              submittedAt: e?.submittedAt ?? null,
+              deliveredAt: null,
+              openedAt: e?.openedAt ?? null,
+              expiresAt: e?.expiresAt ?? null,
+              revokedAt: e?.revokedAt ?? null,
+              errorCode: e?.errorCode ?? null,
+              attempt: null,
+            };
+          }
           return {
             recipientId: i.recipientId,
             channel: i.channel,

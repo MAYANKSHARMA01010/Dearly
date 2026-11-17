@@ -14,6 +14,8 @@ export function createScheduleRouter(
   prisma?: PrismaClient,
   auth?: AuthService,
   secret?: string,
+  emailEnabled = false,
+  emailLocalOnly = false,
 ) {
   const router = Router();
   router.use((_r, res, next) => {
@@ -33,8 +35,29 @@ export function createScheduleRouter(
     );
     return router;
   }
-  const c = scheduleController(new ScheduleService(prisma, secret));
-  router.get('/capabilities', (req,res,next) => { void workerStatus(prisma).then(worker => sendSuccess(res,{...scheduleCapabilities,worker},req.requestId)).catch(next); });
+  const c = scheduleController(
+    new ScheduleService(prisma, secret, undefined, emailEnabled),
+  );
+  router.get('/capabilities', (req, res, next) => {
+    void workerStatus(prisma)
+      .then((worker) =>
+        sendSuccess(
+          res,
+          {
+            ...scheduleCapabilities,
+            emailLocalOnly,
+            channels: scheduleCapabilities.channels.map((c) =>
+              c.channel === 'EMAIL'
+                ? { channel: 'EMAIL', available: emailEnabled, mode: 'SMTP' }
+                : c,
+            ),
+            worker,
+          },
+          req.requestId,
+        ),
+      )
+      .catch(next);
+  });
   router.get('/', c.list);
   router.get('/:id', c.read);
   router.patch('/:id', c.edit);
