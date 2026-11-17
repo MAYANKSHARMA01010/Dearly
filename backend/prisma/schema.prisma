@@ -197,6 +197,7 @@ model DeliveryIntent {
   recipientId String
   recipient DraftRecipient @relation(fields: [recipientId, messageId], references: [id, messageId], onDelete: Cascade)
   channel DeliveryChannel
+  consentAt DateTime? @db.Timestamptz(3)
   attempts DeliveryAttempt[]
   emailDelivery EmailDelivery?
   inboxItem InboxItem?
@@ -288,6 +289,10 @@ model WorkerHeartbeat {
 
 enum MessageEventKind {
   EMAIL_LINK_REVOKED
+  WHATSAPP_LINK_REVOKED
+  WHATSAPP_NOTIFICATION_DELIVERED
+  WHATSAPP_NOTIFICATION_READ
+  WHATSAPP_NOTIFICATION_FAILED
   BASELINE
   CREATED
   EDITED
@@ -336,6 +341,11 @@ model EmailDelivery {
   intent DeliveryIntent @relation(fields: [intentId], references: [id], onDelete: Cascade)
   state EmailState @default(SUBMITTING)
   providerMessageId String? @db.VarChar(255)
+  providerScope String? @db.VarChar(64)
+  notificationAck Int?
+  notificationDeliveredAt DateTime? @db.Timestamptz(3)
+  notificationReadAt DateTime? @db.Timestamptz(3)
+  notificationErrorAt DateTime? @db.Timestamptz(3)
   errorCode String? @db.VarChar(40)
   submittedAt DateTime? @db.Timestamptz(3)
   openedAt DateTime? @db.Timestamptz(3)
@@ -343,6 +353,7 @@ model EmailDelivery {
   revokedAt DateTime? @db.Timestamptz(3)
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt
+  @@unique([providerScope,providerMessageId])
   @@map("email_deliveries")
 }
 
@@ -351,4 +362,21 @@ model EmailBudget {
   count Int @default(0)
   resetsAt DateTime @db.Timestamptz(3)
   @@map("email_budgets")
+}
+
+
+model WahaReceipt {
+  id String @id @default(uuid())
+  scope String @db.VarChar(64)
+  eventId String @db.VarChar(128)
+  providerMessageId String @db.VarChar(255)
+  destination String? @db.VarChar(40)
+  ack Int
+  observedAt DateTime @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  appliedAt DateTime? @db.Timestamptz(3)
+  @@unique([scope,eventId])
+  @@index([scope,providerMessageId])
+  @@index([expiresAt])
+  @@map("waha_receipts")
 }
