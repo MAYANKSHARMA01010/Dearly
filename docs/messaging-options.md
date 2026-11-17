@@ -166,9 +166,9 @@ Fill this in when you review the options; leave unselected choices open.
 | WhatsApp | WAHA free edition; no paid alternative proposed | Pending |
 | SMS | SMSGate; InfiniReach free plan only as an alternative | Pending |
 | Email | Nodemailer SMTP | Gmail SMTP selected by the user on 17 November 2026; dedicated sending identity and app password stored only in private backend configuration |
-| External content access | Notification with secure link; define recipient proof and expiry | Pending |
-| Missing credentials | Explicit unavailable/simulated status; production validation | Pending |
-| Quota/timeout handling | Visible deferred/uncertain outcomes, bounded retries | Pending |
+| External content access | Revocable bearer links | Selected for Phase 12: fragment proof, explicit opening, seven-day expiry and owner revocation; forwarding grants access |
+| Missing credentials | Explicit unavailable status | SMTP mode requires credentials; email scheduling also requires public URL and a separate access key; no silent capture fallback |
+| Quota/timeout handling | Durable budget and safe retries | Rolling sender budget; explicit temporary rejection retries; ambiguous submission stops without automatic resend |
 
 Do not copy ShopSmart environment files, credentials, phone numbers, WhatsApp
 session data, branding, or order-specific templates into Dearly.
@@ -196,3 +196,8 @@ SMTP acceptance must never be labeled delivery confirmation. Authentication chec
 does not authorize a live test: designate a consenting recipient before live sends.
 See [SMTP transport documentation](https://nodemailer.com/smtp) and
 [Google app-password requirements](https://support.google.com/accounts/answer/185833).
+
+Phase 12 now implements this integration; see [email contracts](email-delivery.md).
+The earlier setup checkpoint above records the state at that time. Real inbox
+acceptance is pending the user’s own test; email scheduling is now available when
+all private SMTP/access settings exist.

@@ -48,7 +48,7 @@ and a simulated delivery does not complete a real channel integration.
 | 9 | Schedule, reschedule, and cancellation | 7–8 | Complete — saved plans; automatic delivery not enabled |
 | 10 | Durable workers and in-app delivery | 9 | Complete — native UI check unavailable |
 | 11 | Dashboard, mailboxes, message details, and tracking | 10 | Complete |
-| 12 | Email delivery and secure external content access | 10–11 | In progress — Gmail configured and authentication verified; delivery/access implementation pending |
+| 12 | Email delivery and secure external content access | 10–11 | Implementation ready — automated checks passed; user-run real inbox test pending |
 | 13 | WhatsApp message delivery | 10–12 | Not started |
 | 14 | SMS message delivery | 10–12 | Not started |
 | 15 | Notifications, preferences, and account settings | 11–14 | Not started |
@@ -336,13 +336,26 @@ detail/history/actions and targeted access/status tests.
 
 ## Phase 12 — Email and secure external message access
 
-**Checkpoint — 17 November 2026:** User selected Gmail SMTP. Private credentials
-are configured, TLS/authentication verification passed without sending an email,
-and `email:verify` provides a repeatable sanitized connection check. Backend lint,
-typecheck, 51 tests and build passed. Secure recipient access, templates, durable
-external submission handling, mobile email choices and authorized real-recipient
-acceptance checks remain pending. Email scheduling is still unavailable. This
-checkpoint does not mark Phase 12 complete.
+**Implementation checkpoint — 17 November 2026:** Gmail SMTP delivery, secure
+external recipient access, private attachment loading, owner revocation, mobile
+email review and honest per-recipient statuses are implemented. Applied additive
+email/revocation migrations without resetting existing data. Durable sender budgets,
+bounded safe retries and uncertain-submission stop rules are in place. See
+[email contracts and test instructions](email-delivery.md).
+
+**Verified:** Backend lint/typecheck/build and 57 standard tests; frontend
+lint/typecheck and 73 tests; backend integration suite 66 entries (59 scenarios,
+7 parent suites); mobile integration 3 scenarios; Expo Doctor 20/20 and iOS export.
+Browser functional check covered explicit opening, literal text rendering, private
+file loading, token removal from history and revoked-link rejection. Synthetic
+browser data was removed. Simulator window access was unavailable, so this phase
+has no new native-device verification.
+
+**Acceptance pending by user choice:** The user explicitly chose to perform the
+real email test themselves. No live email was submitted. Current links are local
+`localhost:8080` links and work on this Mac only; no hosted URL was configured.
+Phase 12 remains awaiting that real-recipient acceptance check; capture/mocked SMTP
+checks do not count as proof of delivery. Phases 13–16 have not started.
 
 **Build**
 

@@ -174,8 +174,8 @@ contracts and verification. No public media URLs or paid storage service is enab
 
 Phase 9 adds owner-only `/messages/schedules` APIs for timezone-aware review,
 confirmation, text edits, rescheduling, cancellation and return to drafts. Apply
-the additive migration with `npm run prisma:deploy`. Only in-app choices are accepted. Phase 10 delivers through a separate durable
-worker; external providers remain unavailable. See [schedule contracts](../docs/scheduling.md).
+the additive migration with `npm run prisma:deploy`. In-app choices and configured EMAIL destinations are accepted. Phase 10/12 deliver through a separate durable
+worker; WhatsApp and SMS remain unavailable. See [schedule contracts](../docs/scheduling.md).
 
 ## In-app delivery worker
 
@@ -195,3 +195,14 @@ history APIs and explicit `POST /messages/inbox/:id/open`. Apply the additive
 tracking migration and restart the built delivery worker. Existing records get a
 truthful tracking baseline; earlier history is not invented. GETs never mark a
 message opened. See [mailbox contracts](../docs/mailboxes.md).
+
+## Gmail SMTP and recipient links
+
+Phase 12 adds configured EMAIL scheduling and a minimal private browser viewer.
+Configure SMTP and external-access settings using `.env.example`; app passwords
+and the separate random signing key stay in private `.env`. Run `npm run email:verify`
+for a connection/authentication-only check: it never submits mail. Rebuild/restart
+the separate delivery worker after migrations. Gmail acceptance is submission,
+not confirmed inbox delivery, and uncertain attempts are never automatically resent.
+Local recipient links work only on this Mac; set a reachable HTTPS origin when hosted.
+See [email contracts](../docs/email-delivery.md) for endpoints, limits and manual testing.

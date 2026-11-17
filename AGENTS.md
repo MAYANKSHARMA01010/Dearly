@@ -61,7 +61,12 @@ within a phase does not authorize the entire phase.
   and never bypass the DISPATCHING edit/cancel boundary. Existing paused plans
   require a new explicit review; do not bulk-enable them. Inbox/attachment access
   requires a committed recipient-owned delivery. PHONE bindings must never redirect
-  a recycled number to a replacement account. No external provider sends are enabled.
+  a recycled number to a replacement account. Phase 12 enables explicitly reviewed
+  EMAIL destinations through configured Gmail SMTP; WhatsApp and SMS remain disabled.
+  Follow [email contracts](docs/email-delivery.md): durable submission markers,
+  no automatic resending after uncertainty, private expiring/revocable bearer links,
+  and acceptance distinct from confirmed delivery. The user will perform the live
+  email acceptance test; automated tests must not send real email.
 - Phase 11 mailbox rules are in [mailbox contracts](docs/mailboxes.md). Keep counts
   and list/detail projections scoped to the current owner or delivered inbox user.
   Preserve partial outcomes and explicit opened choices; GET/refresh/media viewing

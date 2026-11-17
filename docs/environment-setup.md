@@ -68,3 +68,21 @@ LAN/public address while it is enabled or expose it through a proxy/tunnel. Use
 iOS Simulator localhost or local adb reverse for development; physical-device/public
 login requires a real verified OTP adapter and subsequent configuration review.
 JWT environment placeholders are obsolete; sessions use opaque database-backed tokens.
+
+## Phase 12 email configuration
+
+Gmail SMTP credentials are private backend values. `EMAIL_PUBLIC_URL` currently
+uses `http://localhost:8080`; the future hosted frontend/API URL remains empty.
+`EXTERNAL_ACCESS_SECRET` is a separate persistent random key. Changing it invalidates
+all existing email links. `EMAIL_DAILY_LIMIT=100` reserves a conservative rolling
+24-hour budget; external sending from the same Gmail account shares Google's
+actual limits and is not measured by Dearly. See [email setup](email-delivery.md).
+
+For future migrations, use Neon's unpooled connection through a private migration
+process environment, preserving SSL settings. Application runtime keeps the pooled
+`DATABASE_URL`. This phase encountered a stale pooled advisory lock. After verifying
+no migration command was running, only the pending additive revocation migration
+was applied over a direct connection with a one-process advisory-lock bypass; no
+sessions were terminated and no bypass was saved in the app environment. Do not
+use that bypass for concurrent migrations. See [Neon/Prisma connection guidance](https://neon.com/blog/prisma-dx-improvements)
+and [Prisma advisory locking](https://docs.prisma.io/docs/orm/v6/reference/environment-variables-reference).

@@ -138,3 +138,14 @@ Authentication is still development-only. Email, WhatsApp and SMS delivery,
 external content links, notifications and public release work remain later phases.
 See [worker operations](delivery-workers.md), [scheduling](scheduling.md) and the
 [phase plan](implementation-phases.md) for exact completion evidence and native limits.
+
+## Phase 12 extension
+
+Configured EMAIL destinations now use the Gmail SMTP worker and revocable external
+access. Earlier in-app-only statements describe the Phase 9–11 baseline. Email
+`SUBMITTED` means SMTP acceptance; `PARTIALLY_SUBMITTED` preserves mixed failures,
+and `DELIVERY_UNKNOWN` stops automatic resending after ambiguity. Received still
+means an account-owned in-app inbox item; email never silently becomes account
+login or a Dearly inbox item. Sender Sent includes accepted email submissions;
+per-recipient detail keeps submission and opening separate from delivery proof.
+See [email contracts](email-delivery.md) for current access and retry rules.

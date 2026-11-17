@@ -128,3 +128,10 @@ Scaffolding uses placeholders only where no implementation is needed. Phase 4 ad
 real auth controllers, validators, services, a provider contract and a migration;
 no real provider credentials or message sends are introduced. Add implementation files and
 feature-specific subdivisions when the corresponding work begins.
+
+Phase 12 adds `providers/email/` for SMTP and escaped notification templates,
+`workers/emailDelivery.ts` for durable submission handling, and external-access
+routes/controllers/service for fragment bearer proofs and scoped private files.
+`views/externalViewer.ts` contains the minimal browser companion (no native app
+required). Email deliveries and sender budgets live in PostgreSQL. See
+[email delivery](email-delivery.md); secrets remain in backend/.env only.
