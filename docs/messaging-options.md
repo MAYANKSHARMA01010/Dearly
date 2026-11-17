@@ -165,10 +165,34 @@ Fill this in when you review the options; leave unselected choices open.
 | OTP channel/provider | Development adapter first; SMSGate or WAHA free edition for real verification | Pending |
 | WhatsApp | WAHA free edition; no paid alternative proposed | Pending |
 | SMS | SMSGate; InfiniReach free plan only as an alternative | Pending |
-| Email | Nodemailer + Brevo free SMTP; Gmail/Resend free alternatives | Pending |
+| Email | Nodemailer SMTP | Gmail SMTP selected by the user on 17 November 2026; dedicated sending identity and app password stored only in private backend configuration |
 | External content access | Notification with secure link; define recipient proof and expiry | Pending |
 | Missing credentials | Explicit unavailable/simulated status; production validation | Pending |
 | Quota/timeout handling | Visible deferred/uncertain outcomes, bounded retries | Pending |
 
 Do not copy ShopSmart environment files, credentials, phone numbers, WhatsApp
 session data, branding, or order-specific templates into Dearly.
+
+### Gmail setup checkpoint — 17 November 2026
+
+Gmail is selected; Brevo/Resend remain alternatives, not active integrations.
+The configured account passed a TLS/authentication-only SMTP verification using
+`npm run email:verify` in `backend/`. This command never submits a message and
+prints only a sanitized result. It does not prove inbox delivery or complete
+Phase 12. No live email has been sent.
+
+Private settings use `EMAIL_MODE=smtp`, `SMTP_HOST=smtp.gmail.com`, port `465`,
+and matching `SMTP_USER`/`SMTP_FROM`. The app password is in ignored
+`backend/.env` with owner-only permissions; no credentials belong in examples.
+Port `587` is supported with mandatory STARTTLS. Both configurations require
+certificate validation. SMTP debug logging and URL/filesystem content fetching
+are disabled. Missing settings fail validation rather than falling back to capture.
+The transport remains separate from the delivery worker; email capabilities stay
+unavailable until secure access and durable submission handling are implemented.
+
+Gmail's documented limits are not a guaranteed application quota. Use a conservative
+durable sending budget during worker integration and report throttling honestly.
+SMTP acceptance must never be labeled delivery confirmation. Authentication checking
+does not authorize a live test: designate a consenting recipient before live sends.
+See [SMTP transport documentation](https://nodemailer.com/smtp) and
+[Google app-password requirements](https://support.google.com/accounts/answer/185833).
