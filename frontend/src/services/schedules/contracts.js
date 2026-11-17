@@ -2,11 +2,11 @@ import { ApiError } from '../../api/client.js';
 import { parseDraft, uuid } from '../drafts/contracts.js';
 import { parseAttachment } from '../attachments/contracts.js';
 /** @typedef {import('../drafts/contracts.js').Recipient & {id:string}} ScheduleRecipient */
-/** @typedef {{recipientId:string,channel:'IN_APP'}} Delivery */
+/** @typedef {{recipientId:string,channel:'IN_APP'|'EMAIL'}} Delivery */
 /** @typedef {{recipientId:string,channels:string[]}} DeliveryChoice */
 /** @typedef {{version:number,localDateTime:string,timezone:string,deliveries?:DeliveryChoice[]}} Choice */
-/** @typedef {Omit<import('../drafts/contracts.js').Draft,'recipients'> & {status:'DRAFT'|'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'FAILED',recipients:ScheduleRecipient[],scheduledFor:string|null,timezone:string|null,localDateTime:string|null,canceledAt:string|null,attachments:import('../attachments/contracts.js').Attachment[],deliveries:Delivery[],backgroundDelivery:true,deliveryEnabled:boolean}} Message */
-/** @typedef {{id:string,status:'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'FAILED',version:number,subject:string|null,scheduledFor:string,timezone:string,localDateTime:string,canceledAt:string|null,deliveryEnabled:boolean}} Summary */
+/** @typedef {Omit<import('../drafts/contracts.js').Draft,'recipients'> & {status:'DRAFT'|'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'SUBMITTED'|'PARTIALLY_SUBMITTED'|'DELIVERY_UNKNOWN'|'FAILED',recipients:ScheduleRecipient[],scheduledFor:string|null,timezone:string|null,localDateTime:string|null,canceledAt:string|null,attachments:import('../attachments/contracts.js').Attachment[],deliveries:Delivery[],backgroundDelivery:true,deliveryEnabled:boolean}} Message */
+/** @typedef {{id:string,status:'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'SUBMITTED'|'PARTIALLY_SUBMITTED'|'DELIVERY_UNKNOWN'|'FAILED',version:number,subject:string|null,scheduledFor:string,timezone:string,localDateTime:string,canceledAt:string|null,deliveryEnabled:boolean}} Summary */
 /** @typedef {{message:Message,resolved:{scheduledFor:string,timezone:string,localDateTime:string,offset:string},deliveries:DeliveryChoice[],reviewToken:string,expiresAt:string,backgroundDelivery:true}} Review */
 const invalid = () =>
   new ApiError(
@@ -43,6 +43,9 @@ export function parseScheduleSummary(value) {
       'DISPATCHING',
       'DELIVERED',
       'PARTIALLY_DELIVERED',
+      'SUBMITTED',
+      'PARTIALLY_SUBMITTED',
+      'DELIVERY_UNKNOWN',
       'FAILED',
     ].includes(String(r.status)) ||
     typeof r.deliveryEnabled !== 'boolean' ||
@@ -80,6 +83,9 @@ export function parseScheduleMessage(value) {
       'DISPATCHING',
       'DELIVERED',
       'PARTIALLY_DELIVERED',
+      'SUBMITTED',
+      'PARTIALLY_SUBMITTED',
+      'DELIVERY_UNKNOWN',
       'FAILED',
     ].includes(String(r.status)) ||
     r.backgroundDelivery !== true ||
@@ -106,7 +112,9 @@ export function parseScheduleMessage(value) {
     if (
       typeof d.recipientId !== 'string' ||
       !recipients.some((r) => r.id === d.recipientId) ||
-      d.channel !== 'IN_APP'
+      !['IN_APP', 'EMAIL'].includes(String(d.channel)) ||
+      (recipients.find((r) => r.id === d.recipientId)?.type === 'EMAIL') !==
+        (d.channel === 'EMAIL')
     )
       throw invalid();
     return /** @type {Delivery} */ ({
@@ -174,10 +182,13 @@ export function parseScheduleReview(value) {
       !message.recipients.some((r) => r.id === d.recipientId) ||
       !Array.isArray(d.channels) ||
       d.channels.length !== 1 ||
-      d.channels[0] !== 'IN_APP'
+      !['IN_APP', 'EMAIL'].includes(String(d.channels[0])) ||
+      (message.recipients.find((r) => r.id === d.recipientId)?.type ===
+        'EMAIL') !==
+        (d.channels[0] === 'EMAIL')
     )
       throw invalid();
-    return { recipientId: d.recipientId, channels: ['IN_APP'] };
+    return { recipientId: d.recipientId, channels: d.channels };
   });
   if (new Set(deliveries.map((d) => d.recipientId)).size !== deliveries.length)
     throw invalid();
@@ -241,6 +252,9 @@ export function scheduleStatusLabel(status) {
     DISPATCHING: 'Dispatch started',
     DELIVERED: 'Delivered in app',
     PARTIALLY_DELIVERED: 'Partially delivered',
+    SUBMITTED: 'Submitted to email service',
+    PARTIALLY_SUBMITTED: 'Partially submitted',
+    DELIVERY_UNKNOWN: 'Email result uncertain',
     FAILED: 'Delivery failed',
   });
   return labels[status] ?? 'Unknown state';

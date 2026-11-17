@@ -170,7 +170,8 @@ export default function ScheduleDetailScreen({ id }) {
           enable delivery.
         </Text>
       ) : null}
-      {message.status === 'SCHEDULED' && message.deliveryEnabled &&
+      {message.status === 'SCHEDULED' &&
+      message.deliveryEnabled &&
       Date.parse(message.scheduledFor ?? '') < checkedAt ? (
         <Text accessibilityRole="alert">
           The scheduled time has passed. This message is waiting to be claimed.
@@ -241,9 +242,13 @@ export default function ScheduleDetailScreen({ id }) {
           {r.label ||
             (r.type === 'SELF'
               ? 'Myself'
-              : ((r.type === 'PHONE' ? r.phone : r.userId) ??
-                'Unavailable account'))}{' '}
-          · In-app{r.unavailable ? ' · Account unavailable' : ''}
+              : ((r.type === 'PHONE'
+                  ? r.phone
+                  : r.type === 'EMAIL'
+                    ? r.email
+                    : r.userId) ?? 'Unavailable account'))}{' '}
+          · {r.type === 'EMAIL' ? 'Email' : 'In-app'}
+          {r.unavailable ? ' · Account unavailable' : ''}
         </Text>
       ))}
       {message.status === 'SCHEDULED' ? (

@@ -35,6 +35,8 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
     [time, setTime] = useState(''),
     [timezone, setTimezone] = useState(user?.timezone ?? 'UTC');
   const [selected, setSelected] = useState(/** @type {string[]} */ ([]));
+  const [emailAvailable, setEmailAvailable] = useState(false),
+    [emailLocalOnly, setEmailLocalOnly] = useState(false);
   const [workerOnline, setWorkerOnline] = useState(false);
   const [available, setAvailable] = useState(false),
     [loaded, setLoaded] = useState(false),
@@ -71,11 +73,14 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
             message.recipients
               .filter(
                 (r) =>
-                  ['SELF', 'USER', 'PHONE'].includes(r.type) && !r.unavailable,
+                  ['SELF', 'USER', 'PHONE', 'EMAIL'].includes(r.type) &&
+                  !r.unavailable,
               )
               .map((r) => r.id),
           );
           setAvailable(capabilities.inAppAvailable);
+          setEmailAvailable(capabilities.emailAvailable);
+          setEmailLocalOnly(capabilities.emailLocalOnly);
           setWorkerOnline(capabilities.workerOnline);
           setReview(null);
           setTouched(false);
@@ -107,7 +112,10 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         ...(!reschedule && {
           deliveries: source.recipients
             .filter((r) => selected.includes(r.id))
-            .map((r) => ({ recipientId: r.id, channels: ['IN_APP'] })),
+            .map((r) => ({
+              recipientId: r.id,
+              channels: [r.type === 'EMAIL' ? 'EMAIL' : 'IN_APP'],
+            })),
         }),
       };
       const data = await api.preview(id, choice, reschedule, signal);
@@ -169,7 +177,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         {reschedule ? 'Choose a new time' : 'Plan a delivery time'}
       </Text>
       <Text>
-        Confirming enables delivery to Dearly inboxes at or after the chosen
+        Confirming enables the selected delivery channels at or after the chosen
         time. Delivery continues when this app is closed.
       </Text>
       {!workerOnline ? (
@@ -232,7 +240,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
       </Text>
       {source.recipients.map((recipient) => {
         const supported =
-          ['SELF', 'USER', 'PHONE'].includes(recipient.type) &&
+          ['SELF', 'USER', 'PHONE', 'EMAIL'].includes(recipient.type) &&
           !recipient.unavailable;
         const label =
           recipient.label ||
@@ -246,9 +254,14 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         return (
           <View key={recipient.id} style={{ gap: spacing.sm }}>
             <Checkbox.Item
-              label={`${label} · In-app`}
+              label={`${label} · ${recipient.type === 'EMAIL' ? 'Email' : 'In-app'}`}
               status={selected.includes(recipient.id) ? 'checked' : 'unchecked'}
-              disabled={action.busy || reschedule || !supported || !available}
+              disabled={
+                action.busy ||
+                reschedule ||
+                !supported ||
+                !(recipient.type === 'EMAIL' ? emailAvailable : available)
+              }
               onPress={() => {
                 changed();
                 setSelected((old) =>
@@ -260,8 +273,8 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
             />
             {!supported ? (
               <Text style={{ color: theme.colors.error }}>
-                This recipient cannot use in-app delivery. Update recipients in
-                drafts.
+                This recipient cannot use the selected delivery channel. Update
+                recipients in drafts.
               </Text>
             ) : null}
           </View>
@@ -269,15 +282,28 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
       })}
       <Text>
         Phone recipients need an existing verified Dearly account. In-app does
-        not send an SMS or WhatsApp message. SMS, WhatsApp and email delivery
-        are unavailable. Recipient and attachment changes require returning to
+        not send an SMS or WhatsApp message. SMS and WhatsApp are unavailable.
+        Email recipients receive a private link that expires in seven days;
+        anyone with the link can open it. Gmail acceptance does not confirm
+        inbox delivery. Recipient and attachment changes require returning to
         drafts and reviewing a new schedule.
       </Text>
+      {source.recipients.some((r) => r.type === 'EMAIL') ? (
+        <Text accessibilityRole="alert">
+          {!emailAvailable
+            ? 'Email is not configured on the server.'
+            : emailLocalOnly
+              ? 'Email links currently open only on this Mac. Use a hosted HTTPS address before sending links to other devices.'
+              : 'You can revoke email links from message details.'}
+        </Text>
+      ) : null}
       <AppButton
         mode="contained"
         disabled={
           action.busy ||
-          !available ||
+          source.recipients.some((r) =>
+            r.type === 'EMAIL' ? !emailAvailable : !available,
+          ) ||
           !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
           !/^\d{2}:\d{2}$/.test(time)
         }
@@ -314,7 +340,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
           <Text>
             Occasion: {review.data.message.occasion || 'None'} ·{' '}
             {review.data.message.attachments.length} attachments ·{' '}
-            {review.data.deliveries.length} in-app recipients
+            {review.data.deliveries.length} recipients
           </Text>
           {review.data.message.recipients.map((recipient) => (
             <Text key={recipient.id}>
@@ -323,8 +349,10 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
                   ? 'Myself'
                   : recipient.type === 'PHONE'
                     ? recipient.phone
-                    : `Dearly account ${recipient.userId}`)}{' '}
-              · In-app
+                    : recipient.type === 'EMAIL'
+                      ? recipient.email
+                      : `Dearly account ${recipient.userId}`)}{' '}
+              · {recipient.type === 'EMAIL' ? 'Email' : 'In-app'}
             </Text>
           ))}
           {review.data.message.attachments.map((file) => (
@@ -333,7 +361,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
           <Text>
             Review valid until{' '}
             {new Date(review.data.expiresAt).toLocaleTimeString()}. Confirming
-            enables in-app delivery.
+            enables the reviewed delivery channels.
           </Text>
           <AppButton
             mode="contained"

@@ -17,13 +17,16 @@ export const states = [
   'DISPATCHING',
   'DELIVERED',
   'PARTIALLY_DELIVERED',
+  'SUBMITTED',
+  'PARTIALLY_SUBMITTED',
+  'DELIVERY_UNKNOWN',
   'FAILED',
 ];
 /** @typedef {{id:string,role:'owned'|'received',subject:string|null,status:string,timestamp:string,scheduledFor:string|null,timezone:string|null,recipientCount:number|null,deliveryEnabled:boolean|null}} Summary */
 /** @typedef {{asOf:string,items:Summary[],nextCursor:string|null}} Page */
 /** @typedef {{id:string,kind:string,state:string,version:number,occurredAt:string}} Event */
 /** @typedef {{items:Event[],nextCursor:string|null}} History */
-/** @typedef {{recipientId:string,channel:string,outcome:string,deliveredAt:string|null,openedAt:string|null,attempt:{state:string,number:number,errorCode:string|null,startedAt:string,finishedAt:string|null}|null}} Delivery */
+/** @typedef {{recipientId:string,channel:string,outcome:string,intentId?:string,submittedAt?:string|null,expiresAt?:string|null,revokedAt?:string|null,errorCode?:string|null,deliveredAt:string|null,openedAt:string|null,attempt:{state:string,number:number,errorCode:string|null,startedAt:string,finishedAt:string|null}|null}} Delivery */
 /** @typedef {Omit<import('../drafts/contracts.js').Draft,'recipients'> & {status:string,recipients:(import('../drafts/contracts.js').Recipient&{id:string})[],scheduledFor:string|null,timezone:string|null,localDateTime:string|null,canceledAt:string|null,deliveryEnabled:boolean,attachments:import('../attachments/contracts.js').Attachment[],deliveries:Delivery[],history:History}} Owned */
 /** @typedef {{id:string,deliveredAt:string,openedAt:string|null,senderName:string|null,senderIsSelf:boolean,subject:string|null,text:string,occasion:string|null,scheduledFor:string,timezone:string,attachments:import('../attachments/contracts.js').Attachment[]}} Received */
 const invalid = () =>
@@ -148,8 +151,12 @@ export function parseHistory(value) {
       'RETRY_REQUESTED',
       'DELIVERED',
       'PARTIALLY_DELIVERED',
+      'SUBMITTED',
+      'PARTIALLY_SUBMITTED',
+      'DELIVERY_UNKNOWN',
       'FAILED',
       'OPENED',
+      'EMAIL_LINK_REVOKED',
     ];
   if (
     !Array.isArray(r.items) ||
@@ -218,6 +225,51 @@ export function parseOwned(value) {
     throw invalid();
   const deliveries = r.deliveries.map((v) => {
     const d = record(v);
+    if (d.channel === 'EMAIL') {
+      if (
+        typeof d.recipientId !== 'string' ||
+        !recipients.some((r) => r.id === d.recipientId && r.type === 'EMAIL') ||
+        typeof d.intentId !== 'string' ||
+        !uuid.test(d.intentId) ||
+        !['PENDING', 'DISPATCHING', 'SUBMITTED', 'UNKNOWN', 'RETRYING', 'FAILED'].includes(
+          String(d.outcome),
+        ) ||
+        d.deliveredAt !== null ||
+        d.attempt !== null ||
+        !nullableDate(d.submittedAt) ||
+        !nullableDate(d.openedAt) ||
+        !nullableDate(d.expiresAt) ||
+        !nullableDate(d.revokedAt) ||
+        (d.outcome === 'SUBMITTED' && !validDate(d.submittedAt)) ||
+        !(
+          d.errorCode === null ||
+          [
+            'SMTP_UNCERTAIN',
+            'SMTP_THROTTLED',
+            'SMTP_REJECTED',
+            'SMTP_CONNECTION',
+            'SMTP_AUTH',
+            'EMAIL_QUOTA',
+            'LINK_UNAVAILABLE',
+            'INVALID_RECIPIENT',
+          ].includes(String(d.errorCode))
+        )
+      )
+        throw invalid();
+      return /** @type {Delivery} */ ({
+        recipientId: d.recipientId,
+        channel: 'EMAIL',
+        outcome: d.outcome,
+        intentId: d.intentId,
+        submittedAt: d.submittedAt,
+        deliveredAt: null,
+        openedAt: d.openedAt,
+        expiresAt: d.expiresAt,
+        revokedAt: d.revokedAt,
+        errorCode: d.errorCode,
+        attempt: null,
+      });
+    }
     if (
       typeof d.recipientId !== 'string' ||
       !recipients.some((r) => r.id === d.recipientId) ||
@@ -358,7 +410,11 @@ export function eventLabel(kind) {
     RETRY_REQUESTED: 'Recovery requested',
     DELIVERED: 'Delivered in app',
     PARTIALLY_DELIVERED: 'Partially delivered',
+    SUBMITTED: 'Submitted to email service',
+    PARTIALLY_SUBMITTED: 'Partially submitted',
+    DELIVERY_UNKNOWN: 'Email result uncertain',
     FAILED: 'Delivery failed',
+    EMAIL_LINK_REVOKED: 'An email link was revoked',
     OPENED: 'A recipient marked this message as opened',
   });
   return labels[kind] ?? 'Unknown activity';

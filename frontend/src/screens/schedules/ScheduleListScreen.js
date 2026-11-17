@@ -19,7 +19,7 @@ export default function ScheduleListScreen() {
     theme = useTheme();
   const api = useMemo(() => createScheduleService(session), [session]);
   const [status, setStatus] = useState(
-    /** @type {'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'FAILED'} */ (
+    /** @type {'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'SUBMITTED'|'PARTIALLY_SUBMITTED'|'DELIVERY_UNKNOWN'|'FAILED'} */ (
       'SCHEDULED'
     ),
   );
@@ -131,7 +131,7 @@ export default function ScheduleListScreen() {
               onValueChange={(value) => {
                 setPage({ items: [], nextCursor: null });
                 setStatus(
-                  /** @type {'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'FAILED'} */ (
+                  /** @type {'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'SUBMITTED'|'PARTIALLY_SUBMITTED'|'DELIVERY_UNKNOWN'|'FAILED'} */ (
                     value
                   ),
                 );
@@ -139,11 +139,14 @@ export default function ScheduleListScreen() {
               buttons={[
                 { value: 'SCHEDULED', label: 'Scheduled' },
                 { value: 'CANCELED', label: 'Canceled' },
-                { value: 'DELIVERED', label: 'Delivered' },
+                { value: 'DELIVERED', label: 'Delivered in app' },
+                { value: 'SUBMITTED', label: 'Email submitted' },
+                { value: 'PARTIALLY_SUBMITTED', label: 'Partial submission' },
+                { value: 'DELIVERY_UNKNOWN', label: 'Uncertain email' },
               ]}
             />
             {
-              /** @type {('DISPATCHING'|'PARTIALLY_DELIVERED'|'FAILED')[]} */ ([
+              /** @type {('DISPATCHING'|'PARTIALLY_DELIVERED'|'SUBMITTED'|'PARTIALLY_SUBMITTED'|'DELIVERY_UNKNOWN'|'FAILED')[]} */ ([
                 'DISPATCHING',
                 'PARTIALLY_DELIVERED',
                 'FAILED',

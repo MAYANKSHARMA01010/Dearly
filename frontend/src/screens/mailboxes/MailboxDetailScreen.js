@@ -165,8 +165,12 @@ function OwnedMessage({ id }) {
                       DELIVERED: 'Delivered in app',
                       FAILED: 'Delivery failed',
                       UNAVAILABLE: 'Channel unavailable',
+                      SUBMITTED:
+                        'Submitted to Gmail; inbox delivery unconfirmed',
+                      UNKNOWN:
+                        'Send result uncertain; automatic resend stopped',
                     }[
-                      /** @type {'PENDING'|'DISPATCHING'|'RETRYING'|'DELIVERED'|'FAILED'|'UNAVAILABLE'} */ (
+                      /** @type {'PENDING'|'DISPATCHING'|'RETRYING'|'DELIVERED'|'FAILED'|'UNAVAILABLE'|'SUBMITTED'|'UNKNOWN'} */ (
                         d.outcome
                       )
                     ]
@@ -180,6 +184,39 @@ function OwnedMessage({ id }) {
                       ? `Marked as opened ${when(d.openedAt)}`
                       : 'No recorded opened status'}
                   </Text>
+                ) : null}
+                {d.channel === 'EMAIL' ? (
+                  <>
+                    {d.submittedAt ? (
+                      <Text>Submitted {when(d.submittedAt)}</Text>
+                    ) : null}
+                    <Text>
+                      {d.openedAt
+                        ? `Link opened ${when(d.openedAt)}`
+                        : 'No recorded link opening'}
+                    </Text>
+                    {d.errorCode ? <Text>Reason: {d.errorCode}</Text> : null}
+                    {d.expiresAt ? (
+                      <Text>
+                        {d.revokedAt
+                          ? 'Link revoked'
+                          : `Link expires ${when(d.expiresAt)}`}
+                      </Text>
+                    ) : null}
+                    {d.intentId && d.expiresAt && !d.revokedAt ? (
+                      <AppButton
+                        disabled={action.busy}
+                        onPress={() => {
+                          void action.run(async (signal) => {
+                            await api.revokeEmail(d.intentId ?? '', signal);
+                            if (!signal.aborted) refresh();
+                          });
+                        }}
+                      >
+                        Revoke email link
+                      </AppButton>
+                    ) : null}
+                  </>
                 ) : null}
                 {d.attempt ? (
                   <Text>

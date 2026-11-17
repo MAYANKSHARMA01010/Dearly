@@ -19,6 +19,25 @@ export function createMailboxService(session) {
     return id;
   };
   return {
+    /** @param {string} intentId @param {AbortSignal} [signal] */
+    async revokeEmail(intentId, signal) {
+      const result = record(
+        await session.request(
+          `/external/deliveries/${valid(intentId)}/revoke`,
+          {
+            method: 'POST',
+            signal,
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}',
+          },
+        ),
+      );
+      if (result.revoked !== true)
+        throw new ApiError(
+          'Link revocation could not be confirmed. Refresh and try again.',
+          'invalid_response',
+        );
+    },
     /** @param {AbortSignal} [signal] */
     async dashboard(signal) {
       return parseDashboard(

@@ -211,7 +211,7 @@ test('delivery capabilities distinguish a running worker from supported in-app d
   assert.deepEqual(await api.capabilities(), {
     backgroundDelivery: true,
     workerOnline: false,
-    inAppAvailable: true,
+    inAppAvailable: true, emailAvailable:false, emailLocalOnly:false,
   });
   status = 'running';
   assert.equal((await api.capabilities()).workerOnline, true);

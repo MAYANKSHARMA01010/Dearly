@@ -49,6 +49,15 @@ export function createScheduleService(session) {
             'status' in r.worker &&
             r.worker.status === 'running',
           ),
+        emailAvailable: r.channels.some(
+          (value) =>
+            value &&
+            typeof value === 'object' &&
+            value.channel === 'EMAIL' &&
+            value.available === true &&
+            value.mode === 'SMTP',
+        ),
+        emailLocalOnly: 'emailLocalOnly' in r && r.emailLocalOnly === true,
         inAppAvailable: r.channels.some(
           (value) =>
             value &&
@@ -129,7 +138,7 @@ export function createScheduleService(session) {
         await write(`${path(id)}/reopen`, 'POST', { version }, signal),
       );
     },
-    /** @param {'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'FAILED'} [status] @param {string|null} [cursor] @param {AbortSignal} [signal] */
+    /** @param {'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'SUBMITTED'|'PARTIALLY_SUBMITTED'|'DELIVERY_UNKNOWN'|'FAILED'} [status] @param {string|null} [cursor] @param {AbortSignal} [signal] */
     async list(status = 'SCHEDULED', cursor = null, signal) {
       return parseSchedulePage(
         await session.request(
