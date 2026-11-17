@@ -28,7 +28,21 @@ const environmentSchema = z.object({
   STORAGE_ROOT: z.string().trim().min(1).default('./data/attachments'),
   FFPROBE_PATH: z.string().trim().min(1).default('ffprobe'),
   OTP_PEPPER: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+  EMAIL_MODE: z.enum(['disabled', 'smtp']).default('disabled'),
+  SMTP_HOST: z.string().trim().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().refine((value) => value === 465 || value === 587).default(465),
+  SMTP_USER: z.email().optional(),
+  SMTP_PASSWORD: z.string().min(1).optional(),
+  SMTP_FROM: z.email().optional(),
 }).superRefine((env, ctx) => {
+  if (env.EMAIL_MODE === 'smtp') {
+    for (const field of ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM'] as const) {
+      if (!env[field]) ctx.addIssue({ code: 'custom', path: [field], message: 'Required for SMTP.' });
+    }
+    if (env.SMTP_HOST === 'smtp.gmail.com' && env.SMTP_FROM?.toLowerCase() !== env.SMTP_USER?.toLowerCase()) {
+      ctx.addIssue({ code: 'custom', path: ['SMTP_FROM'], message: 'Gmail sender must match the authenticated account.' });
+    }
+  }
   if (env.AUTH_MODE === 'development' && (env.NODE_ENV === 'production' ||
       !['127.0.0.1', '::1', 'localhost'].includes(env.HOST) || !env.OTP_PEPPER)) {
     ctx.addIssue({ code: 'custom', path: ['AUTH_MODE'], message: 'Development auth requires loopback, a pepper and a non-production environment.' });
@@ -36,6 +50,7 @@ const environmentSchema = z.object({
 });
 
 export interface AppConfig {
+  email?: SmtpConfig;
   nodeEnv: 'development' | 'test' | 'production';
   port: number;
   host: string;
@@ -53,6 +68,14 @@ export interface AppConfig {
   ffprobePath: string;
 }
 
+export interface SmtpConfig {
+  host: string;
+  port: 465 | 587;
+  user: string;
+  password: string;
+  from: string;
+}
+
 export class EnvironmentError extends Error {}
 
 export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
@@ -64,6 +87,10 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
   }
   const env = result.data;
   return {
+    email: env.EMAIL_MODE === 'smtp' ? {
+      host: env.SMTP_HOST!, port: env.SMTP_PORT as 465 | 587,
+      user: env.SMTP_USER!, password: env.SMTP_PASSWORD!, from: env.SMTP_FROM!,
+    } : undefined,
     nodeEnv: env.NODE_ENV,
     port: env.PORT,
     host: env.HOST,
