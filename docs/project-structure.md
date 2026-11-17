@@ -135,3 +135,11 @@ routes/controllers/service for fragment bearer proofs and scoped private files.
 `views/externalViewer.ts` contains the minimal browser companion (no native app
 required). Email deliveries and sender budgets live in PostgreSQL. See
 [email delivery](email-delivery.md); secrets remain in backend/.env only.
+
+Phase 13 generalizes `workers/emailDelivery.ts` to `workers/externalDelivery.ts`.
+Prisma `ExternalDelivery` and `SenderBudget` map to the existing physical email
+submission/budget tables, preserving rows and issued links. New `providers/whatsapp/`
+contains gateway I/O and the temporary pairing helper; signed callback routes →
+controller → `services/wahaReceipt.service.ts` keep transport/authentication separate
+from receipt persistence. `scripts/whatsapp.compose.yaml` operates only Dearly's
+own Core instance/session volume. No vendor credentials reach frontend configuration.

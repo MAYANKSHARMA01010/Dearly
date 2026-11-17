@@ -33,7 +33,7 @@ versions, so adapt patterns rather than copying its package manifest.
 
 | Channel | Suggested starting point | Alternative | Decision status |
 | --- | --- | --- | --- |
-| WhatsApp | Existing WAHA integration using its free edition | No replacement proposed | Proposed; verify free-edition capabilities and session operations |
+| WhatsApp | WAHA Core free edition | No paid alternative | Selected in Phase 13; dedicated GOWS sender paired and READY; real test pending |
 | SMS | SMSGate with a dedicated Android phone/SIM | InfiniReach free plan only, within its quota | Proposed; verify hardware, SIM costs, reachability, and sending limits |
 | Email | Nodemailer + Brevo SMTP free plan | Gmail SMTP for a small demo; Resend API/SMTP free plan | Proposed; verify sender/domain setup and usable quota |
 | Local email testing | Explicit local JSON/capture transport | A local test inbox | Development only; never count it as delivery |
@@ -163,7 +163,7 @@ Fill this in when you review the options; leave unselected choices open.
 | Decision | Current proposal | Selected value / reason |
 | --- | --- | --- |
 | OTP channel/provider | Development adapter first; SMSGate or WAHA free edition for real verification | Pending |
-| WhatsApp | WAHA free edition; no paid alternative proposed | Pending |
+| WhatsApp | WAHA Core free edition | Selected: dedicated GOWS sender, private links, signed receipts; no live send yet |
 | SMS | SMSGate; InfiniReach free plan only as an alternative | Pending |
 | Email | Nodemailer SMTP | Gmail SMTP selected by the user on 17 November 2026; dedicated sending identity and app password stored only in private backend configuration |
 | External content access | Revocable bearer links | Selected for Phase 12: fragment proof, explicit opening, seven-day expiry and owner revocation; forwarding grants access |
@@ -201,3 +201,7 @@ Phase 12 now implements this integration; see [email contracts](email-delivery.m
 The earlier setup checkpoint above records the state at that time. Real inbox
 acceptance is pending the user’s own test; email scheduling is now available when
 all private SMTP/access settings exist.
+
+Phase 13 implements the WAHA candidate; see [WhatsApp operations](whatsapp-delivery.md).
+The free Core GOWS sender is paired and readiness was verified. This is separate
+from a real recipient delivery acceptance check. ShopSmart remains read-only.

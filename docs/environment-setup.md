@@ -86,3 +86,19 @@ was applied over a direct connection with a one-process advisory-lock bypass; no
 sessions were terminated and no bypass was saved in the app environment. Do not
 use that bypass for concurrent migrations. See [Neon/Prisma connection guidance](https://neon.com/blog/prisma-dx-improvements)
 and [Prisma advisory locking](https://docs.prisma.io/docs/orm/v6/reference/environment-variables-reference).
+
+## Phase 13 WhatsApp local/server selection
+
+`WHATSAPP_MODE=waha` enables the private configured Core integration. Development
+uses `WAHA_LOCAL_API_URL=http://localhost:3100`; production requires an explicitly
+set `WAHA_SERVER_API_URL` and never falls back to the local URL. The hosted value
+is still empty. API and callback HMAC keys are separate server secrets. `WAHA_ENGINE=GOWS`
+is selected after successful pairing; `WAHA_SESSION=default` matches the single free
+Core sender. `CONTENT_PUBLIC_URL` optionally replaces the compatible `EMAIL_PUBLIC_URL`
+setting for shared recipient links. Its existing localhost value stays in effect;
+the frontend hosted URL is still empty. See [WhatsApp setup](whatsapp-delivery.md).
+
+The optional local pairing helper binds port 3101 only while requested and expires
+after 15 minutes. It is not a deployed setup/admin endpoint. Do not expose it, gateway
+session files or the development OTP backend as a public service. Real remote content
+access requires the planned hosted HTTPS URL, not replacing loopback development auth.

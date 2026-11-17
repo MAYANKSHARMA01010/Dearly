@@ -174,8 +174,8 @@ contracts and verification. No public media URLs or paid storage service is enab
 
 Phase 9 adds owner-only `/messages/schedules` APIs for timezone-aware review,
 confirmation, text edits, rescheduling, cancellation and return to drafts. Apply
-the additive migration with `npm run prisma:deploy`. In-app choices and configured EMAIL destinations are accepted. Phase 10/12 deliver through a separate durable
-worker; WhatsApp and SMS remain unavailable. See [schedule contracts](../docs/scheduling.md).
+the additive migration with `npm run prisma:deploy`. In-app choices, configured EMAIL destinations and explicit PHONE/WHATSAPP choices are accepted. Phase 10/12 deliver through a separate durable
+worker; SMS remains unavailable. See [schedule contracts](../docs/scheduling.md).
 
 ## In-app delivery worker
 
@@ -206,3 +206,15 @@ the separate delivery worker after migrations. Gmail acceptance is submission,
 not confirmed inbox delivery, and uncertain attempts are never automatically resent.
 Local recipient links work only on this Mac; set a reachable HTTPS origin when hosted.
 See [email contracts](../docs/email-delivery.md) for endpoints, limits and manual testing.
+
+## WhatsApp Core sender
+
+Phase 13 uses the free WAHA Core GOWS engine, one dedicated default sender session,
+and the shared durable external worker. Keep the pinned-image/API/HMAC keys private;
+Compose passes no Gmail or database credentials into the gateway. Use
+`npm run whatsapp:status`, `whatsapp:init`, `whatsapp:start`, and `whatsapp:pair`
+from backend/ for local setup/recovery. The temporary pairing helper is loopback-only
+on port 3101 and never sends messages. `whatsapp:cleanup` removes expired callback
+records. No command resets or logs out an existing account. Production selects
+only the explicitly configured server URL; no local fallback. See
+[WhatsApp setup](../docs/whatsapp-delivery.md) for exact operations and acceptance limits.

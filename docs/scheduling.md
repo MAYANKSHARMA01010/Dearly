@@ -143,3 +143,15 @@ means an account-owned in-app inbox item; email never silently becomes account
 login or a Dearly inbox item. Sender Sent includes accepted email submissions;
 per-recipient detail keeps submission and opening separate from delivery proof.
 See [email contracts](email-delivery.md) for current access and retry rules.
+
+## Phase 13 WhatsApp extension
+
+Configured PHONE recipients may explicitly choose WHATSAPP instead of IN_APP.
+Consent is bound to schedule review and persisted; there is no automatic extra
+channel. The shared external worker retains accepted/uncertain submissions and
+per-provider budgets. Core sender readiness is visible. Authenticated scoped
+acknowledgements can confirm notification delivery/read while private content
+opening remains a separate action. Failed notification evidence appears in Failed
+mailbox counts/lists and can recover from a later stronger receipt without another
+send. See [WhatsApp contracts](whatsapp-delivery.md). Earlier unavailable-WhatsApp
+statements describe the prior phase baseline; SMS remains unavailable.

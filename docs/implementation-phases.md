@@ -49,7 +49,7 @@ and a simulated delivery does not complete a real channel integration.
 | 10 | Durable workers and in-app delivery | 9 | Complete — native UI check unavailable |
 | 11 | Dashboard, mailboxes, message details, and tracking | 10 | Complete |
 | 12 | Email delivery and secure external content access | 10–11 | Implementation ready — automated checks passed; user-run real inbox test pending |
-| 13 | WhatsApp message delivery | 10–12 | Not started |
+| 13 | WhatsApp message delivery | 10–12 | Implementation ready — free Core GOWS sender paired; real recipient delivery check pending |
 | 14 | SMS message delivery | 10–12 | Not started |
 | 15 | Notifications, preferences, and account settings | 11–14 | Not started |
 | 16 | Release verification, operations, and handover | 2–15 | Not started |
@@ -383,6 +383,33 @@ and timeout paths have honest outcomes and tests. Fake SMTP alone does not pass.
 adapter/templates/configuration; worker integration and event/error handling.
 
 ## Phase 13 — WhatsApp message delivery
+
+**Implementation checkpoint — 17 November 2026:** Added the free WAHA Core
+provider with separate local/server configuration, a dedicated persistent local
+Docker instance, safe session recovery and a temporary loopback-only auto-refreshing
+pairing page. After the initial engine rejected linking while official WhatsApp Web
+worked, free GOWS paired successfully and verified READY. The existing ShopSmart and
+official WhatsApp Web sessions were preserved. No real WhatsApp test was sent.
+
+The shared external worker now handles reviewed WhatsApp choices, consent evidence,
+private links and per-provider budgets; ambiguous submissions are never blindly
+replayed. Exact-body signed callbacks are scoped/deduplicated, retain only relevant
+outbound metadata, and distinguish notification delivery/read from private content
+opening. Owner revocation works for either external channel. Existing email rows
+and issued link proofs are preserved; legacy physical table names remain mapped.
+
+**Verified:** Backend lint/typecheck/build and 66 standard tests; frontend
+lint/typecheck and 76 tests; 75 full backend integration entries plus the expanded
+WhatsApp-specific suite (10 entries / nine scenarios); three mobile integration
+scenarios; Expo Doctor 20/20; iOS export. Applied the additive migration and verified
+its checksum. The local service is confirmed Core 2026.10.1 on GOWS. Native UI was
+not newly verified. No Android emulator or simulator reset was used.
+
+**Acceptance pending:** A real designated-recipient scheduled text/link and receipt
+check remains to be authorized/performed. Hosted provider/API/content URLs remain
+unconfigured, as requested; current private content links open on this Mac only.
+Phase 12's user-run email acceptance is still pending. This does not start Phase 14.
+See [WhatsApp setup and contracts](whatsapp-delivery.md).
 
 **Build**
 

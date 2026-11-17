@@ -62,7 +62,12 @@ within a phase does not authorize the entire phase.
   require a new explicit review; do not bulk-enable them. Inbox/attachment access
   requires a committed recipient-owned delivery. PHONE bindings must never redirect
   a recycled number to a replacement account. Phase 12 enables explicitly reviewed
-  EMAIL destinations through configured Gmail SMTP; WhatsApp and SMS remain disabled.
+  EMAIL destinations through configured Gmail SMTP. Phase 13 enables explicitly
+  chosen PHONE/WHATSAPP destinations through the configured free WAHA Core sender;
+  SMS remains disabled. Follow [WhatsApp contracts](docs/whatsapp-delivery.md) for
+  sender pairing/readiness, scoped HMAC receipts and separate notification/content
+  read evidence. Keep gateway credentials and session volumes private, ignore unrelated
+  personal-account receipts, and never reset or relink another application's session.
   Follow [email contracts](docs/email-delivery.md): durable submission markers,
   no automatic resending after uncertainty, private expiring/revocable bearer links,
   and acceptance distinct from confirmed delivery. The user will perform the live
