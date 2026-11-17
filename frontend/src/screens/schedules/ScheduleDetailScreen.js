@@ -247,7 +247,13 @@ export default function ScheduleDetailScreen({ id }) {
                   : r.type === 'EMAIL'
                     ? r.email
                     : r.userId) ?? 'Unavailable account'))}{' '}
-          · {r.type === 'EMAIL' ? 'Email' : 'In-app'}
+          ·{' '}
+          {r.type === 'EMAIL'
+            ? 'Email'
+            : message.deliveries.find((d) => d.recipientId === r.id)
+                  ?.channel === 'WHATSAPP'
+              ? 'WhatsApp'
+              : 'In-app'}
           {r.unavailable ? ' · Account unavailable' : ''}
         </Text>
       ))}

@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { usePreventRemove, useRouter } from 'expo-router';
-import { Checkbox, Dialog, Portal, Text, useTheme } from 'react-native-paper';
+import {
+  Checkbox,
+  RadioButton,
+  Dialog,
+  Portal,
+  Text,
+  useTheme,
+} from 'react-native-paper';
 import Screen from '../../components/layout/Screen';
 import AppButton from '../../components/common/AppButton';
 import AppTextField from '../../components/forms/AppTextField';
@@ -34,6 +41,19 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
   const [date, setDate] = useState(''),
     [time, setTime] = useState(''),
     [timezone, setTimezone] = useState(user?.timezone ?? 'UTC');
+  const [phoneChannels, setPhoneChannels] = useState(
+    /** @type {Record<string,string>} */ ({}),
+  );
+  const [whatsappConsent, setWhatsappConsent] = useState(false),
+    [whatsappAvailable, setWhatsappAvailable] = useState(false),
+    [whatsappStatus, setWhatsappStatus] = useState('DISABLED');
+  /** @param {import('../../services/schedules/contracts').ScheduleRecipient} r */
+  const channelFor = (r) =>
+    r.type === 'EMAIL'
+      ? 'EMAIL'
+      : r.type === 'PHONE'
+        ? (phoneChannels[r.id] ?? 'IN_APP')
+        : 'IN_APP';
   const [selected, setSelected] = useState(/** @type {string[]} */ ([]));
   const [emailAvailable, setEmailAvailable] = useState(false),
     [emailLocalOnly, setEmailLocalOnly] = useState(false);
@@ -78,6 +98,20 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
               )
               .map((r) => r.id),
           );
+          setPhoneChannels(
+            Object.fromEntries(
+              message.recipients
+                .filter((r) => r.type === 'PHONE')
+                .map((r) => [
+                  r.id,
+                  message.deliveries.find((d) => d.recipientId === r.id)
+                    ?.channel ?? 'IN_APP',
+                ]),
+            ),
+          );
+          setWhatsappConsent(false);
+          setWhatsappAvailable(capabilities.whatsappAvailable);
+          setWhatsappStatus(capabilities.whatsappStatus);
           setAvailable(capabilities.inAppAvailable);
           setEmailAvailable(capabilities.emailAvailable);
           setEmailLocalOnly(capabilities.emailLocalOnly);
@@ -109,12 +143,15 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         version: source.version,
         localDateTime: `${date}T${time}`,
         timezone,
+        ...(source.recipients.some((r) => channelFor(r) === 'WHATSAPP')
+          ? { whatsappConsent }
+          : {}),
         ...(!reschedule && {
           deliveries: source.recipients
             .filter((r) => selected.includes(r.id))
             .map((r) => ({
               recipientId: r.id,
-              channels: [r.type === 'EMAIL' ? 'EMAIL' : 'IN_APP'],
+              channels: [channelFor(r)],
             })),
         }),
       };
@@ -254,13 +291,17 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         return (
           <View key={recipient.id} style={{ gap: spacing.sm }}>
             <Checkbox.Item
-              label={`${label} · ${recipient.type === 'EMAIL' ? 'Email' : 'In-app'}`}
+              label={`${label} · ${recipient.type === 'EMAIL' ? 'Email' : channelFor(recipient) === 'WHATSAPP' ? 'WhatsApp' : 'In-app'}`}
               status={selected.includes(recipient.id) ? 'checked' : 'unchecked'}
               disabled={
                 action.busy ||
                 reschedule ||
                 !supported ||
-                !(recipient.type === 'EMAIL' ? emailAvailable : available)
+                !(recipient.type === 'EMAIL'
+                  ? emailAvailable
+                  : channelFor(recipient) === 'WHATSAPP'
+                    ? whatsappAvailable
+                    : available)
               }
               onPress={() => {
                 changed();
@@ -271,6 +312,30 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
                 );
               }}
             />
+            {recipient.type === 'PHONE' ? (
+              <RadioButton.Group
+                value={channelFor(recipient)}
+                onValueChange={(value) => {
+                  changed();
+                  setWhatsappConsent(false);
+                  setPhoneChannels((old) => ({
+                    ...old,
+                    [recipient.id]: value,
+                  }));
+                }}
+              >
+                <RadioButton.Item
+                  label="Dearly inbox"
+                  value="IN_APP"
+                  disabled={action.busy || reschedule || !available}
+                />
+                <RadioButton.Item
+                  label="WhatsApp private link"
+                  value="WHATSAPP"
+                  disabled={action.busy || reschedule || !whatsappAvailable}
+                />
+              </RadioButton.Group>
+            ) : null}
             {!supported ? (
               <Text style={{ color: theme.colors.error }}>
                 This recipient cannot use the selected delivery channel. Update
@@ -282,28 +347,72 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
       })}
       <Text>
         Phone recipients need an existing verified Dearly account. In-app does
-        not send an SMS or WhatsApp message. SMS and WhatsApp are unavailable.
-        Email recipients receive a private link that expires in seven days;
-        anyone with the link can open it. Gmail acceptance does not confirm
-        inbox delivery. Recipient and attachment changes require returning to
-        drafts and reviewing a new schedule.
+        not send an SMS or WhatsApp message. Choose WhatsApp explicitly for a
+        phone recipient; SMS is unavailable. Email recipients receive a private
+        link that expires in seven days; anyone with the link can open it. Gmail
+        acceptance does not confirm inbox delivery. Recipient and attachment
+        changes require returning to drafts and reviewing a new schedule.
       </Text>
-      {source.recipients.some((r) => r.type === 'EMAIL') ? (
+      {source.recipients.some((r) =>
+        ['EMAIL', 'WHATSAPP'].includes(channelFor(r)),
+      ) ? (
         <Text accessibilityRole="alert">
-          {!emailAvailable
+          {source.recipients.some((r) => r.type === 'EMAIL') && !emailAvailable
             ? 'Email is not configured on the server.'
             : emailLocalOnly
               ? 'Email links currently open only on this Mac. Use a hosted HTTPS address before sending links to other devices.'
-              : 'You can revoke email links from message details.'}
+              : 'You can revoke private links from message details.'}
         </Text>
+      ) : null}
+      {source.recipients.some((r) => channelFor(r) === 'WHATSAPP') ? (
+        <>
+          <Text>
+            WhatsApp sender:{' '}
+            {
+              {
+                READY: 'Ready',
+                UNPAIRED: 'Pair your sender phone',
+                STOPPED: 'Stopped',
+                OFFLINE: 'Offline',
+                AUTH_FAILED: 'Configuration needs attention',
+                RESTRICTED: 'Sending restricted',
+                MISCONFIGURED: 'Configuration needs attention',
+                DISABLED: 'Not configured',
+              }[
+                /** @type {'READY'|'UNPAIRED'|'STOPPED'|'OFFLINE'|'AUTH_FAILED'|'RESTRICTED'|'MISCONFIGURED'|'DISABLED'} */ (
+                  whatsappStatus
+                )
+              ]
+            }
+            .{' '}
+            {whatsappStatus !== 'READY'
+              ? 'Messages stay scheduled; due delivery can fail if the sender is not ready.'
+              : ''}
+          </Text>
+          <Checkbox.Item
+            label="These recipients agreed to receive WhatsApp messages from me"
+            status={whatsappConsent ? 'checked' : 'unchecked'}
+            disabled={action.busy}
+            onPress={() => {
+              changed();
+              setWhatsappConsent((v) => !v);
+            }}
+          />
+        </>
       ) : null}
       <AppButton
         mode="contained"
         disabled={
           action.busy ||
           source.recipients.some((r) =>
-            r.type === 'EMAIL' ? !emailAvailable : !available,
+            r.type === 'EMAIL'
+              ? !emailAvailable
+              : channelFor(r) === 'WHATSAPP'
+                ? !whatsappAvailable
+                : !available,
           ) ||
+          (source.recipients.some((r) => channelFor(r) === 'WHATSAPP') &&
+            !whatsappConsent) ||
           !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
           !/^\d{2}:\d{2}$/.test(time)
         }
@@ -352,7 +461,12 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
                     : recipient.type === 'EMAIL'
                       ? recipient.email
                       : `Dearly account ${recipient.userId}`)}{' '}
-              · {recipient.type === 'EMAIL' ? 'Email' : 'In-app'}
+              ·{' '}
+              {recipient.type === 'EMAIL'
+                ? 'Email'
+                : channelFor(recipient) === 'WHATSAPP'
+                  ? 'WhatsApp'
+                  : 'In-app'}
             </Text>
           ))}
           {review.data.message.attachments.map((file) => (

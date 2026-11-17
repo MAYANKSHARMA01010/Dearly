@@ -132,7 +132,7 @@ test('capabilities expose configured SMTP separately and revocation is explicit 
   assert.equal(c.emailAvailable, true);
   assert.equal(c.emailLocalOnly, true);
   assert.equal(c.inAppAvailable, false);
-  await createMailboxService(session).revokeEmail(id);
+  await createMailboxService(session).revokeLink(id);
   assert.equal(calls.at(-1).options.method, 'POST');
   assert.equal(calls.at(-1).path, `/external/deliveries/${id}/revoke`);
   await assert.rejects(() =>
@@ -140,6 +140,6 @@ test('capabilities expose configured SMTP separately and revocation is explicit 
       request: async () => {
         throw Error('unavailable');
       },
-    }).revokeEmail(id),
+    }).revokeLink(id),
   );
 });

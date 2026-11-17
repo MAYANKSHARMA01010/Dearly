@@ -156,13 +156,21 @@ function OwnedMessage({ id }) {
             .map((d) => (
               <View key={d.channel} style={{ gap: spacing.xs }}>
                 <Text>
-                  {d.channel === 'IN_APP' ? 'In-app' : d.channel} ·{' '}
+                  {d.channel === 'IN_APP'
+                    ? 'In-app'
+                    : d.channel === 'WHATSAPP'
+                      ? 'WhatsApp'
+                      : d.channel}{' '}
+                  ·{' '}
                   {
                     {
                       PENDING: 'Not delivered',
                       DISPATCHING: 'Delivery in progress',
                       RETRYING: 'Waiting for another attempt',
-                      DELIVERED: 'Delivered in app',
+                      DELIVERED:
+                        d.channel === 'WHATSAPP'
+                          ? 'WhatsApp notification delivered'
+                          : 'Delivered in app',
                       FAILED: 'Delivery failed',
                       UNAVAILABLE: 'Channel unavailable',
                       SUBMITTED:
@@ -185,14 +193,19 @@ function OwnedMessage({ id }) {
                       : 'No recorded opened status'}
                   </Text>
                 ) : null}
-                {d.channel === 'EMAIL' ? (
+                {['EMAIL', 'WHATSAPP'].includes(d.channel) ? (
                   <>
+                    {d.notificationReadAt ? (
+                      <Text>
+                        WhatsApp notification read {when(d.notificationReadAt)}
+                      </Text>
+                    ) : null}
                     {d.submittedAt ? (
                       <Text>Submitted {when(d.submittedAt)}</Text>
                     ) : null}
                     <Text>
                       {d.openedAt
-                        ? `Link opened ${when(d.openedAt)}`
+                        ? `Private content opened ${when(d.openedAt)}`
                         : 'No recorded link opening'}
                     </Text>
                     {d.errorCode ? <Text>Reason: {d.errorCode}</Text> : null}
@@ -208,12 +221,12 @@ function OwnedMessage({ id }) {
                         disabled={action.busy}
                         onPress={() => {
                           void action.run(async (signal) => {
-                            await api.revokeEmail(d.intentId ?? '', signal);
+                            await api.revokeLink(d.intentId ?? '', signal);
                             if (!signal.aborted) refresh();
                           });
                         }}
                       >
-                        Revoke email link
+                        Revoke private link
                       </AppButton>
                     ) : null}
                   </>

@@ -20,7 +20,7 @@ export function createMailboxService(session) {
   };
   return {
     /** @param {string} intentId @param {AbortSignal} [signal] */
-    async revokeEmail(intentId, signal) {
+    async revokeLink(intentId, signal) {
       const result = record(
         await session.request(
           `/external/deliveries/${valid(intentId)}/revoke`,

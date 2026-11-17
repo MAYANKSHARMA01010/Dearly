@@ -26,7 +26,7 @@ export const states = [
 /** @typedef {{asOf:string,items:Summary[],nextCursor:string|null}} Page */
 /** @typedef {{id:string,kind:string,state:string,version:number,occurredAt:string}} Event */
 /** @typedef {{items:Event[],nextCursor:string|null}} History */
-/** @typedef {{recipientId:string,channel:string,outcome:string,intentId?:string,submittedAt?:string|null,expiresAt?:string|null,revokedAt?:string|null,errorCode?:string|null,deliveredAt:string|null,openedAt:string|null,attempt:{state:string,number:number,errorCode:string|null,startedAt:string,finishedAt:string|null}|null}} Delivery */
+/** @typedef {{recipientId:string,channel:string,outcome:string,intentId?:string,submittedAt?:string|null,expiresAt?:string|null,revokedAt?:string|null,errorCode?:string|null,notificationReadAt?:string|null,deliveredAt:string|null,openedAt:string|null,attempt:{state:string,number:number,errorCode:string|null,startedAt:string,finishedAt:string|null}|null}} Delivery */
 /** @typedef {Omit<import('../drafts/contracts.js').Draft,'recipients'> & {status:string,recipients:(import('../drafts/contracts.js').Recipient&{id:string})[],scheduledFor:string|null,timezone:string|null,localDateTime:string|null,canceledAt:string|null,deliveryEnabled:boolean,attachments:import('../attachments/contracts.js').Attachment[],deliveries:Delivery[],history:History}} Owned */
 /** @typedef {{id:string,deliveredAt:string,openedAt:string|null,senderName:string|null,senderIsSelf:boolean,subject:string|null,text:string,occasion:string|null,scheduledFor:string,timezone:string,attachments:import('../attachments/contracts.js').Attachment[]}} Received */
 const invalid = () =>
@@ -157,6 +157,10 @@ export function parseHistory(value) {
       'FAILED',
       'OPENED',
       'EMAIL_LINK_REVOKED',
+      'WHATSAPP_LINK_REVOKED',
+      'WHATSAPP_NOTIFICATION_DELIVERED',
+      'WHATSAPP_NOTIFICATION_READ',
+      'WHATSAPP_NOTIFICATION_FAILED',
     ];
   if (
     !Array.isArray(r.items) ||
@@ -225,16 +229,33 @@ export function parseOwned(value) {
     throw invalid();
   const deliveries = r.deliveries.map((v) => {
     const d = record(v);
-    if (d.channel === 'EMAIL') {
+    if (d.channel === 'EMAIL' || d.channel === 'WHATSAPP') {
       if (
         typeof d.recipientId !== 'string' ||
-        !recipients.some((r) => r.id === d.recipientId && r.type === 'EMAIL') ||
+        !recipients.some(
+          (r) =>
+            r.id === d.recipientId &&
+            r.type === (d.channel === 'EMAIL' ? 'EMAIL' : 'PHONE'),
+        ) ||
         typeof d.intentId !== 'string' ||
         !uuid.test(d.intentId) ||
-        !['PENDING', 'DISPATCHING', 'SUBMITTED', 'UNKNOWN', 'RETRYING', 'FAILED'].includes(
-          String(d.outcome),
-        ) ||
-        d.deliveredAt !== null ||
+        ![
+          'PENDING',
+          'DISPATCHING',
+          'SUBMITTED',
+          'UNKNOWN',
+          'RETRYING',
+          'FAILED',
+          'DELIVERED',
+        ].includes(String(d.outcome)) ||
+        (d.channel === 'EMAIL'
+          ? d.deliveredAt !== null
+          : !nullableDate(d.deliveredAt)) ||
+        (d.outcome === 'DELIVERED' &&
+          (d.channel !== 'WHATSAPP' || !validDate(d.deliveredAt))) ||
+        (d.channel === 'WHATSAPP' &&
+          (!nullableDate(d.notificationReadAt) ||
+            (d.notificationReadAt !== null && !validDate(d.deliveredAt)))) ||
         d.attempt !== null ||
         !nullableDate(d.submittedAt) ||
         !nullableDate(d.openedAt) ||
@@ -252,17 +273,28 @@ export function parseOwned(value) {
             'EMAIL_QUOTA',
             'LINK_UNAVAILABLE',
             'INVALID_RECIPIENT',
+            'EXTERNAL_UNCERTAIN',
+            'WAHA_UNCERTAIN',
+            'WAHA_UNPAIRED',
+            'WAHA_RESTRICTED',
+            'WAHA_AUTH',
+            'WAHA_OFFLINE',
+            'WAHA_THROTTLED',
+            'WAHA_REJECTED',
+            'WAHA_DELIVERY_ERROR',
+            'WHATSAPP_QUOTA',
           ].includes(String(d.errorCode))
         )
       )
         throw invalid();
       return /** @type {Delivery} */ ({
         recipientId: d.recipientId,
-        channel: 'EMAIL',
+        channel: d.channel,
         outcome: d.outcome,
         intentId: d.intentId,
         submittedAt: d.submittedAt,
-        deliveredAt: null,
+        deliveredAt: d.deliveredAt,
+        notificationReadAt: d.notificationReadAt ?? null,
         openedAt: d.openedAt,
         expiresAt: d.expiresAt,
         revokedAt: d.revokedAt,
@@ -410,10 +442,14 @@ export function eventLabel(kind) {
     RETRY_REQUESTED: 'Recovery requested',
     DELIVERED: 'Delivered in app',
     PARTIALLY_DELIVERED: 'Partially delivered',
-    SUBMITTED: 'Submitted to email service',
+    SUBMITTED: 'Submitted to delivery service',
     PARTIALLY_SUBMITTED: 'Partially submitted',
-    DELIVERY_UNKNOWN: 'Email result uncertain',
+    DELIVERY_UNKNOWN: 'Delivery result uncertain',
     FAILED: 'Delivery failed',
+    WHATSAPP_LINK_REVOKED: 'A WhatsApp content link was revoked',
+    WHATSAPP_NOTIFICATION_DELIVERED: 'WhatsApp notification delivered',
+    WHATSAPP_NOTIFICATION_READ: 'WhatsApp notification read',
+    WHATSAPP_NOTIFICATION_FAILED: 'WhatsApp notification delivery failed',
     EMAIL_LINK_REVOKED: 'An email link was revoked',
     OPENED: 'A recipient marked this message as opened',
   });

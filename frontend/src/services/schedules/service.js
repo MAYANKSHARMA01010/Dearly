@@ -49,6 +49,28 @@ export function createScheduleService(session) {
             'status' in r.worker &&
             r.worker.status === 'running',
           ),
+        whatsappAvailable: r.channels.some(
+          (value) =>
+            value &&
+            typeof value === 'object' &&
+            value.channel === 'WHATSAPP' &&
+            value.available === true &&
+            value.mode === 'WAHA_CORE',
+        ),
+        whatsappStatus:
+          'whatsappStatus' in r &&
+          [
+            'READY',
+            'DISABLED',
+            'UNPAIRED',
+            'STOPPED',
+            'OFFLINE',
+            'AUTH_FAILED',
+            'RESTRICTED',
+            'MISCONFIGURED',
+          ].includes(String(r.whatsappStatus))
+            ? String(r.whatsappStatus)
+            : 'DISABLED',
         emailAvailable: r.channels.some(
           (value) =>
             value &&
