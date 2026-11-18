@@ -2,9 +2,9 @@ import { ApiError } from '../../api/client.js';
 import { parseDraft, uuid } from '../drafts/contracts.js';
 import { parseAttachment } from '../attachments/contracts.js';
 /** @typedef {import('../drafts/contracts.js').Recipient & {id:string}} ScheduleRecipient */
-/** @typedef {{recipientId:string,channel:'IN_APP'|'EMAIL'|'WHATSAPP'}} Delivery */
+/** @typedef {{recipientId:string,channel:'IN_APP'|'EMAIL'|'WHATSAPP'|'SMS'}} Delivery */
 /** @typedef {{recipientId:string,channels:string[]}} DeliveryChoice */
-/** @typedef {{version:number,localDateTime:string,timezone:string,deliveries?:DeliveryChoice[],whatsappConsent?:boolean}} Choice */
+/** @typedef {{version:number,localDateTime:string,timezone:string,deliveries?:DeliveryChoice[],whatsappConsent?:boolean,smsConsent?:boolean}} Choice */
 /** @typedef {Omit<import('../drafts/contracts.js').Draft,'recipients'> & {status:'DRAFT'|'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'SUBMITTED'|'PARTIALLY_SUBMITTED'|'DELIVERY_UNKNOWN'|'FAILED',recipients:ScheduleRecipient[],scheduledFor:string|null,timezone:string|null,localDateTime:string|null,canceledAt:string|null,attachments:import('../attachments/contracts.js').Attachment[],deliveries:Delivery[],backgroundDelivery:true,deliveryEnabled:boolean}} Message */
 /** @typedef {{id:string,status:'SCHEDULED'|'CANCELED'|'DISPATCHING'|'DELIVERED'|'PARTIALLY_DELIVERED'|'SUBMITTED'|'PARTIALLY_SUBMITTED'|'DELIVERY_UNKNOWN'|'FAILED',version:number,subject:string|null,scheduledFor:string,timezone:string,localDateTime:string,canceledAt:string|null,deliveryEnabled:boolean}} Summary */
 /** @typedef {{message:Message,resolved:{scheduledFor:string,timezone:string,localDateTime:string,offset:string},deliveries:DeliveryChoice[],reviewToken:string,expiresAt:string,backgroundDelivery:true}} Review */
@@ -112,7 +112,7 @@ export function parseScheduleMessage(value) {
     if (
       typeof d.recipientId !== 'string' ||
       !recipients.some((r) => r.id === d.recipientId) ||
-      !['IN_APP', 'EMAIL', 'WHATSAPP'].includes(String(d.channel)) ||
+      !['IN_APP', 'EMAIL', 'WHATSAPP', 'SMS'].includes(String(d.channel)) ||
       !channelMatches(
         recipients.find((r) => r.id === d.recipientId),
         String(d.channel),
@@ -184,7 +184,7 @@ export function parseScheduleReview(value) {
       !message.recipients.some((r) => r.id === d.recipientId) ||
       !Array.isArray(d.channels) ||
       d.channels.length !== 1 ||
-      !['IN_APP', 'EMAIL', 'WHATSAPP'].includes(String(d.channels[0])) ||
+      !['IN_APP', 'EMAIL', 'WHATSAPP', 'SMS'].includes(String(d.channels[0])) ||
       !channelMatches(
         message.recipients.find((r) => r.id === d.recipientId),
         String(d.channels[0]),
@@ -268,7 +268,7 @@ function channelMatches(recipient, channel) {
   return recipient?.type === 'EMAIL'
     ? channel === 'EMAIL'
     : recipient?.type === 'PHONE'
-      ? ['IN_APP', 'WHATSAPP'].includes(channel)
+      ? ['IN_APP', 'WHATSAPP', 'SMS'].includes(channel)
       : ['SELF', 'USER'].includes(recipient?.type ?? '') &&
         channel === 'IN_APP';
 }

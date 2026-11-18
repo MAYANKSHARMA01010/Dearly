@@ -170,11 +170,10 @@ function OwnedMessage({ id }) {
                       DELIVERED:
                         d.channel === 'WHATSAPP'
                           ? 'WhatsApp notification delivered'
-                          : 'Delivered in app',
+                          : d.channel === 'SMS' ? 'SMS delivery confirmed' : 'Delivered in app',
                       FAILED: 'Delivery failed',
                       UNAVAILABLE: 'Channel unavailable',
-                      SUBMITTED:
-                        'Submitted to Gmail; inbox delivery unconfirmed',
+                      SUBMITTED: d.channel === 'EMAIL' ? 'Submitted to Gmail; inbox delivery unconfirmed' : d.channel === 'SMS' ? 'Queued by SMS gateway; carrier delivery unconfirmed' : 'Submitted to WhatsApp; device delivery unconfirmed',
                       UNKNOWN:
                         'Send result uncertain; automatic resend stopped',
                     }[
@@ -193,8 +192,9 @@ function OwnedMessage({ id }) {
                       : 'No recorded opened status'}
                   </Text>
                 ) : null}
-                {['EMAIL', 'WHATSAPP'].includes(d.channel) ? (
+                {['EMAIL', 'WHATSAPP', 'SMS'].includes(d.channel) ? (
                   <>
+                    {d.notificationSentAt ? <Text>Carrier accepted SMS {when(d.notificationSentAt)}</Text> : null}
                     {d.notificationReadAt ? (
                       <Text>
                         WhatsApp notification read {when(d.notificationReadAt)}

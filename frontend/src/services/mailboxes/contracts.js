@@ -26,7 +26,7 @@ export const states = [
 /** @typedef {{asOf:string,items:Summary[],nextCursor:string|null}} Page */
 /** @typedef {{id:string,kind:string,state:string,version:number,occurredAt:string}} Event */
 /** @typedef {{items:Event[],nextCursor:string|null}} History */
-/** @typedef {{recipientId:string,channel:string,outcome:string,intentId?:string,submittedAt?:string|null,expiresAt?:string|null,revokedAt?:string|null,errorCode?:string|null,notificationReadAt?:string|null,deliveredAt:string|null,openedAt:string|null,attempt:{state:string,number:number,errorCode:string|null,startedAt:string,finishedAt:string|null}|null}} Delivery */
+/** @typedef {{recipientId:string,channel:string,outcome:string,intentId?:string,submittedAt?:string|null,expiresAt?:string|null,revokedAt?:string|null,errorCode?:string|null,notificationSentAt?:string|null,notificationReadAt?:string|null,deliveredAt:string|null,openedAt:string|null,attempt:{state:string,number:number,errorCode:string|null,startedAt:string,finishedAt:string|null}|null}} Delivery */
 /** @typedef {Omit<import('../drafts/contracts.js').Draft,'recipients'> & {status:string,recipients:(import('../drafts/contracts.js').Recipient&{id:string})[],scheduledFor:string|null,timezone:string|null,localDateTime:string|null,canceledAt:string|null,deliveryEnabled:boolean,attachments:import('../attachments/contracts.js').Attachment[],deliveries:Delivery[],history:History}} Owned */
 /** @typedef {{id:string,deliveredAt:string,openedAt:string|null,senderName:string|null,senderIsSelf:boolean,subject:string|null,text:string,occasion:string|null,scheduledFor:string,timezone:string,attachments:import('../attachments/contracts.js').Attachment[]}} Received */
 const invalid = () =>
@@ -157,6 +157,10 @@ export function parseHistory(value) {
       'FAILED',
       'OPENED',
       'EMAIL_LINK_REVOKED',
+      'SMS_LINK_REVOKED',
+      'SMS_NOTIFICATION_SENT',
+      'SMS_NOTIFICATION_DELIVERED',
+      'SMS_NOTIFICATION_FAILED',
       'WHATSAPP_LINK_REVOKED',
       'WHATSAPP_NOTIFICATION_DELIVERED',
       'WHATSAPP_NOTIFICATION_READ',
@@ -229,7 +233,7 @@ export function parseOwned(value) {
     throw invalid();
   const deliveries = r.deliveries.map((v) => {
     const d = record(v);
-    if (d.channel === 'EMAIL' || d.channel === 'WHATSAPP') {
+    if (['EMAIL', 'WHATSAPP', 'SMS'].includes(String(d.channel)) && !(d.channel === 'SMS' && d.outcome === 'UNAVAILABLE')) {
       if (
         typeof d.recipientId !== 'string' ||
         !recipients.some(
@@ -252,7 +256,8 @@ export function parseOwned(value) {
           ? d.deliveredAt !== null
           : !nullableDate(d.deliveredAt)) ||
         (d.outcome === 'DELIVERED' &&
-          (d.channel !== 'WHATSAPP' || !validDate(d.deliveredAt))) ||
+          (!['WHATSAPP', 'SMS'].includes(String(d.channel)) || !validDate(d.deliveredAt))) ||
+        (d.channel === 'SMS' && (!nullableDate(d.notificationSentAt) || d.notificationReadAt !== null || (d.deliveredAt !== null && !validDate(d.notificationSentAt)))) ||
         (d.channel === 'WHATSAPP' &&
           (!nullableDate(d.notificationReadAt) ||
             (d.notificationReadAt !== null && !validDate(d.deliveredAt)))) ||
@@ -283,6 +288,7 @@ export function parseOwned(value) {
             'WAHA_REJECTED',
             'WAHA_DELIVERY_ERROR',
             'WHATSAPP_QUOTA',
+            'SMS_QUOTA', 'SMS_TOO_LONG', 'SMSGATE_AUTH', 'SMSGATE_OFFLINE', 'SMSGATE_THROTTLED', 'SMSGATE_REJECTED', 'SMSGATE_UNCERTAIN', 'SMSGATE_DELIVERY_ERROR',
           ].includes(String(d.errorCode))
         )
       )
@@ -294,6 +300,7 @@ export function parseOwned(value) {
         intentId: d.intentId,
         submittedAt: d.submittedAt,
         deliveredAt: d.deliveredAt,
+        notificationSentAt: d.notificationSentAt ?? null,
         notificationReadAt: d.notificationReadAt ?? null,
         openedAt: d.openedAt,
         expiresAt: d.expiresAt,
@@ -446,6 +453,10 @@ export function eventLabel(kind) {
     PARTIALLY_SUBMITTED: 'Partially submitted',
     DELIVERY_UNKNOWN: 'Delivery result uncertain',
     FAILED: 'Delivery failed',
+    SMS_LINK_REVOKED: 'An SMS content link was revoked',
+    SMS_NOTIFICATION_SENT: 'SMS accepted by carrier',
+    SMS_NOTIFICATION_DELIVERED: 'SMS delivery confirmed',
+    SMS_NOTIFICATION_FAILED: 'SMS delivery failed',
     WHATSAPP_LINK_REVOKED: 'A WhatsApp content link was revoked',
     WHATSAPP_NOTIFICATION_DELIVERED: 'WhatsApp notification delivered',
     WHATSAPP_NOTIFICATION_READ: 'WhatsApp notification read',

@@ -214,9 +214,18 @@ test('delivery capabilities distinguish a running worker from supported in-app d
     inAppAvailable: true,
     emailAvailable: false,
     emailLocalOnly: false,
+    smsAvailable: false, smsStatus: 'DISABLED',
     whatsappAvailable: false,
     whatsappStatus: 'DISABLED',
   });
   status = 'running';
   assert.equal((await api.capabilities()).workerOnline, true);
+});
+
+test('SMS availability requires the selected gateway mode and never borrows WhatsApp readiness', async () => {
+  const api = createScheduleService({ request: async () => ({ backgroundDelivery: true, smsStatus: 'OFFLINE', whatsappStatus: 'READY', worker: { status: 'running' }, channels: [{ channel: 'SMS', available: true, mode: 'SMSGATE' }] }) });
+  const capabilities = await api.capabilities();
+  assert.equal(capabilities.smsAvailable, true);
+  assert.equal(capabilities.smsStatus, 'OFFLINE');
+  assert.equal(capabilities.whatsappAvailable, false);
 });

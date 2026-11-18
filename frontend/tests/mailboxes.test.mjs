@@ -281,3 +281,14 @@ test('confirmed missing or denied messages clear retained private content', asyn
     assert.equal(model.getSnapshot().error, 'Unavailable');
   }
 });
+
+test('SMS carrier evidence stays separate from link opening and rejects unsupported read or delivery claims', () => {
+  const base = message();
+  const sms = { ...base, status: 'SUBMITTED', recipients: [{ id: rid, type: 'PHONE', phone: '+12025550181', country: 'US', label: null }], deliveries: [{ recipientId: rid, intentId: id, channel: 'SMS', outcome: 'SUBMITTED', submittedAt: date, notificationSentAt: null, notificationReadAt: null, deliveredAt: null, openedAt: null, expiresAt: date, revokedAt: null, errorCode: null, attempt: null }] };
+  assert.equal(parseOwned(sms).deliveries[0].outcome, 'SUBMITTED');
+  const delivered = { ...sms.deliveries[0], outcome: 'DELIVERED', notificationSentAt: date, deliveredAt: date };
+  assert.equal(parseOwned({ ...sms, deliveries: [delivered] }).deliveries[0].openedAt, null);
+  assert.throws(() => parseOwned({ ...sms, deliveries: [{ ...delivered, notificationSentAt: null }] }));
+  assert.throws(() => parseOwned({ ...sms, deliveries: [{ ...delivered, notificationReadAt: date }] }));
+  assert.equal(parseOwned({ ...sms, deliveries: [{ ...sms.deliveries[0], outcome: 'UNKNOWN', errorCode: 'SMSGATE_UNCERTAIN' }] }).deliveries[0].errorCode, 'SMSGATE_UNCERTAIN');
+});

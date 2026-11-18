@@ -44,6 +44,9 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
   const [phoneChannels, setPhoneChannels] = useState(
     /** @type {Record<string,string>} */ ({}),
   );
+  const [smsConsent, setSmsConsent] = useState(false),
+    [smsAvailable, setSmsAvailable] = useState(false),
+    [smsStatus, setSmsStatus] = useState('DISABLED');
   const [whatsappConsent, setWhatsappConsent] = useState(false),
     [whatsappAvailable, setWhatsappAvailable] = useState(false),
     [whatsappStatus, setWhatsappStatus] = useState('DISABLED');
@@ -110,6 +113,8 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
             ),
           );
           setWhatsappConsent(false);
+          setSmsAvailable(capabilities.smsAvailable);
+          setSmsStatus(capabilities.smsStatus);
           setWhatsappAvailable(capabilities.whatsappAvailable);
           setWhatsappStatus(capabilities.whatsappStatus);
           setAvailable(capabilities.inAppAvailable);
@@ -146,6 +151,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         ...(source.recipients.some((r) => channelFor(r) === 'WHATSAPP')
           ? { whatsappConsent }
           : {}),
+        ...(source.recipients.some((r) => channelFor(r) === 'SMS') ? { smsConsent } : {}),
         ...(!reschedule && {
           deliveries: source.recipients
             .filter((r) => selected.includes(r.id))
@@ -291,7 +297,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         return (
           <View key={recipient.id} style={{ gap: spacing.sm }}>
             <Checkbox.Item
-              label={`${label} · ${recipient.type === 'EMAIL' ? 'Email' : channelFor(recipient) === 'WHATSAPP' ? 'WhatsApp' : 'In-app'}`}
+              label={`${label} · ${recipient.type === 'EMAIL' ? 'Email' : channelFor(recipient) === 'WHATSAPP' ? 'WhatsApp' : channelFor(recipient) === 'SMS' ? 'SMS' : 'In-app'}`}
               status={selected.includes(recipient.id) ? 'checked' : 'unchecked'}
               disabled={
                 action.busy ||
@@ -299,7 +305,9 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
                 !supported ||
                 !(recipient.type === 'EMAIL'
                   ? emailAvailable
-                  : channelFor(recipient) === 'WHATSAPP'
+                  : channelFor(recipient) === 'SMS'
+                    ? smsAvailable
+                    : channelFor(recipient) === 'WHATSAPP'
                     ? whatsappAvailable
                     : available)
               }
@@ -318,6 +326,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
                 onValueChange={(value) => {
                   changed();
                   setWhatsappConsent(false);
+                  setSmsConsent(false);
                   setPhoneChannels((old) => ({
                     ...old,
                     [recipient.id]: value,
@@ -334,6 +343,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
                   value="WHATSAPP"
                   disabled={action.busy || reschedule || !whatsappAvailable}
                 />
+                <RadioButton.Item label="SMS private link" value="SMS" disabled={action.busy || reschedule || !smsAvailable} />
               </RadioButton.Group>
             ) : null}
             {!supported ? (
@@ -354,7 +364,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         changes require returning to drafts and reviewing a new schedule.
       </Text>
       {source.recipients.some((r) =>
-        ['EMAIL', 'WHATSAPP'].includes(channelFor(r)),
+        ['EMAIL', 'WHATSAPP', 'SMS'].includes(channelFor(r)),
       ) ? (
         <Text accessibilityRole="alert">
           {source.recipients.some((r) => r.type === 'EMAIL') && !emailAvailable
@@ -364,6 +374,10 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
               : 'You can revoke private links from message details.'}
         </Text>
       ) : null}
+      {source.recipients.some((r) => channelFor(r) === 'SMS') ? <>
+        <Text>SMS sender: {smsStatus === 'READY' ? 'Gateway reachable' : smsStatus === 'DISABLED' ? 'Not configured' : 'Needs attention'}. The Android phone and SIM must stay online. Each notification is limited to one SMS segment; carrier limits still apply.</Text>
+        <Checkbox.Item label="These recipients agreed to receive SMS messages from me" status={smsConsent ? 'checked' : 'unchecked'} disabled={action.busy} onPress={() => { changed(); setSmsConsent((v) => !v); }} />
+      </> : null}
       {source.recipients.some((r) => channelFor(r) === 'WHATSAPP') ? (
         <>
           <Text>
@@ -407,10 +421,13 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
           source.recipients.some((r) =>
             r.type === 'EMAIL'
               ? !emailAvailable
-              : channelFor(r) === 'WHATSAPP'
+              : channelFor(r) === 'SMS'
+                ? !smsAvailable
+                : channelFor(r) === 'WHATSAPP'
                 ? !whatsappAvailable
                 : !available,
           ) ||
+          (source.recipients.some((r) => channelFor(r) === 'SMS') && !smsConsent) ||
           (source.recipients.some((r) => channelFor(r) === 'WHATSAPP') &&
             !whatsappConsent) ||
           !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
@@ -466,7 +483,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
                 ? 'Email'
                 : channelFor(recipient) === 'WHATSAPP'
                   ? 'WhatsApp'
-                  : 'In-app'}
+                  : channelFor(recipient) === 'SMS' ? 'SMS' : 'In-app'}
             </Text>
           ))}
           {review.data.message.attachments.map((file) => (
