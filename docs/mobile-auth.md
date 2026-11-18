@@ -1,8 +1,11 @@
 # Mobile authentication — Phase 5
 
-Phone login, profile setup and session recovery use the Phase 4 API. The server
-currently provides **local simulated OTP only**. This is not public phone-possession
-verification; no SMS/WhatsApp provider is configured or contacted.
+Phone login, profile setup and session recovery use the Phase 4 API, extended in
+Phase 13 with real WhatsApp OTP. The local backend now selects `AUTH_MODE=whatsapp`.
+After requesting a code, the screen directs users to WhatsApp; real responses
+contain no development code. Failed or uncertain requests never retry silently.
+The explicit local simulation remains available for isolated development; it is
+not phone-possession verification. No SMS OTP is configured.
 
 ## Try the flow
 

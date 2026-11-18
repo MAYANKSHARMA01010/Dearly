@@ -50,7 +50,7 @@ export default function LoginScreen() {
     <View style={{ gap: spacing.md }}>
       <Text variant="headlineMedium" accessibilityRole="header">{challenge ? 'Enter your code' : 'Your number, your Dearly'}</Text>
       <Text variant="bodyLarge">{challenge ? `Verify ${phone.trim()} to continue.` : 'Sign in or create an account with your phone number.'}</Text>
-      {__DEV__ && process.env.EXPO_PUBLIC_APP_ENV !== 'production' ? <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Local development uses test codes. Real SMS and WhatsApp delivery are not configured yet.</Text> : null}
+      {challenge?.channel === 'whatsapp' ? <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Check WhatsApp for your six-digit verification code.</Text> : challenge?.dispatch === 'simulated' ? <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Local test login. No message was sent.</Text> : null}
     </View>
     {!challenge ? <>
       <CountryPicker value={country} onChange={setCountry} disabled={action.busy} />

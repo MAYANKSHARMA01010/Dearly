@@ -200,3 +200,13 @@ test('file transports use the current session without persisting content or repl
   await s.request('/messages/drafts/media/content',{method:'PUT'},async(_path,options)=>{assert.equal(options.headers.Authorization,`Bearer ${rotated.accessToken}`);transfers++;return {state:'UPLOADED'};});
   assert.equal(transfers,2);
 });
+
+test('real WhatsApp OTP works in release contracts without exposing a development code', () => {
+  const data = { challengeId: id, expiresAt: new Date(clock + 300000).toISOString(), resendAfterSeconds: 60, dispatch: 'accepted', channel: 'whatsapp' };
+  const challenge = parseChallenge(data, false, clock);
+  assert.equal(challenge.channel, 'whatsapp');
+  assert.equal(challenge.developmentCode, undefined);
+  assert.throws(() => parseChallenge({ ...data, developmentCode: '123456' }, true, clock));
+  assert.throws(() => parseChallenge({ ...data, dispatch: 'simulated' }, true, clock));
+  assert.throws(() => parseChallenge({ ...data, channel: 'unknown' }, true, clock));
+});

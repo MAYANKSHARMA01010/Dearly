@@ -2,7 +2,7 @@ import { ApiError } from '../../api/client.js';
 
 /** @typedef {{ id: string, phone: string, name: string | null, email: string | null, timezone: string, phoneVerifiedAt: string, createdAt: string }} User */
 /** @typedef {{ accessToken: string, refreshToken: string, accessExpiresAt: string, sessionExpiresAt: string }} Tokens */
-/** @typedef {{ challengeId: string, expiresAt: string, resendAt: number, dispatch: 'simulated' | 'accepted', developmentCode?: string }} Challenge */
+/** @typedef {{ challengeId: string, expiresAt: string, resendAt: number, dispatch: 'simulated' | 'accepted', channel?: 'whatsapp', developmentCode?: string }} Challenge */
 const invalid = () => new ApiError('The service returned an unexpected response. Please try again.', 'invalid_response');
 /** @param {unknown} value @returns {Record<string, unknown>} */
 function record(value) { if (!value || typeof value !== 'object') throw invalid(); return /** @type {Record<string, unknown>} */ (value); }
@@ -33,8 +33,11 @@ export function parseChallenge(value, allowDevelopmentCode, now = Date.now()) {
     !Number.isInteger(c.resendAfterSeconds) || Number(c.resendAfterSeconds) < 0 || Number(c.resendAfterSeconds) > 3600 ||
     !['simulated', 'accepted'].includes(/** @type {string} */ (c.dispatch))) throw invalid();
   if (c.dispatch === 'simulated' && !allowDevelopmentCode) throw new ApiError('Test login is unavailable in this build.', 'configuration');
+  if (c.channel !== undefined && (c.channel !== 'whatsapp' || c.dispatch !== 'accepted')) throw invalid();
+  if (c.dispatch === 'accepted' && c.developmentCode !== undefined) throw invalid();
   return /** @type {Challenge} */ ({ challengeId: c.challengeId, expiresAt: c.expiresAt,
     resendAt: now + Number(c.resendAfterSeconds) * 1000, dispatch: c.dispatch,
+    ...(c.channel === 'whatsapp' ? { channel: 'whatsapp' } : {}),
     ...(allowDevelopmentCode && c.dispatch === 'simulated' && typeof c.developmentCode === 'string' && /^\d{6}$/.test(c.developmentCode)
       ? { developmentCode: c.developmentCode } : {}),
   });
