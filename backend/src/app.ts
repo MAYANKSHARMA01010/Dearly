@@ -1,3 +1,4 @@
+import { createSmsWebhookRouter } from './routes/smsWebhook.routes';
 import { createWahaWebhookRouter } from './routes/wahaWebhook.routes';
 import { createExternalAccessRouter } from './routes/externalAccess.routes';
 import { createMailboxRouter } from './routes/mailbox.routes';
@@ -78,6 +79,7 @@ export function createApp(
     '/webhooks/waha',
     createWahaWebhookRouter(database.prisma, config.whatsapp),
   );
+  app.use('/webhooks/smsgate', createSmsWebhookRouter(database.prisma, config.sms));
   app.use(express.json({ limit: config.bodyLimitBytes }));
   app.use('/', createRootRouter());
   app.use('/health', createHealthRouter(database));
@@ -124,6 +126,8 @@ export function createApp(
       ),
       config.whatsapp,
       Boolean(config.externalAccess),
+      config.sms,
+      config.externalAccess?.publicUrl,
     ),
   );
   app.use(

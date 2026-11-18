@@ -258,7 +258,7 @@ export class DeliveryWorker {
       await this.verifyFiles(snapshot.attachments);
       if (
         snapshot.deliveryIntents.some((i) =>
-          ['EMAIL', 'WHATSAPP'].includes(i.channel),
+          ['EMAIL', 'WHATSAPP', 'SMS'].includes(i.channel),
         )
       ) {
         if (!this.external) throw new DeliveryFault('INTERNAL');

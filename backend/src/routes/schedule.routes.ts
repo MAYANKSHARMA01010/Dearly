@@ -1,4 +1,5 @@
-import type { WahaConfig } from '../configs/env';
+import { SmsGateProvider, smsLinkFits } from '../providers/sms/smsgate.provider';
+import type { SmsGateConfig, WahaConfig } from '../configs/env';
 import { WahaProvider } from '../providers/whatsapp/waha.provider';
 import { workerStatus } from '../services/workerStatus.service';
 import { Router } from 'express';
@@ -20,7 +21,10 @@ export function createScheduleRouter(
   emailLocalOnly = false,
   whatsapp?: WahaConfig,
   externalAccessEnabled = false,
+  sms?: SmsGateConfig,
+  smsContentUrl?: string,
 ) {
+  const smsEnabled = Boolean(sms && externalAccessEnabled && smsContentUrl && smsLinkFits(smsContentUrl));
   const router = Router();
   router.use((_r, res, next) => {
     res.set('Cache-Control', 'no-store');
@@ -46,16 +50,18 @@ export function createScheduleRouter(
       undefined,
       emailEnabled,
       Boolean(whatsapp && externalAccessEnabled),
+      smsEnabled,
     ),
   );
   router.get('/capabilities', (req, res, next) => {
     void Promise.all([
       workerStatus(prisma),
+      sms ? new SmsGateProvider(sms).readiness() : Promise.resolve('DISABLED'),
       whatsapp
         ? new WahaProvider(whatsapp).readiness()
         : Promise.resolve('DISABLED'),
     ])
-      .then(([worker, whatsappStatus]) =>
+      .then(([worker, smsStatus, whatsappStatus]) =>
         sendSuccess(
           res,
           {
@@ -63,9 +69,13 @@ export function createScheduleRouter(
             emailLocalOnly,
             externalLocalOnly: emailLocalOnly,
             whatsappStatus,
+            smsStatus: sms && !smsEnabled ? 'MISCONFIGURED' : smsStatus,
+            smsSinglePart: true,
             channels: scheduleCapabilities.channels.map((c) =>
               c.channel === 'EMAIL'
                 ? { channel: 'EMAIL', available: emailEnabled, mode: 'SMTP' }
+                : c.channel === 'SMS'
+                  ? { channel: 'SMS', available: smsEnabled, mode: 'SMSGATE' }
                 : c.channel === 'WHATSAPP'
                   ? {
                       channel: 'WHATSAPP',

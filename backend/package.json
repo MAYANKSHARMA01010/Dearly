@@ -26,7 +26,10 @@
     "whatsapp:qr": "tsx src/jobs/manageWhatsapp.ts qr",
     "whatsapp:cleanup": "tsx src/jobs/manageWhatsapp.ts cleanup",
     "whatsapp:start": "tsx src/jobs/manageWhatsapp.ts start",
-    "whatsapp:pair": "tsx src/jobs/manageWhatsapp.ts pair"
+    "whatsapp:pair": "tsx src/jobs/manageWhatsapp.ts pair",
+    "sms:status": "tsx src/jobs/manageSms.ts status",
+    "sms:init": "tsx src/jobs/manageSms.ts init",
+    "sms:cleanup": "tsx src/jobs/manageSms.ts cleanup"
   },
   "keywords": [],
   "author": "",

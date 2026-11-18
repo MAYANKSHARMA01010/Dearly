@@ -1,3 +1,5 @@
+import { SmsGateProvider } from '../providers/sms/smsgate.provider';
+import { SmsReceiptService } from '../services/smsReceipt.service';
 import { WahaProvider } from '../providers/whatsapp/waha.provider';
 import { WahaReceiptService } from '../services/wahaReceipt.service';
 import type {
@@ -96,6 +98,11 @@ async function main() {
       send: (to, link) => waha.send(to, link),
       reconcile: (id) => receipts.reconcile(id),
     };
+  }
+  if (config.sms) {
+    const sms = new SmsGateProvider(config.sms), receipts = new SmsReceiptService(db.prisma!, config.sms);
+    providers.SMS = { senderKey: `sms:${sms.scope}`, scope: sms.scope, dailyLimit: config.sms.dailyLimit,
+      send: (to, link, id) => sms.send(to, link, id), reconcile: (id) => receipts.reconcile(id) };
   }
   const worker = new DeliveryWorker(
     db.prisma!,

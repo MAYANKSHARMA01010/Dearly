@@ -71,6 +71,17 @@ const environmentSchema = z
     EMAIL_PUBLIC_URL: origin.optional(),
     CONTENT_PUBLIC_URL: origin.optional(),
     WHATSAPP_MODE: z.enum(['disabled', 'waha']).default('disabled'),
+    SMS_PROVIDER: z.enum(['disabled', 'smsgate']).default('disabled'),
+    SMSGATE_CONNECTION: z.enum(['local', 'cloud']).default('local'),
+    SMSGATE_LOCAL_API_URL: z.string().url().optional(),
+    SMSGATE_SERVER_API_URL: z.preprocess((v) => v === '' ? undefined : v, z.string().url().optional()),
+    SMSGATE_DEVICE_ID: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/).optional(),
+    SMSGATE_USERNAME: z.string().min(1).max(256).refine((v) => !v.includes(':')).optional(),
+    SMSGATE_PASSWORD: z.string().min(1).max(256).optional(),
+    SMSGATE_TOKEN: z.string().min(16).max(4096).optional(),
+    SMSGATE_WEBHOOK_SECRET: z.string().min(16).max(256).optional(),
+    SMSGATE_SIM_NUMBER: z.coerce.number().int().min(1).max(3).default(1),
+    SMS_DAILY_LIMIT: z.coerce.number().int().min(1).max(500).default(20),
     WAHA_LOCAL_API_URL: origin.optional(),
     WAHA_SERVER_API_URL: z.preprocess(
       (v) => (v === '' ? undefined : v),
@@ -167,6 +178,7 @@ const environmentSchema = z
   });
 
 export interface AppConfig {
+  sms?: SmsGateConfig;
   email?: SmtpConfig;
   whatsapp?: WahaConfig;
   externalAccess?: { publicUrl: string; secret: string; dailyLimit: number };
@@ -196,6 +208,17 @@ export interface WahaConfig {
   session: 'default';
   dailyLimit: number;
   callbackUrl?: string;
+}
+export interface SmsGateConfig {
+  baseUrl: string;
+  connection: 'local' | 'cloud';
+  deviceId?: string;
+  username?: string;
+  password?: string;
+  token?: string;
+  webhookSecret: string;
+  simNumber: number;
+  dailyLimit: number;
 }
 export interface SmtpConfig {
   host: string;
@@ -253,7 +276,25 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     throw new EnvironmentError(
       'Invalid environment settings: WAHA_CALLBACK_URL',
     );
+  const smsUrl = env.NODE_ENV === 'production' ? env.SMSGATE_SERVER_API_URL : env.SMSGATE_LOCAL_API_URL;
+  if (env.SMS_PROVIDER === 'smsgate') {
+    if (!smsUrl || (env.SMSGATE_CONNECTION === 'cloud' && !env.SMSGATE_DEVICE_ID) || !env.SMSGATE_WEBHOOK_SECRET ||
+        (env.SMSGATE_TOKEN ? Boolean(env.SMSGATE_USERNAME || env.SMSGATE_PASSWORD) : !env.SMSGATE_USERNAME || !env.SMSGATE_PASSWORD) ||
+        (env.SMSGATE_CONNECTION === 'local' && env.SMSGATE_TOKEN))
+      throw new EnvironmentError('Invalid environment settings: SMSGate configuration');
+    const u = new URL(smsUrl);
+    if (u.username || u.password || u.search || u.hash ||
+        (u.protocol !== 'https:' && !(u.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(u.hostname))) ||
+        (env.SMSGATE_CONNECTION === 'local' ? u.pathname !== '/' : u.pathname.replace(/\/$/, '') !== '/3rdparty/v1'))
+      throw new EnvironmentError('Invalid environment settings: SMSGate API URL');
+  }
   return {
+    sms: env.SMS_PROVIDER === 'smsgate' ? {
+      baseUrl: smsUrl!.replace(/\/$/, ''), connection: env.SMSGATE_CONNECTION,
+      deviceId: env.SMSGATE_DEVICE_ID!, username: env.SMSGATE_USERNAME,
+      password: env.SMSGATE_PASSWORD, token: env.SMSGATE_TOKEN,
+      webhookSecret: env.SMSGATE_WEBHOOK_SECRET!, simNumber: env.SMSGATE_SIM_NUMBER, dailyLimit: env.SMS_DAILY_LIMIT,
+    } : undefined,
     whatsapp:
       env.WHATSAPP_MODE === 'waha'
         ? {

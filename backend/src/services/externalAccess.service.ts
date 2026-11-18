@@ -50,7 +50,7 @@ export class ExternalAccessService {
       row.revokedAt ||
       row.expiresAt <= now ||
       !['SUBMITTING', 'ACCEPTED', 'UNKNOWN'].includes(row.state) ||
-      !['EMAIL', 'WHATSAPP'].includes(row.intent.channel) ||
+      !['EMAIL', 'WHATSAPP', 'SMS'].includes(row.intent.channel) ||
       !row.intent.message.deliveryEnabled ||
       !row.intent.message.scheduledFor ||
       row.intent.message.scheduledFor > now
@@ -112,7 +112,7 @@ export class ExternalAccessService {
       const intent = await tx.deliveryIntent.findFirst({
         where: {
           id: intentId,
-          channel: { in: ['EMAIL', 'WHATSAPP'] },
+          channel: { in: ['EMAIL', 'WHATSAPP', 'SMS'] },
           message: { ownerId },
         },
         include: { externalDelivery: true, message: true },
@@ -135,7 +135,7 @@ export class ExternalAccessService {
           intent.messageId,
           intent.channel === 'EMAIL'
             ? 'EMAIL_LINK_REVOKED'
-            : 'WHATSAPP_LINK_REVOKED',
+            : intent.channel === 'SMS' ? 'SMS_LINK_REVOKED' : 'WHATSAPP_LINK_REVOKED',
           current.status,
           current.version,
         );

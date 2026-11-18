@@ -1,4 +1,4 @@
-export type ExternalChannel = 'EMAIL' | 'WHATSAPP';
+export type ExternalChannel = 'EMAIL' | 'WHATSAPP' | 'SMS';
 export type SubmissionResult = {
   state: 'ACCEPTED' | 'REJECTED' | 'RETRYABLE' | 'UNKNOWN';
   code: string | null;

@@ -15,7 +15,7 @@ const sent: Prisma.DraftMessageWhereInput = {
     {
       deliveryIntents: {
         some: {
-          channel: { in: ['EMAIL', 'WHATSAPP'] },
+          channel: { in: ['EMAIL', 'WHATSAPP', 'SMS'] },
           externalDelivery: { state: 'ACCEPTED' },
         },
       },
@@ -43,7 +43,7 @@ const failedScope: Prisma.DraftMessageWhereInput = {
     {
       deliveryIntents: {
         some: {
-          channel: 'WHATSAPP',
+          channel: { in: ['WHATSAPP', 'SMS'] },
           externalDelivery: {
             notificationErrorAt: { not: null },
             notificationDeliveredAt: null,
@@ -326,7 +326,8 @@ export class MailboxService {
             supported = i.channel === 'IN_APP';
           const confirmed =
             supported && (Boolean(i.inboxItem) || a?.state === 'SUCCEEDED');
-          if (['EMAIL', 'WHATSAPP'].includes(i.channel)) {
+          if (['EMAIL', 'WHATSAPP'].includes(i.channel) ||
+              (i.channel === 'SMS' && (i.consentAt || i.externalDelivery))) {
             const e = i.externalDelivery;
             return {
               recipientId: i.recipientId,
@@ -334,9 +335,9 @@ export class MailboxService {
               intentId: i.id,
               outcome: !e
                 ? 'PENDING'
-                : i.channel === 'WHATSAPP' && e.notificationDeliveredAt
+                : ['WHATSAPP', 'SMS'].includes(i.channel) && e.notificationDeliveredAt
                   ? 'DELIVERED'
-                  : i.channel === 'WHATSAPP' && e.notificationErrorAt
+                  : ['WHATSAPP', 'SMS'].includes(i.channel) && e.notificationErrorAt
                     ? 'FAILED'
                     : e.state === 'ACCEPTED'
                       ? 'SUBMITTED'
@@ -350,9 +351,10 @@ export class MailboxService {
                             : 'FAILED',
               submittedAt: e?.submittedAt ?? null,
               deliveredAt:
-                i.channel === 'WHATSAPP'
+                ['WHATSAPP', 'SMS'].includes(i.channel)
                   ? (e?.notificationDeliveredAt ?? null)
                   : null,
+              notificationSentAt: i.channel === 'SMS' ? (e?.notificationSentAt ?? null) : null,
               notificationReadAt:
                 i.channel === 'WHATSAPP'
                   ? (e?.notificationReadAt ?? null)
@@ -362,7 +364,7 @@ export class MailboxService {
               revokedAt: e?.revokedAt ?? null,
               errorCode:
                 e?.notificationErrorAt && !e.notificationDeliveredAt
-                  ? 'WAHA_DELIVERY_ERROR'
+                  ? i.channel === 'SMS' ? 'SMSGATE_DELIVERY_ERROR' : 'WAHA_DELIVERY_ERROR'
                   : (e?.errorCode ?? null),
               attempt: null,
             };

@@ -106,7 +106,7 @@ export class ExternalDelivery {
         });
         continue;
       }
-      if (!['EMAIL', 'WHATSAPP'].includes(intent.channel)) continue;
+      if (!['EMAIL', 'WHATSAPP', 'SMS'].includes(intent.channel)) continue;
       const channel = intent.channel as ExternalChannel,
         provider = this.providers[channel];
       const prepared = await this.tx(async (tx) => {
@@ -121,7 +121,7 @@ export class ExternalDelivery {
               data: {
                 state: 'UNKNOWN',
                 errorCode:
-                  channel === 'EMAIL' ? 'SMTP_UNCERTAIN' : 'WAHA_UNCERTAIN',
+                  channel === 'EMAIL' ? 'SMTP_UNCERTAIN' : channel === 'SMS' ? 'SMSGATE_UNCERTAIN' : 'WAHA_UNCERTAIN',
               },
             });
           return null;
@@ -153,7 +153,7 @@ export class ExternalDelivery {
             errorCode: quota
               ? channel === 'EMAIL'
                 ? 'EMAIL_QUOTA'
-                : 'WHATSAPP_QUOTA'
+                : channel === 'SMS' ? 'SMS_QUOTA' : 'WHATSAPP_QUOTA'
               : null,
             expiresAt: new Date(now.getTime() + 7 * 86400000),
           },
@@ -163,7 +163,7 @@ export class ExternalDelivery {
             errorCode: quota
               ? channel === 'EMAIL'
                 ? 'EMAIL_QUOTA'
-                : 'WHATSAPP_QUOTA'
+                : channel === 'SMS' ? 'SMS_QUOTA' : 'WHATSAPP_QUOTA'
               : null,
           },
         });
@@ -201,7 +201,13 @@ export class ExternalDelivery {
               : intent.recipient.phone!,
         };
       });
-      if (!prepared) continue;
+      if (!prepared) {
+        if (channel === 'SMS' && provider?.reconcile) {
+          const existing = await this.db.externalDelivery.findUnique({ where: { intentId: intent.id } });
+          if (existing) await provider.reconcile(existing.id);
+        }
+        continue;
+      }
       // A durable SUBMITTING marker exists before network activity. Never blindly resend it.
       const result = await provider!.send(
         prepared.to,
@@ -223,6 +229,8 @@ export class ExternalDelivery {
       });
       if (result.state === 'ACCEPTED' && result.providerMessageId)
         await provider?.reconcile?.(result.providerMessageId);
+      if (channel === 'SMS' && result.state === 'UNKNOWN')
+        await provider?.reconcile?.(prepared.id);
     }
     return this.tx(async (tx) => {
       const { m, now, w } = await this.held(tx, c);
@@ -242,7 +250,7 @@ export class ExternalDelivery {
           continue;
         }
         const e = i.externalDelivery;
-        if (!['EMAIL', 'WHATSAPP'].includes(i.channel) || !e) {
+        if (!['EMAIL', 'WHATSAPP', 'SMS'].includes(i.channel) || !e) {
           failed++;
           continue;
         }
@@ -252,7 +260,7 @@ export class ExternalDelivery {
             data: {
               state: 'UNKNOWN',
               errorCode:
-                i.channel === 'EMAIL' ? 'SMTP_UNCERTAIN' : 'WAHA_UNCERTAIN',
+                i.channel === 'EMAIL' ? 'SMTP_UNCERTAIN' : i.channel === 'SMS' ? 'SMSGATE_UNCERTAIN' : 'WAHA_UNCERTAIN',
             },
           });
         if (e.state === 'ACCEPTED') accepted++;

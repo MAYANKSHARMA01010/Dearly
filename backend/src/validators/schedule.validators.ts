@@ -4,6 +4,7 @@ export const scheduleVersion = z
   .object({ version: z.number().int().min(1).max(2147483646) })
   .strict();
 const time = {
+  smsConsent: z.boolean().optional(),
   whatsappConsent: z.boolean().optional(),
   localDateTime: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/),
   timezone: z.string().min(1).max(80),

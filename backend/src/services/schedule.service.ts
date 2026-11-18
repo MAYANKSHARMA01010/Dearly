@@ -74,6 +74,7 @@ export class ScheduleService {
     private readonly now: () => Date = () => new Date(),
     private readonly emailEnabled = false,
     private readonly whatsappEnabled = false,
+    private readonly smsEnabled = false,
   ) {
     this.key = createHmac('sha256', secret)
       .update('dearly.schedule.review.v1')
@@ -143,7 +144,9 @@ export class ScheduleService {
           d.channels.length !== 1 ||
           (recipient.type === 'EMAIL'
             ? !this.emailEnabled || d.channels[0] !== 'EMAIL'
-            : recipient.type === 'PHONE' && d.channels[0] === 'WHATSAPP'
+            : recipient.type === 'PHONE' && d.channels[0] === 'SMS'
+              ? !this.smsEnabled || !recipient.phone
+              : recipient.type === 'PHONE' && d.channels[0] === 'WHATSAPP'
               ? !this.whatsappEnabled || !recipient.phone
               : !['SELF', 'USER', 'PHONE'].includes(recipient.type) ||
                 d.channels[0] !== 'IN_APP')
@@ -232,6 +235,7 @@ export class ScheduleService {
         ownerId: message.ownerId,
         deliveryEnabled: message.deliveryEnabled,
         whatsappConsent: choice.whatsappConsent === true,
+        smsConsent: choice.smsConsent === true,
         bindings,
         attachments: message.attachments.map((a) => ({
           id: a.id,
@@ -310,6 +314,8 @@ export class ScheduleService {
           'RECIPIENT_CONSENT_REQUIRED',
           'Confirm that these recipients agreed to WhatsApp messages.',
         );
+      if (deliveries.some((d) => d.channels.includes('SMS')) && choice.smsConsent !== true)
+        throw new ApiError(400, 'RECIPIENT_CONSENT_REQUIRED', 'Confirm that these recipients agreed to SMS messages.');
       const bindings = await this.ready(tx, message, deliveries);
       const resolved = resolveScheduleTime(
         choice.localDateTime,
@@ -352,6 +358,7 @@ export class ScheduleService {
         localDateTime: choice.localDateTime,
         timezone: choice.timezone,
         whatsappConsent: choice.whatsappConsent === true,
+        smsConsent: choice.smsConsent === true,
         deliveries: 'deliveries' in choice ? choice.deliveries : null,
         reviewToken: choice.reviewToken,
       }),
@@ -378,6 +385,8 @@ export class ScheduleService {
           'RECIPIENT_CONSENT_REQUIRED',
           'Confirm that these recipients agreed to WhatsApp messages.',
         );
+      if (deliveries.some((d) => d.channels.includes('SMS')) && choice.smsConsent !== true)
+        throw new ApiError(400, 'RECIPIENT_CONSENT_REQUIRED', 'Confirm that these recipients agreed to SMS messages.');
       const bindings = await this.ready(tx, message, deliveries);
       this.verify(
         choice.reviewToken,
@@ -423,7 +432,7 @@ export class ScheduleService {
             messageId: id,
             recipientId: d.recipientId,
             channel: d.channels[0],
-            consentAt: d.channels[0] === 'WHATSAPP' ? this.now() : null,
+            consentAt: ['WHATSAPP', 'SMS'].includes(d.channels[0]) ? this.now() : null,
           })),
         });
       await recordMessageEvent(
