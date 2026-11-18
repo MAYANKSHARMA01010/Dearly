@@ -32,10 +32,10 @@ test('PostgreSQL draft ownership, recipients, revisions and pagination', { timeo
     await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);
     for (const folder of readdirSync('prisma/migrations').filter((name) => /^\d/.test(name)).sort()) {
       const sql = readFileSync(`prisma/migrations/${folder}/migration.sql`, 'utf8')
-        .replace(/"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|delivery_intents|delivery_work|delivery_attempts|inbox_items|worker_heartbeats|message_events|email_deliveries|email_budgets|waha_receipts|EmailState|MessageEventKind|WorkState|AttemptState|MessageStatus|RecipientType|AttachmentState|DeliveryChannel)"/g, `"${schema}"."$1"`);
-      for (const statement of sql.split(';').filter((s) => s.trim())) await db.$executeRawUnsafe(statement);
+        .replace(/"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|delivery_intents|delivery_work|delivery_attempts|inbox_items|worker_heartbeats|message_events|email_deliveries|email_budgets|waha_receipts|sms_receipts|EmailState|MessageEventKind|WorkState|AttemptState|MessageStatus|RecipientType|AttachmentState|DeliveryChannel)"/g, `"${schema}"."$1"`);
+      for (const statement of sql.replace(/^\s*--.*$/gm, '').split(';').filter((s) => s.trim())) await db.$executeRawUnsafe(statement);
     }
-    assert.equal((await db.$queryRaw<{ table_name: string }[]>`SELECT table_name FROM information_schema.tables WHERE table_schema = ${schema}`).length, 17);
+    assert.equal((await db.$queryRaw<{ table_name: string }[]>`SELECT table_name FROM information_schema.tables WHERE table_schema = ${schema}`).length, 18);
     // Log in through the actual HTTP auth contract; subsequent tests use real
     // database-backed bearer sessions, never a fake owner header.
     const login = async (phone: string) => {

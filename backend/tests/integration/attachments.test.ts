@@ -26,8 +26,8 @@ test('private attachment API, real storage/media validation and orphan cleanup',
   try {
     await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);
     for (const folder of readdirSync('prisma/migrations').filter((name) => /^\d/.test(name)).sort()) {
-      const sql = readFileSync(`prisma/migrations/${folder}/migration.sql`, 'utf8').replace(/"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|delivery_intents|delivery_work|delivery_attempts|inbox_items|worker_heartbeats|message_events|email_deliveries|email_budgets|waha_receipts|EmailState|MessageEventKind|WorkState|AttemptState|MessageStatus|RecipientType|AttachmentState|DeliveryChannel)"/g, `"${schema}"."$1"`);
-      for (const statement of sql.split(';').filter((s) => s.trim())) await db.$executeRawUnsafe(statement);
+      const sql = readFileSync(`prisma/migrations/${folder}/migration.sql`, 'utf8').replace(/"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|delivery_intents|delivery_work|delivery_attempts|inbox_items|worker_heartbeats|message_events|email_deliveries|email_budgets|waha_receipts|sms_receipts|EmailState|MessageEventKind|WorkState|AttemptState|MessageStatus|RecipientType|AttachmentState|DeliveryChannel)"/g, `"${schema}"."$1"`);
+      for (const statement of sql.replace(/^\s*--.*$/gm, '').split(';').filter((s) => s.trim())) await db.$executeRawUnsafe(statement);
     }
     const logs = captureLogger(); const config = { ...parseEnvironment({ NODE_ENV: 'test', DATABASE_URL: url.toString(), AUTH_MODE: 'development', OTP_PEPPER: randomBytes(32).toString('hex'), STORAGE_ROOT: root }), rateLimitMax: 1000 };
     const app = createApp(config, { prisma: db, isReady: async () => true, disconnect: async () => {} }, logs.logger);

@@ -289,6 +289,10 @@ model WorkerHeartbeat {
 
 enum MessageEventKind {
   EMAIL_LINK_REVOKED
+  SMS_LINK_REVOKED
+  SMS_NOTIFICATION_SENT
+  SMS_NOTIFICATION_DELIVERED
+  SMS_NOTIFICATION_FAILED
   WHATSAPP_LINK_REVOKED
   WHATSAPP_NOTIFICATION_DELIVERED
   WHATSAPP_NOTIFICATION_READ
@@ -342,6 +346,8 @@ model ExternalDelivery {
   state EmailState @default(SUBMITTING)
   providerMessageId String? @db.VarChar(255)
   providerScope String? @db.VarChar(64)
+  smsReceipts SmsReceipt[]
+  notificationSentAt DateTime? @db.Timestamptz(3)
   notificationAck Int?
   notificationDeliveredAt DateTime? @db.Timestamptz(3)
   notificationReadAt DateTime? @db.Timestamptz(3)
@@ -379,4 +385,21 @@ model WahaReceipt {
   @@index([scope,providerMessageId])
   @@index([expiresAt])
   @@map("waha_receipts")
+}
+
+model SmsReceipt {
+  id String @id @default(uuid())
+  scope String @db.VarChar(64)
+  eventId String @db.VarChar(128)
+  deliveryId String
+  delivery ExternalDelivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  kind String @db.VarChar(16)
+  partsCount Int?
+  observedAt DateTime @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  appliedAt DateTime? @db.Timestamptz(3)
+  @@unique([scope,eventId])
+  @@index([deliveryId])
+  @@index([expiresAt])
+  @@map("sms_receipts")
 }
