@@ -40,16 +40,16 @@ and a simulated delivery does not complete a real channel integration.
 | 1 | Project structure | — | Complete — scaffold only |
 | 2 | Backend runtime, database connection, and checks | 1 | Complete |
 | 3 | Mobile foundation, routing, theme, and API client | 1; 2 for connectivity | Complete — restored 16 November |
-| 4 | Phone OTP and session backend | 2 | Complete — development only |
-| 5 | Mobile login, session restoration, and profile | 3–4 | Complete — development only |
+| 4 | Phone OTP and session backend | 2 | Complete — real WhatsApp OTP added and self-tested 19 November |
+| 5 | Mobile login, session restoration, and profile | 3–4 | Complete — WhatsApp OTP response supported; new native OTP entry not repeated |
 | 6 | Draft message and recipient APIs | 4 | Complete |
 | 7 | Mobile composer, recipients, and draft management | 5–6 | Complete |
 | 8 | Attachment storage and mobile media tools | 6–7 | Complete |
 | 9 | Schedule, reschedule, and cancellation | 7–8 | Complete — saved plans; automatic delivery not enabled |
 | 10 | Durable workers and in-app delivery | 9 | Complete — native UI check unavailable |
 | 11 | Dashboard, mailboxes, message details, and tracking | 10 | Complete |
-| 12 | Email delivery and secure external content access | 10–11 | Implementation ready — automated checks passed; user-run real inbox test pending |
-| 13 | WhatsApp message delivery | 10–12 | Implementation ready — free Core GOWS sender paired; real recipient delivery check pending |
+| 12 | Email delivery and secure external content access | 10–11 | Complete — real self-inbox, private link and revocation verified 19 November |
+| 13 | WhatsApp message delivery | 10–12 | Complete — scheduled self-delivery and login OTP verified 19 November |
 | 14 | SMS message delivery | 10–12 | Not started |
 | 15 | Notifications, preferences, and account settings | 11–14 | Not started |
 | 16 | Release verification, operations, and handover | 2–15 | Not started |
@@ -351,11 +351,14 @@ file loading, token removal from history and revoked-link rejection. Synthetic
 browser data was removed. Simulator window access was unavailable, so this phase
 has no new native-device verification.
 
-**Acceptance pending by user choice:** The user explicitly chose to perform the
-real email test themselves. No live email was submitted. Current links are local
-`localhost:8080` links and work on this Mac only; no hosted URL was configured.
-Phase 12 remains awaiting that real-recipient acceptance check; capture/mocked SMTP
-checks do not count as proof of delivery. Phases 13–16 have not started.
+**Acceptance completed — 19 November 2026:** The user subsequently authorized
+agent-run self-tests through Phase 13. A reviewed synthetic message reached the
+configured sender's own real Gmail inbox through the durable worker. Its link
+opened the exact private content on this Mac, and owner revocation then returned
+404. An initial pre-submission SMTP connection failure safely retried; one email
+was accepted. This supersedes the original user-run acceptance deferral. Hosted
+URLs remain unconfigured and new native email interaction was not repeated.
+Phases 1–13 are now complete within their documented scope; Phase 14 is not started.
 
 **Build**
 
@@ -405,11 +408,35 @@ scenarios; Expo Doctor 20/20; iOS export. Applied the additive migration and ver
 its checksum. The local service is confirmed Core 2026.10.1 on GOWS. Native UI was
 not newly verified. No Android emulator or simulator reset was used.
 
-**Acceptance pending:** A real designated-recipient scheduled text/link and receipt
-check remains to be authorized/performed. Hosted provider/API/content URLs remain
-unconfigured, as requested; current private content links open on this Mac only.
-Phase 12's user-run email acceptance is still pending. This does not start Phase 14.
-See [WhatsApp setup and contracts](whatsapp-delivery.md).
+**Acceptance completed — 19 November 2026:** The user authorized agent-run self-tests
+through Phase 13 plus WhatsApp OTP. A real fresh OTP was accepted, verified, and
+rejected on replay; the test session was logged out. A reviewed synthetic message
+was scheduled through the durable worker to the paired account and own Gmail.
+WhatsApp was accepted exactly once, and the user confirmed both the OTP and
+scheduled notification arrived. Self-chat did not emit DEVICE/READ receipts, so
+phone arrival is user-confirmed, not fabricated callback evidence. Gmail inbox
+arrival, exact private content opening on this Mac and revocation/404 rejection
+for both channels passed. The first email connection failed before acceptance;
+bounded retry succeeded without replaying the accepted WhatsApp submission.
+
+Live testing found a real Core GOWS response mismatch: `{ id, _data }` omits
+`fromMe`/`to`. The adapter now accepts validated serialized outgoing IDs for this
+engine and preserves UNKNOWN for malformed/mismatched responses. The earlier OTP
+remains UNKNOWN and was superseded by a distinct fresh challenge, never replayed.
+The selected `AUTH_MODE=whatsapp` has separate immediate dispatch and a persistent
+OTP sender budget; development-code simulation remains opt-in and blocked in
+production. Mobile copy/contracts distinguish real WhatsApp from local simulation.
+
+**Follow-up verification:** Backend lint/typecheck/build and 69 standard tests;
+frontend lint/typecheck and 77 tests; isolated auth/WhatsApp integration 25 runner
+entries; final focused WhatsApp integration rerun 11. The existing iPhone 17 Pro Max
+app bundled successfully; new native OTP entry was not separately automated.
+No dependency upgrades, migration, Android launch or reset occurred. Hosted URLs
+remain empty, and localhost links still work on this Mac only. The labeled
+synthetic message remains as acceptance evidence with its test links revoked.
+Phases 1–13 are complete within their documented scope; Phase 14 is not started.
+See [WhatsApp setup and contracts](whatsapp-delivery.md) and
+[real OTP configuration](authentication.md).
 
 **Build**
 

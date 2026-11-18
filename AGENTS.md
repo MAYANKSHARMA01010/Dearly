@@ -70,8 +70,11 @@ within a phase does not authorize the entire phase.
   personal-account receipts, and never reset or relink another application's session.
   Follow [email contracts](docs/email-delivery.md): durable submission markers,
   no automatic resending after uncertainty, private expiring/revocable bearer links,
-  and acceptance distinct from confirmed delivery. The user will perform the live
-  email acceptance test; automated tests must not send real email.
+  and acceptance distinct from confirmed delivery. Live self-tests were explicitly
+  authorized on 19 November 2026; this is not standing permission for arbitrary
+  future test messages. Automated suites must use fake transports. Real login OTP
+  now uses `AUTH_MODE=whatsapp` and the separate immediate auth adapter/budget;
+  simulation remains explicitly local and never falls back from real auth.
 - Phase 11 mailbox rules are in [mailbox contracts](docs/mailboxes.md). Keep counts
   and list/detail projections scoped to the current owner or delivered inbox user.
   Preserve partial outcomes and explicit opened choices; GET/refresh/media viewing

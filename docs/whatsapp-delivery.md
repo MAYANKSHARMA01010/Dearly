@@ -58,9 +58,9 @@ carry stronger evidence. Unmatched events expire through an explicit cleanup job
 
 Provider software can lose its pairing or be restricted by WhatsApp. Pause and
 surface those conditions; do not try to evade them or promise uninterrupted sending.
-Real delivery acceptance needs a user-designated consenting recipient. No live test
-messages are authorized in this phase yet. Phase 12's user-run email acceptance
-also remains pending; starting this phase does not turn it into a pass.
+Real delivery acceptance needs a user-designated consenting recipient. Setup and pairing alone never authorize live sends. On 19 November the user
+explicitly authorized self-tests through Phase 13 plus WhatsApp login OTP. This
+authorization is limited to that acceptance check, not future arbitrary messages.
 
 
 ## Local setup (prepared)
@@ -174,7 +174,8 @@ Revoke a link from owned message details; the phone notification itself cannot b
 recalled by revoking its content link, and downloaded content cannot be recalled.
 
 Pairing and a real designated-recipient send/opening check remain separate from
-contract tests. No live WhatsApp test messages are authorized or sent by this work.
+contract tests. The initial implementation did not send live messages; see the
+19 November acceptance follow-up below.
 
 ## Pairing verification — 17 November 2026
 
@@ -205,3 +206,42 @@ scenarios passed. Expo Doctor passed 20/20 and an iOS export was built. Tests us
 fake gateways and isolated database schemas; no real email/WhatsApp messages were
 submitted. Native mobile UI was not newly verified in this phase. Phone pairing is verified. Real designated-recipient delivery and hosted URL
 validation remain acceptance work.
+
+## WhatsApp login OTP — 19 November follow-up
+
+Real login is selected with `AUTH_MODE=whatsapp`, using this same free Core sender
+through a dedicated immediate OTP adapter. It never enters the scheduled queue,
+never includes a private-content link, and never returns the code to the client.
+See [authentication](authentication.md) for expiry, resend and separate persistent
+sender limits. SMS remains disabled. Core GOWS returns `{ id, _data }` on send;
+the adapter now handles this verified minimal response while still rejecting
+incoming IDs, explicit `fromMe: false`, mismatched phone destinations and malformed
+IDs. Other engines retain their existing stricter contract.
+
+### Live self-test
+
+The user authorized real self-tests on 19 November. An initial OTP returned HTTP
+201 from Core GOWS but was classified UNKNOWN by the old response-field check.
+That challenge was never verified/replayed. After the contract fix, an explicit
+fresh challenge superseded it: gateway acceptance, wrong-code rejection, correct
+verification, session authentication and code-replay rejection passed. The test
+session was logged out. Codes, tokens and the sender number were not logged.
+
+One clearly labeled synthetic message (`Dearly acceptance 1e16f360`) was scheduled
+through normal preview/consent/confirmation for the user's paired account and own
+Gmail. The worker accepted WhatsApp exactly once; an SMTP connection failure safely
+retried before the single email acceptance. Gmail inbox arrival and its exact
+private-content link were verified. The user confirmed both the OTP and scheduled notification arrived in WhatsApp.
+Self-chat did not return DEVICE/READ evidence; phone arrival is user-confirmed,
+not a fabricated callback receipt. Desktop WhatsApp window access was
+unavailable. Phone access to localhost links remains unsupported; content checks
+run on this Mac. Both test links opened the exact synthetic content, were revoked
+by the owner service, and then returned 404. The synthetic message remains as
+labeled evidence in Sent. The real OTP test used the auth HTTP handlers with a
+cryptographically generated code retained only in test memory; native code entry
+was not separately automated.
+
+Standard checks passed: backend lint/typecheck/build and 69 tests; frontend
+lint/typecheck and 77 tests. Isolated auth/WhatsApp integration passed 25 runner
+entries, with a final focused WhatsApp rerun passing 11. No new migration,
+dependency, Expo configuration, Android launch or device reset was needed.

@@ -100,3 +100,15 @@ private file loading, fragment removal and revoked-link rejection; their synthet
 account/message/file were deleted afterward. Native Simulator window access was
 unavailable; a new native email flow check remains unconfirmed. Real inbox delivery
 and opening are pending the user's manual check, not claimed by these results.
+
+
+## Live acceptance follow-up — 19 November 2026
+
+The user subsequently requested agent-run self-tests through Phase 13. A synthetic
+message was reviewed and scheduled to the configured sender's own Gmail alongside
+its WhatsApp self-test. The first SMTP connection failed before submission; the
+existing bounded retry succeeded. One email reached the real Gmail inbox. Its
+private link opened the exact synthetic content on this Mac. No other recipient
+was used. This supersedes the earlier manual-test-pending note for inbox/link
+acceptance. The synthetic link was then revoked, and access correctly returned
+404. Hosted URLs and new native email interaction remain unverified.
