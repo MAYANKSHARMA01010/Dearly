@@ -50,7 +50,7 @@ and a simulated delivery does not complete a real channel integration.
 | 11 | Dashboard, mailboxes, message details, and tracking | 10 | Complete |
 | 12 | Email delivery and secure external content access | 10–11 | Complete — real self-inbox, private link and revocation verified 19 November |
 | 13 | WhatsApp message delivery | 10–12 | Complete — scheduled self-delivery and login OTP verified 19 November |
-| 14 | SMS message delivery | 10–12 | Not started |
+| 14 | SMS message delivery | 10–12 | Implementation ready — physical SMSGate sender setup and real delivery acceptance pending |
 | 15 | Notifications, preferences, and account settings | 11–14 | Not started |
 | 16 | Release verification, operations, and handover | 2–15 | Not started |
 
@@ -463,6 +463,30 @@ limitations are documented; a logged simulation remains incomplete.
 integration; readiness/recovery and user-facing channel state.
 
 ## Phase 14 — SMS message delivery
+
+**Implementation checkpoint — 19 November 2026:** The user selected free SMSGate
+with their physical Android/SIM. Added separate local/server configuration, private
+USB forwarding support, sender readiness/operations, a one-segment private-link
+notification and a separate durable sender budget. SMS requires explicit consent
+bound to schedule review and confirmation. The shared worker records queue
+acceptance, uncertainty and carrier evidence without replaying unknown sends or
+silently adding another channel. Signed callbacks retain only exact scoped
+outbound metadata and require single-part SENT plus DELIVERED evidence before
+claiming whole-message delivery. Link opening remains separate; SMS has no read
+receipt. The mobile form/mailbox support these choices and evidence.
+
+An additive migration adds SMS receipt storage and carrier-submission time while
+preserving existing email/WhatsApp data and links. Existing test fixtures now strip
+SQL comment lines before splitting migration statements; applied migrations were
+not rewritten. Current private SMS configuration stays disabled. No physical phone
+is connected yet and no real SMS has been submitted. Verified backend lint/typecheck/build and 76 tests, frontend lint/typecheck and 79
+tests, all 84 backend integration entries, seven focused SMS integration entries
+and three mobile integration scenarios. A legacy unsupported-SMS display regression
+was corrected and the complete integration sweep rerun successfully. The applied
+migration checksum was verified. No new native SMS check, live SMS, Android emulator
+launch, device reset, dependency upgrade or hosting was performed. This checkpoint
+is not phase completion. See [SMS setup](sms-delivery.md).
+
 
 **Build**
 

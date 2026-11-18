@@ -80,6 +80,15 @@ within a phase does not authorize the entire phase.
   Preserve partial outcomes and explicit opened choices; GET/refresh/media viewing
   must never create an opened receipt. Record activity inside the same transaction
   as each mutation, with no fabricated pre-tracking history or private payloads.
+- Phase 14 selects free SMSGate using the user's physical Android/SIM. Follow
+  [SMS contracts](docs/sms-delivery.md): one carrier segment per private-link
+  notification, explicit review-bound SMS consent, separate sender budget, scoped
+  signed outbound-only callbacks and no blind replay of uncertainty. Distinguish
+  queue acceptance, carrier submission, single-part delivery and content opening.
+  Keep SMS disabled until the intended phone/private credentials are configured.
+  Do not launch an emulator, expose phone APIs publicly, subscribe to incoming SMS,
+  copy ShopSmart credentials, or send to undesignated recipients. Real phone arrival
+  is required before marking Phase 14 complete; WhatsApp login OTP stays separate.
 - Track delivery per recipient and channel. Distinguish provider acceptance,
   delivery confirmation, and opening; only claim statuses supported by evidence.
 - Phase 8 uses private filesystem attachments with owner-only APIs, bounded

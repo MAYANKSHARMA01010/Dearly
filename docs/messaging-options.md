@@ -33,8 +33,8 @@ versions, so adapt patterns rather than copying its package manifest.
 
 | Channel | Suggested starting point | Alternative | Decision status |
 | --- | --- | --- | --- |
-| WhatsApp | WAHA Core free edition | No paid alternative | Selected in Phase 13; dedicated GOWS sender paired and READY; real test pending |
-| SMS | SMSGate with a dedicated Android phone/SIM | InfiniReach free plan only, within its quota | Proposed; verify hardware, SIM costs, reachability, and sending limits |
+| WhatsApp | WAHA Core free edition | No paid alternative | Selected in Phase 13; real scheduled self-delivery confirmed 19 November |
+| SMS | SMSGate with a dedicated Android phone/SIM | InfiniReach free plan only, within its quota | SMSGate selected 19 November; physical Android/SIM setup and live acceptance pending |
 | Email | Nodemailer + Brevo SMTP free plan | Gmail SMTP for a small demo; Resend API/SMTP free plan | Proposed; verify sender/domain setup and usable quota |
 | Local email testing | Explicit local JSON/capture transport | A local test inbox | Development only; never count it as delivery |
 
@@ -162,9 +162,9 @@ Fill this in when you review the options; leave unselected choices open.
 
 | Decision | Current proposal | Selected value / reason |
 | --- | --- | --- |
-| OTP channel/provider | Development adapter first; SMSGate or WAHA free edition for real verification | Pending |
-| WhatsApp | WAHA Core free edition | Selected: dedicated GOWS sender, private links, signed receipts; no live send yet |
-| SMS | SMSGate; InfiniReach free plan only as an alternative | Pending |
+| OTP channel/provider | Explicit local simulation or immediate real dispatch | WhatsApp via free WAHA Core selected; live OTP self-test passed 19 November |
+| WhatsApp | WAHA Core free edition | Selected: dedicated GOWS sender, private links, signed receipts; live self-delivery confirmed 19 November |
+| SMS | SMSGate; InfiniReach free plan only as an alternative | User selected SMSGate with physical Android/SIM on 19 November; setup pending |
 | Email | Nodemailer SMTP | Gmail SMTP selected by the user on 17 November 2026; dedicated sending identity and app password stored only in private backend configuration |
 | External content access | Revocable bearer links | Selected for Phase 12: fragment proof, explicit opening, seven-day expiry and owner revocation; forwarding grants access |
 | Missing credentials | Explicit unavailable status | SMTP mode requires credentials; email scheduling also requires public URL and a separate access key; no silent capture fallback |
@@ -199,9 +199,19 @@ See [SMTP transport documentation](https://nodemailer.com/smtp) and
 
 Phase 12 now implements this integration; see [email contracts](email-delivery.md).
 The earlier setup checkpoint above records the state at that time. Real inbox
-acceptance is pending the user’s own test; email scheduling is now available when
-all private SMTP/access settings exist.
+acceptance passed in the authorized 19 November self-test; email scheduling is
+available when all private SMTP/access settings exist. Earlier no-send statements
+above describe the initial setup checkpoint.
 
 Phase 13 implements the WAHA candidate; see [WhatsApp operations](whatsapp-delivery.md).
 The free Core GOWS sender is paired and readiness was verified. This is separate
 from a real recipient delivery acceptance check. ShopSmart remains read-only.
+
+
+Phase 14 selects SMSGate with the user's physical Android/SIM. The free software
+and current free cloud option were rechecked on 19 November against the provider's
+[pricing](https://docs.sms-gate.app/pricing/), [license](https://docs.sms-gate.app/license/)
+and [API](https://docs.sms-gate.app/integration/api/) documentation. InfiniReach's
+[free plan](https://infinireach.io/docs/billing) still lists one line/100 messages
+per month, with carrier costs separate; it is not selected. See
+[SMS operations and the outstanding live-device check](sms-delivery.md).

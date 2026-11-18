@@ -220,3 +220,22 @@ on port 3101 and never sends messages. `whatsapp:cleanup` removes expired callba
 records. No command resets or logs out an existing account. Production selects
 only the explicitly configured server URL; no local fallback. See
 [WhatsApp setup](../docs/whatsapp-delivery.md) for exact operations and acceptance limits.
+
+## SMSGate sender
+
+Phase 14 selects free SMSGate with the user's physical Android/SIM. SMS currently
+stays disabled pending the actual phone/private sender configuration and live
+acceptance. Read [SMS setup](../docs/sms-delivery.md) before enabling it. The
+integration uses a one-segment private-link notification, explicit SMS consent,
+separate durable quota, client-selected submission IDs and signed outbound receipts.
+Gateway queue acceptance, carrier submission/delivery and content opening are
+separate. Unknown sends never automatically replay. WhatsApp login OTP is unchanged.
+
+Use `sh scripts/connect-smsgate-usb.sh` from the root for a single authorized
+physical phone; it does not start an emulator. From backend/, `npm run sms:status`
+checks readiness, `sms:init` registers outbound-only callbacks, and `sms:cleanup`
+removes expired receipt rows. These commands do not send SMS. Local phone access is
+loopback USB port 3102; reverse port 3103 carries callbacks to backend 8080. Keep
+credentials/signing keys private; current server URLs remain empty. Future hosted
+mode selects only its explicit server URL and requires HTTPS for remote transport.
+Free gateway software does not remove carrier charges, SIM limits or phone uptime.

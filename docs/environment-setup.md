@@ -8,6 +8,8 @@
 | `PORT=8080` | `backend/.env` | Local Express listening port |
 | `AUTH_MODE=whatsapp` | `backend/.env` | Real login OTP through the paired free WAHA sender; committed default remains disabled |
 | `WHATSAPP_OTP_DAILY_LIMIT=20` | `backend/.env` or default | Separate persistent per-sender OTP limit |
+| `SMS_PROVIDER=disabled` | `backend/.env` | Enable only after physical SMSGate sender setup; see SMS guide |
+| `SMSGATE_LOCAL_API_URL` / `SMSGATE_SERVER_API_URL` | `backend/.env` | USB loopback gateway / explicit future server; no production fallback |
 | `OTP_PEPPER` | `backend/.env` only | Private generated OTP hashing key |
 | `EXPO_PUBLIC_API_URL=http://localhost:8080` | `frontend/.env` | Local backend base URL |
 | `EXPO_PUBLIC_SERVER_API_URL=` | `frontend/.env` | Future hosted backend base URL; intentionally empty |
@@ -104,3 +106,6 @@ The optional local pairing helper binds port 3101 only while requested and expir
 after 15 minutes. It is not a deployed setup/admin endpoint. Do not expose it, gateway
 session files or the development OTP backend as a public service. Real remote content
 access requires the planned hosted HTTPS URL, not replacing loopback development auth.
+
+For SMSGate credentials, device signing key, SIM selection and USB forwarding, see
+[SMS setup](sms-delivery.md). None of those values belong in frontend variables.
