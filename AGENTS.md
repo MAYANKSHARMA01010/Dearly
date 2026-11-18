@@ -122,6 +122,12 @@ within a phase does not authorize the entire phase.
 
 ## Verification and documentation
 
+- The user requests an audible alert when work finishes or needs their input,
+  because Do Not Disturb can hide banners. Run `sh scripts/attention-sound.sh`
+  before asking a blocking question/handoff and before the final reply. Do not
+  change system volume, output device or Focus settings. Report sound failures;
+  do not claim the user heard a sound just because playback returned successfully.
+
 - Use a single iOS simulator: iPhone 18 Pro Max if installed; otherwise iPhone
   17 Pro Max. Do not create additional iPhone or iPad targets for routine work.
   Keep one suitable Android phone emulator for Android checks, and leave it

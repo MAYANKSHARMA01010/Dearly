@@ -39,3 +39,8 @@ SMTP notifications and private links; Phase 13 adds free WAHA Core WhatsApp deli
 and immediate login OTP. Live self-tests verified inbox arrival, user-confirmed
 WhatsApp arrival, private content and revoked-link rejection. Hosted URLs remain
 empty; localhost message links open on this Mac only. Phase 14 (SMS) is next.
+
+For development-task attention alerts on this Mac, run
+`sh scripts/attention-sound.sh`. Agents use it before waiting for input and finishing.
+It plays a local sound without changing Focus, volume or output settings. This is
+separate from Dearly's future product notification features in Phase 15.
