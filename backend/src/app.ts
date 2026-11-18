@@ -18,6 +18,8 @@ import { ApiError } from './utils/ApiError';
 import type { AppLogger } from './utils/logger';
 import { AuthService } from './services/auth.service';
 import { developmentOtpProvider } from './providers/otp/otp.provider';
+import { whatsappOtpProvider } from './providers/otp/whatsappOtp.provider';
+import { WahaProvider } from './providers/whatsapp/waha.provider';
 import { createAuthRouter } from './routes/auth.routes';
 import { createDraftRouter } from './routes/draft.routes';
 
@@ -80,15 +82,23 @@ export function createApp(
   app.use('/', createRootRouter());
   app.use('/health', createHealthRouter(database));
   const auth =
-    config.authMode === 'development' && database.prisma && config.otpPepper
+    config.authMode !== 'disabled' &&
+    database.prisma &&
+    config.otpPepper &&
+    (config.authMode === 'development' || config.whatsapp)
       ? new AuthService(
           database.prisma,
           config.otpPepper,
-          developmentOtpProvider(),
+          config.authMode === 'whatsapp' && config.whatsapp
+            ? whatsappOtpProvider(
+                new WahaProvider(config.whatsapp),
+                config.whatsappOtpDailyLimit ?? 20,
+              )
+            : developmentOtpProvider(),
         )
       : undefined;
   const activeAuth =
-    config.authMode === 'development' ? (authOverride ?? auth) : undefined;
+    config.authMode !== 'disabled' ? (authOverride ?? auth) : undefined;
   app.use('/auth', createAuthRouter(activeAuth));
   app.use(
     '/external',

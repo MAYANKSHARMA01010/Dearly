@@ -1,14 +1,39 @@
 # Phone authentication backend — Phase 4
 
-Implemented on 16 November 2026. **Development-only authentication.** No SMS or
-WhatsApp provider is configured; no real messages have been sent. The local
-adapter returns a random code in the response with `dispatch: "simulated"`.
-It does not prove possession of a phone. Do not publish this mode or treat its
-accounts as evidence of real phone verification.
+Implemented on 16 November 2026; extended with WhatsApp OTP on 19 November.
+`AUTH_MODE=whatsapp` sends real login codes through the configured free WAHA Core
+GOWS sender. `AUTH_MODE=development` remains an explicit local simulation, returning
+`dispatch: "simulated"` and a test code. Simulation does not prove phone possession
+and must never be published. SMS OTP is not implemented.
+
+## Enable WhatsApp OTP
+
+Configure `AUTH_MODE=whatsapp`, a private stable `OTP_PEPPER`, and the existing
+[WAHA sender settings](whatsapp-delivery.md). Keep the sender paired and online.
+Restart the backend after changing `.env`. Local private configuration now selects
+WhatsApp OTP. The verification screen directs users to WhatsApp; real responses
+contain `dispatch: "accepted"`, `channel: "whatsapp"` and no code.
+
+Codes dispatch immediately through auth, separately from scheduled messages.
+Existing cryptographic six-digit generation, five-minute expiry, hashed storage,
+one-minute resend cooldown, five requests per number/hour and attempt limits still
+apply. A separate persistent `WHATSAPP_OTP_DAILY_LIMIT` (default 20) reserves quota
+transactionally across numbers/processes before sending. It uses the existing
+sender-budget table with a distinct scoped OTP key; scheduled sends cannot consume
+it. Failed/uncertain attempts count. Quota exhaustion returns 429. Offline,
+restricted, rejected or uncertain sends return safe 503 errors, create no session,
+and never trigger automatic retry or channel fallback. An explicit new request
+supersedes the previous code. Provider acceptance alone cannot prove phone receipt.
+
+Production accepts WhatsApp auth only with complete private server WAHA settings;
+it still rejects development auth. Keep local services on loopback and leave hosted
+URLs empty until deployment. This integration alone does not establish release
+readiness. Existing accounts verified through simulation are not retroactively
+proof of real phone possession; sign in again using real OTP before relying on them.
 
 ## Enable local testing
 
-The existing private `backend/.env` now enables the development adapter. New
+The existing private `backend/.env` now selects WhatsApp OTP. New
 checkouts start with `AUTH_MODE=disabled` and return `503 AUTH_DISABLED` on `/auth`.
 To enable local simulation, configure all of:
 
@@ -35,8 +60,8 @@ and migrate it separately; do not apply a reset or fabricate migration history.
 
 Production rejects `AUTH_MODE=development`, including when `HOST` is loopback.
 Development mode also rejects non-loopback binds and missing/malformed peppers.
-Keep auth disabled on hosted servers until a real adapter is implemented and
-verified. A local proxy/tunnel must not expose this simulation endpoint publicly.
+Keep auth disabled on hosted servers until the real sender is configured and
+verified there. A local proxy/tunnel must not expose this simulation endpoint publicly.
 
 ## HTTP contracts
 
@@ -122,10 +147,11 @@ connectivity only, not migration completeness.
 `src/providers/otp/otp.provider.ts` defines simulated/accepted/rejected/unknown
 outcomes. Accepted submissions retain provider message IDs. Exceptions/timeouts
 become uncertain and do not trigger automatic retries or channel fallback. Adapter
-acceptance is not proof of delivery; never label simulation as sent. No real
-SMSGate/WAHA implementation or dependency is included. The user must select a free
-option from [messaging options](messaging-options.md) before integration, with an
-explicit consenting test recipient before any live test. Public login remains blocked.
+acceptance is not proof of delivery; never label simulation as sent. The real
+WhatsApp adapter reuses the selected free WAHA transport. Core GOWS send responses
+contain `{ id, _data }`, without `fromMe`/`to`; validate the serialized outbound ID
+and phone destination, preserving UNKNOWN for malformed/mismatched responses.
+No SMS adapter was added. Use only designated consenting recipients for live tests.
 
 The implementation follows the OTP/session hygiene in the
 [OWASP OTP guidance](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html)

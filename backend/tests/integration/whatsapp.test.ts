@@ -26,6 +26,12 @@ import {
 import { WahaReceiptService } from '../../src/services/wahaReceipt.service';
 import type { WahaConfig } from '../../src/configs/env';
 import { MailboxService } from '../../src/services/mailbox.service';
+import { AuthService } from '../../src/services/auth.service';
+import { whatsappOtpProvider } from '../../src/providers/otp/whatsappOtp.provider';
+import { ApiError } from '../../src/utils/ApiError';
+import request from 'supertest';
+import { createApp } from '../../src/app';
+import { captureLogger, config } from '../helpers';
 const databaseUrl = process.env.AUTH_TEST_DATABASE_URL;
 if (!databaseUrl)
   throw Error('Set AUTH_TEST_DATABASE_URL for isolated WhatsApp tests.');
@@ -184,6 +190,33 @@ test(
             phoneVerifiedAt: new Date('2020-01-01'),
           },
         });
+      await scenario('WhatsApp OTP verifies without returning a code and its sender quota survives concurrency/restarts', async () => {
+        let posts = 0;
+        const p = whatsappOtpProvider(new WahaProvider(settings, async (_u, o) => {
+          if (!o?.method) return Response.json({ name: 'default', status: 'WORKING' });
+          posts++;
+          const target = JSON.parse(String(o.body)).chatId;
+          return Response.json({ id: `true_${target}_OTPTEST`, fromMe: true });
+        }), 2);
+        const logs = captureLogger();
+        const service = new AuthService(db, pepper, p, () => new Date(), () => '123456');
+        const app = createApp({ ...config, authMode: 'whatsapp', whatsapp: settings, otpPepper: pepper }, { prisma: db, isReady: async () => true, disconnect: async () => {} }, logs.logger, service);
+        const result = await request(app).post('/auth/otp/request').send({ phone: '+12025550185', country: 'US' }).expect(200);
+        assert.equal(result.body.data.channel, 'whatsapp');
+        assert.equal(result.body.data.dispatch, 'accepted');
+        assert.equal(result.body.data.developmentCode, undefined);
+        assert.doesNotMatch(JSON.stringify(result.body), /123456|OTPTEST/);
+        await request(app).post('/auth/otp/verify').send({ challengeId: result.body.data.challengeId, code: '000000' }).expect(401);
+        await request(app).post('/auth/otp/verify').send({ challengeId: result.body.data.challengeId, code: '123456' }).expect(200);
+        await request(app).post('/auth/otp/verify').send({ challengeId: result.body.data.challengeId, code: '123456' }).expect(401);
+        const restarted = new AuthService(db, pepper, p);
+        const concurrent = await Promise.allSettled(['+12025550186', '+12025550187'].map((phone) => restarted.requestOtp(phone)));
+        assert.equal(concurrent.filter((r) => r.status === 'fulfilled').length, 1);
+        assert.equal(concurrent.filter((r) => r.status === 'rejected' && r.reason instanceof ApiError && r.reason.code === 'AUTH_RATE_LIMITED').length, 1);
+        await assert.rejects(new AuthService(db, pepper, p).requestOtp('+12025550188'), (e: unknown) => e instanceof ApiError && e.code === 'AUTH_RATE_LIMITED');
+        assert.equal(posts, 2);
+        assert.doesNotMatch(JSON.stringify(logs.entries), /123456|OTPTEST|12025550185/);
+      });
       const drafts = new DraftService(db),
         schedules = new ScheduleService(db, pepper, () => now, false, true),
         external = new ExternalAccessService(db, key),

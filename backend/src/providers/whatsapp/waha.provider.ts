@@ -245,6 +245,31 @@ export class WahaProvider {
     } catch {
       return result('REJECTED', 'INVALID_RECIPIENT');
     }
+    return this.sendText(
+      chatId,
+      `Your private Dearly message is ready.\n\n${link}\n\nThis link expires in seven days. Anyone with the link can open it; the sender can revoke it.`,
+    );
+  }
+  async sendOtp(phone: string, code: string): Promise<SubmissionResult> {
+    if (!/^\d{6}$/.test(code))
+      return { state: 'REJECTED', code: 'INVALID_OTP', providerMessageId: null };
+    let chatId: string;
+    try {
+      chatId = whatsappJid(phone);
+    } catch {
+      return { state: 'REJECTED', code: 'INVALID_RECIPIENT', providerMessageId: null };
+    }
+    return this.sendText(
+      chatId,
+      `Your Dearly verification code is ${code}. It expires in 5 minutes. Do not share this code. If you did not request it, ignore this message.`,
+    );
+  }
+  private async sendText(chatId: string, text: string): Promise<SubmissionResult> {
+    const result = (
+      state: SubmissionResult['state'],
+      code: string | null,
+      providerMessageId: string | null = null,
+    ) => ({ state, code, providerMessageId });
     const status = await this.readiness();
     if (status !== 'READY')
       return result(
@@ -263,7 +288,7 @@ export class WahaProvider {
         body: JSON.stringify({
           session: this.config.session,
           chatId,
-          text: `Your private Dearly message is ready.\n\n${link}\n\nThis link expires in seven days. Anyone with the link can open it; the sender can revoke it.`,
+          text,
           linkPreview: false,
         }),
       });
@@ -279,8 +304,14 @@ export class WahaProvider {
         typeof r.id !== 'string' ||
         r.id.length > 255 ||
         !/^true_[0-9]{5,20}@(c\.us|lid)_[A-Za-z0-9_-]+$/.test(r.id) ||
-        r.fromMe !== true
+        (r.fromMe !== true &&
+          !(this.config.engine === 'GOWS' && r.fromMe === undefined))
       )
+        return result('UNKNOWN', 'WAHA_UNCERTAIN');
+      // Core GOWS returns { id, _data }, without the redundant fromMe/to fields.
+      // The serialized ID must still prove outbound direction and the PN destination.
+      const idChat = r.id.split('_')[1];
+      if (idChat.endsWith('@c.us') && idChat !== chatId)
         return result('UNKNOWN', 'WAHA_UNCERTAIN');
       if (typeof r.to === 'string' && r.to.endsWith('@c.us') && r.to !== chatId)
         return result('UNKNOWN', 'WAHA_UNCERTAIN');

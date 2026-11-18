@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Prisma, type PrismaClient, type User } from '@prisma/client';
 import { ApiError } from '../utils/ApiError';
 import { matchesHash, newOtp, newToken, otpHash, sessionIdFromToken, tokenHash } from '../utils/authCrypto';
@@ -46,6 +46,17 @@ export class AuthService {
       const state = await tx.phoneAuthState.findUnique({ where: { phone } });
       const inWindow = state && now.getTime() - state.requestWindowAt.getTime() < 60 * MINUTE;
       if (state && (now.getTime() - state.lastRequestedAt.getTime() < MINUTE || (inWindow && state.requestCount >= 5))) throw limited();
+      // Separate persistent sender quota prevents many distinct numbers exhausting WAHA.
+      // Consume before network I/O, including unknown outcomes; never auto refund/retry.
+      if (this.provider.budget) {
+        const id = createHash('sha256').update(this.provider.budget.key).digest('hex');
+        await tx.senderBudget.upsert({ where: { id }, create: { id, resetsAt: new Date(now.getTime() + 24 * 60 * MINUTE) }, update: { id } });
+        let budget = await tx.senderBudget.findUniqueOrThrow({ where: { id } });
+        if (budget.resetsAt <= now)
+          budget = await tx.senderBudget.update({ where: { id }, data: { count: 0, resetsAt: new Date(now.getTime() + 24 * 60 * MINUTE) } });
+        if (budget.count >= this.provider.budget.dailyLimit) throw limited();
+        await tx.senderBudget.update({ where: { id }, data: { count: { increment: 1 } } });
+      }
       const id = randomUUID();
       const code = this.code();
       await tx.phoneAuthState.upsert({ where: { phone },
@@ -79,6 +90,7 @@ export class AuthService {
     return {
       challengeId: reservation.challenge.id, expiresAt: reservation.challenge.expiresAt,
       resendAfterSeconds: 60, dispatch: outcome.status,
+      ...(this.provider.channel && { channel: this.provider.channel }),
       ...(outcome.status === 'simulated' && { developmentCode: outcome.developmentCode }),
     };
   }

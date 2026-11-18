@@ -6,7 +6,8 @@
 | --- | --- | --- |
 | `DATABASE_URL` | `backend/.env` only | Supplied Neon PostgreSQL connection; preserve its SSL/channel-binding query parameters |
 | `PORT=8080` | `backend/.env` | Local Express listening port |
-| `AUTH_MODE=development` | `backend/.env` | Local simulated OTP only; committed default is disabled |
+| `AUTH_MODE=whatsapp` | `backend/.env` | Real login OTP through the paired free WAHA sender; committed default remains disabled |
+| `WHATSAPP_OTP_DAILY_LIMIT=20` | `backend/.env` or default | Separate persistent per-sender OTP limit |
 | `OTP_PEPPER` | `backend/.env` only | Private generated OTP hashing key |
 | `EXPO_PUBLIC_API_URL=http://localhost:8080` | `frontend/.env` | Local backend base URL |
 | `EXPO_PUBLIC_SERVER_API_URL=` | `frontend/.env` | Future hosted backend base URL; intentionally empty |
@@ -19,8 +20,9 @@ connection string. Never put database credentials in the frontend.
 Private `.env` files are ignored by Git. Committed `.env.example` files contain
 only safe placeholders/public defaults. On a fresh checkout, copy each example
 to `.env` and supply the real backend database connection privately. Other backend
-example settings are validated as features are implemented. Phase 4 adds explicitly
-development-only authentication; Redis remains optional. See
+example settings are validated as features are implemented. Phase 4's local
+simulation remains available only through explicit `AUTH_MODE=development`;
+Phase 13 adds real WhatsApp OTP. Redis remains optional. See
 [auth setup and contracts](authentication.md) for mode guards, migration and tests.
 
 Backend defaults are `HOST=127.0.0.1`, `LOG_LEVEL=info`, a 1 MiB JSON body limit,

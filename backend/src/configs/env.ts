@@ -59,7 +59,9 @@ const environmentSchema = z
       .min(100)
       .max(60000)
       .default(10000),
-    AUTH_MODE: z.enum(['disabled', 'development']).default('disabled'),
+    AUTH_MODE: z.enum(['disabled', 'development', 'whatsapp']).default('disabled'),
+    WHATSAPP_OTP_DAILY_LIMIT: z.coerce
+      .number().int().min(1).max(500).default(20),
     STORAGE_ROOT: z.string().trim().min(1).default('./data/attachments'),
     FFPROBE_PATH: z.string().trim().min(1).default('ffprobe'),
     OTP_PEPPER: z
@@ -152,6 +154,16 @@ const environmentSchema = z
           'Development auth requires loopback, a pepper and a non-production environment.',
       });
     }
+    if (
+      env.AUTH_MODE === 'whatsapp' &&
+      (!env.OTP_PEPPER || env.WHATSAPP_MODE !== 'waha')
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['AUTH_MODE'],
+        message: 'WhatsApp auth requires a pepper and configured WAHA.',
+      });
+    }
   });
 
 export interface AppConfig {
@@ -169,7 +181,8 @@ export interface AppConfig {
   rateLimitMax: number;
   trustProxyHops: number;
   shutdownTimeoutMs: number;
-  authMode: 'disabled' | 'development';
+  authMode: 'disabled' | 'development' | 'whatsapp';
+  whatsappOtpDailyLimit?: number;
   otpPepper?: string;
   storageRoot: string;
   ffprobePath: string;
@@ -289,6 +302,7 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     trustProxyHops: env.TRUST_PROXY_HOPS,
     shutdownTimeoutMs: env.SHUTDOWN_TIMEOUT_MS,
     authMode: env.AUTH_MODE,
+    whatsappOtpDailyLimit: env.WHATSAPP_OTP_DAILY_LIMIT,
     otpPepper: env.OTP_PEPPER,
     storageRoot: env.STORAGE_ROOT,
     ffprobePath: env.FFPROBE_PATH,

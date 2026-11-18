@@ -297,3 +297,58 @@ test('GOWS callbacks persist only for the configured engine and preserve scope i
   }
   assert.equal(stored, 1);
 });
+
+test('WhatsApp OTP is immediate, contains no content link and never auto retries ambiguous sends', async () => {
+  const { whatsappOtpProvider } = await import('../src/providers/otp/whatsappOtp.provider');
+  const calls: RequestInit[] = [];
+  const gateway = new WahaProvider(settings, async (_url, options) => {
+    if (!options?.method) return ready();
+    calls.push(options);
+    return Response.json({ id: messageId, fromMe: true, to: '12025550171@c.us' });
+  });
+  const provider = whatsappOtpProvider(gateway, 20);
+  const result = await provider.dispatch({ phone: '+12025550171', code: '123456', challengeId: 'synthetic' });
+  assert.equal(result.status, 'accepted');
+  assert.equal(provider.channel, 'whatsapp');
+  const body = JSON.parse(String(calls[0].body));
+  assert.match(body.text, /123456.*5 minutes/);
+  assert.doesNotMatch(body.text, /https?:|private Dearly message/);
+  assert.equal(body.linkPreview, false);
+  assert.equal(calls.length, 1);
+  await gateway.sendOtp('+12025550171', 'bad');
+  assert.equal(calls.length, 1);
+  for (const mode of ['offline', 'throttled', 'uncertain'] as const) {
+    let posts = 0;
+    const p = whatsappOtpProvider(new WahaProvider(settings, async (_u, options) => {
+      if (!options?.method) return mode === 'offline' ? new Response('', { status: 503 }) : ready();
+      posts++;
+      if (mode === 'uncertain') throw Error('synthetic timeout');
+      return new Response('', { status: 429 });
+    }), 20);
+    const out = await p.dispatch({ phone: '+12025550171', code: '123456', challengeId: 'synthetic' });
+    assert.equal(out.status, mode === 'uncertain' ? 'unknown' : 'rejected');
+    assert.equal(posts, mode === 'offline' ? 0 : 1);
+  }
+});
+
+test('WhatsApp auth requires real provider configuration and never relaxes production development-code guards', () => {
+  const base = { DATABASE_URL: config.databaseUrl, AUTH_MODE: 'whatsapp', OTP_PEPPER: 'a'.repeat(64), WHATSAPP_MODE: 'waha', WAHA_LOCAL_API_URL: 'http://localhost:3100', WAHA_API_KEY: settings.apiKey, WAHA_WEBHOOK_SECRET: settings.webhookSecret };
+  assert.equal(parseEnvironment(base).authMode, 'whatsapp');
+  assert.equal(parseEnvironment(base).whatsappOtpDailyLimit, 20);
+  for (const change of [{ OTP_PEPPER: undefined }, { WHATSAPP_MODE: 'disabled' }, { WAHA_API_KEY: undefined }, { WHATSAPP_OTP_DAILY_LIMIT: '0' }, { NODE_ENV: 'production' }])
+    assert.throws(() => parseEnvironment({ ...base, ...change }));
+  assert.equal(parseEnvironment({ ...base, NODE_ENV: 'production', WAHA_SERVER_API_URL: 'https://private-waha.example' }).authMode, 'whatsapp');
+});
+
+test('Core GOWS minimal send responses accept outbound IDs while mismatches stay uncertain', async () => {
+  for (const [body, expected] of [
+    [{ id: messageId, _data: null }, 'ACCEPTED'],
+    [{ id: messageId, fromMe: false }, 'UNKNOWN'],
+    [{ id: 'false_12025550171@c.us_TEST' }, 'UNKNOWN'],
+    [{ id: 'true_12025550172@c.us_TEST' }, 'UNKNOWN'],
+    [{ id: messageId, to: '12025550172@c.us' }, 'UNKNOWN'],
+  ] as const) {
+    const gateway = new WahaProvider({ ...settings, engine: 'GOWS' }, async (_u, o) => o?.method ? Response.json(body) : ready());
+    assert.equal((await gateway.sendOtp('+12025550171', '123456')).state, expected);
+  }
+});

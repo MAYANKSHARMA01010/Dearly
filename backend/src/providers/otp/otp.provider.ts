@@ -4,6 +4,8 @@ export type OtpDispatchResult =
   | { status: 'rejected' | 'unknown'; code: string };
 
 export interface OtpProvider {
+  readonly channel?: 'whatsapp';
+  readonly budget?: { key: string; dailyLimit: number };
   dispatch(input: { phone: string; code: string; challengeId: string }): Promise<OtpDispatchResult>;
 }
 

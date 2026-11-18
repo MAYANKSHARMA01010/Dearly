@@ -2,8 +2,9 @@
 
 Phase 2 provides a runnable Node.js/Express/TypeScript API with Prisma/PostgreSQL,
 health checks, request safeguards, safe JSON logging, and focused automated tests.
-Phase 4 adds phone OTP, rotating sessions and own-profile APIs, explicitly for local
-development simulation only. See [authentication setup and contracts](../docs/authentication.md).
+Phase 4 adds phone OTP, rotating sessions and own-profile APIs. Phase 13 extends
+login with real WhatsApp OTP through free WAHA Core; local simulation remains opt-in.
+See [authentication setup and contracts](../docs/authentication.md).
 Phase 6 adds private versioned draft/recipient APIs; see [the draft contract](../docs/draft-api.md).
 Scheduling and real channel delivery follow later.
 
@@ -103,8 +104,9 @@ with `Retry-After`. Unexpected errors are safe `500` responses without raw stack
 | `RATE_LIMIT_MAX` | `100` requests/IP/window |
 | `TRUST_PROXY_HOPS` | `0`; review the actual proxy topology before changing |
 | `SHUTDOWN_TIMEOUT_MS` | `10000` |
-| `AUTH_MODE` | `disabled`; `development` enables loopback-only simulated OTP |
-| `OTP_PEPPER` | Required for development auth: private random 64 lowercase hex characters |
+| `AUTH_MODE` | `disabled`; `development` for loopback simulation; `whatsapp` for real WAHA login OTP |
+| `OTP_PEPPER` | Required for enabled auth: private random 64 lowercase hex characters |
+| `WHATSAPP_OTP_DAILY_LIMIT` | Persistent separate OTP sender budget, default 20 per 24-hour window |
 
 Missing/invalid required settings fail startup with safe field names. Redis remains
 optional. Opaque database-backed tokens replace the unused JWT placeholders. Never expose `DATABASE_URL` or credentials via frontend variables.
