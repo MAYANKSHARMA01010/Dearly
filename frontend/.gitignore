@@ -39,3 +39,15 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Private local build credentials and outputs
+credentials.json
+.secrets/
+artifacts/
+*.apk
+*.aab
+*.jks
+*.keystore
+
+google-services.json
+firebase-debug.log

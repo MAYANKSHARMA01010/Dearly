@@ -1,0 +1,27 @@
+# Local Android source archive: only the mobile app belongs in it.
+.git/
+**/node_modules/
+backend/
+docs/
+scripts/
+temp/
+.impeccable/
+**/.runtime/
+**/.expo/
+frontend/android/
+frontend/ios/
+**/dist/
+**/web-build/
+**/artifacts/
+**/.secrets/
+**/credentials.json
+**/.env
+**/.env.*
+**/firebase-debug.log
+**/*.apk
+**/*.aab
+**/*.jks
+**/*.keystore
+**/*.pem
+# Firebase Android client config belongs in the native app, never server keys.
+!frontend/google-services.json
