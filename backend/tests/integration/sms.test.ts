@@ -55,7 +55,7 @@ test('SMS durable dispatch, scoped receipts, consent, privacy and uncertainty', 
   try {
     await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);
     for (const folder of readdirSync('prisma/migrations').filter((f) => /^\d/.test(f)).sort()) {
-      const sql = readFileSync(`prisma/migrations/${folder}/migration.sql`, 'utf8').replace(/"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|delivery_intents|delivery_work|delivery_attempts|inbox_items|worker_heartbeats|message_events|email_deliveries|email_budgets|waha_receipts|sms_receipts|EmailState|MessageEventKind|WorkState|AttemptState|MessageStatus|RecipientType|AttachmentState|DeliveryChannel)"/g, `"${schema}"."$1"`);
+      const sql = readFileSync(`prisma/migrations/${folder}/migration.sql`, 'utf8').replace(/"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|delivery_intents|delivery_work|delivery_attempts|inbox_items|worker_heartbeats|message_events|email_deliveries|email_budgets|waha_receipts|sms_receipts|account_preferences|notifications|push_devices|push_jobs|EmailState|MessageEventKind|WorkState|AttemptState|MessageStatus|RecipientType|AttachmentState|DeliveryChannel)"/g, `"${schema}"."$1"`);
       for (const statement of sql.replace(/^\s*--.*$/gm, '').split(';').filter((s) => s.trim())) await db.$executeRawUnsafe(statement);
     }
     const owner = await db.user.create({ data: { phone: '+12025550180', phoneVerifiedAt: new Date() } });
