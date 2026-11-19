@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { BackupService } from '../../src/services/backup.service';
+let stage = 'configuration';
 async function main() {
   const raw = process.env.DRILL_DATABASE_URL;
   if (
@@ -43,8 +44,10 @@ async function main() {
     key = 'c'.repeat(64),
     id = '00000000-0000-4000-8000-000000000001';
   try {
+    stage = 'create-isolated-databases';
     await admin.$executeRawUnsafe(`CREATE DATABASE "${sourceName}"`);
     await admin.$executeRawUnsafe(`CREATE DATABASE "${targetName}"`);
+    stage = 'apply-migrations';
     await promisify(execFile)(
       process.execPath,
       ['node_modules/prisma/build/index.js', 'migrate', 'deploy'],
@@ -53,6 +56,7 @@ async function main() {
         timeout: 60000,
       },
     );
+    stage = 'seed-synthetic-data';
     const user = await from.user.create({
       data: { phone: '+12025550125', phoneVerifiedAt: new Date() },
     });
@@ -73,6 +77,7 @@ async function main() {
     );
     await mkdir(storage);
     await writeFile(join(storage, id), 'synthetic private attachment');
+    stage = 'create-encrypted-backup';
     await promisify(execFile)(
       process.execPath,
       [
@@ -94,6 +99,7 @@ async function main() {
         timeout: 60000,
       },
     );
+    stage = 'restore-encrypted-backup';
     const service = new BackupService();
     await service.restore(
       archive,
@@ -103,6 +109,7 @@ async function main() {
       storage,
       key,
     );
+    stage = 'verify-restored-data';
     assert.equal(await to.session.count({ where: { revokedAt: null } }), 0);
     assert(
       (await readFile(join(restored, '.restore-review-required'))).length > 0,
@@ -155,6 +162,6 @@ async function main() {
   }
 }
 void main().catch(() => {
-  console.error('Isolated backup/restore drill failed. No live data was used.');
+  console.error('Isolated backup/restore drill failed at ' + stage + '. No live data was used.');
   process.exitCode = 1;
 });
