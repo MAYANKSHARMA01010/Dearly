@@ -90,3 +90,25 @@ test('SMS provider configuration is explicit, private and never falls back to a 
   assert.equal(parseEnvironment({ ...base, NODE_ENV: 'production', SMSGATE_SERVER_API_URL: 'https://sms.example/3rdparty/v1', SMSGATE_CONNECTION: 'cloud', SMSGATE_DEVICE_ID: settings.deviceId }).sms?.baseUrl, 'https://sms.example/3rdparty/v1');
   assert.equal(parseEnvironment({ DATABASE_URL: config.databaseUrl }).sms, undefined);
 });
+
+test('cloud callback registration pins deviceId, stays idempotent and only narrows this exact URL', async () => {
+  const callback = 'https://callback.example/webhooks/smsgate';
+  const hooks: { id: string; url: string; event: string; deviceId?: string }[] = [
+    { id: 'legacy-own', url: callback, event: 'sms:sent' },
+    { id: 'other-app', url: 'https://other.example/webhooks/smsgate', event: 'sms:sent' },
+  ];
+  let posted = 0; const removed: string[] = [];
+  const gateway = new SmsGateProvider({ ...settings, connection: 'cloud', baseUrl: 'https://sms.example/3rdparty/v1' }, async (url, options) => {
+    if (options?.method === 'POST') {
+      const body = JSON.parse(String(options.body));
+      assert.equal(body.deviceId, settings.deviceId); assert.equal(body.device_id, undefined);
+      hooks.push({ id: `scoped-${++posted}`, ...body }); return Response.json(body, { status: 201 });
+    }
+    if (options?.method === 'DELETE') { const id = String(url).split('/').at(-1)!; removed.push(id); hooks.splice(hooks.findIndex((h) => h.id === id), 1); return new Response(null, { status: 204 }); }
+    return Response.json(hooks);
+  });
+  await gateway.registerCallbacks(callback); await gateway.registerCallbacks(callback);
+  assert.equal(posted, 4); assert.deepEqual(removed, ['legacy-own']);
+  assert.ok(hooks.some((h) => h.id === 'other-app'));
+  assert.equal(hooks.filter((h) => h.url === callback && h.deviceId === settings.deviceId).length, 4);
+});

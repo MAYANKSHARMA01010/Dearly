@@ -84,12 +84,23 @@ export class SmsGateProvider {
     if (!existing.ok) throw Error('Callback setup unavailable');
     const rows: unknown = await boundedJson(existing);
     if (!Array.isArray(rows)) throw Error('Callback setup unavailable');
-    for (const event of ['sms:sent', 'sms:delivered', 'sms:failed', 'sms:cancelled']) {
+    const events = ['sms:sent', 'sms:delivered', 'sms:failed', 'sms:cancelled'];
+    for (const event of events) {
       if (rows.some((r) => r?.url === callbackUrl && r?.event === event &&
-          (this.config.connection === 'local' || r?.device_id === this.config.deviceId))) continue;
+          (this.config.connection === 'local' || (r?.deviceId ?? r?.device_id) === this.config.deviceId))) continue;
       const r = await this.http('/webhooks', { method: 'POST', body: JSON.stringify({ url: callbackUrl, event,
-        ...(this.config.connection === 'cloud' ? { device_id: this.config.deviceId } : {}) }) });
+        ...(this.config.connection === 'cloud' ? { deviceId: this.config.deviceId } : {}) }) });
       if (!r.ok) throw Error('Callback setup unavailable');
+    }
+    // Narrow only legacy unscoped registrations for this exact Dearly URL, after
+    // their scoped replacements exist. Never modify another URL/device's hooks.
+    if (this.config.connection === 'cloud') {
+      for (const r of rows) {
+        if (r?.url !== callbackUrl || !events.includes(r?.event) || r?.deviceId || r?.device_id ||
+            typeof r?.id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(r.id)) continue;
+        const removed = await this.http(`/webhooks/${encodeURIComponent(r.id)}`, { method: 'DELETE' });
+        if (!removed.ok && removed.status !== 404) throw Error('Callback narrowing unavailable');
+      }
     }
   }
 }
