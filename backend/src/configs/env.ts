@@ -19,12 +19,27 @@ const origin = z
     }
   }, 'Expected an HTTP(S) origin');
 
+const redisConnectionUrl = z.string().url().refine((value) => {
+  try { return ['redis:', 'rediss:'].includes(new URL(value).protocol); }
+  catch { return false; }
+});
+
 const environmentSchema = z
   .object({
     NODE_ENV: z
       .enum(['development', 'test', 'production'])
       .default('development'),
     PORT: z.coerce.number().int().min(1).max(65535).default(8080),
+    BACKEND_LOCAL_URL: origin.optional(),
+    BACKEND_SERVER_URL: z.preprocess((v) => v === '' ? undefined : v, origin.refine((v) => {
+      try {
+        const u = new URL(v);
+        return u.protocol === 'https:' && !['localhost', '127.0.0.1', '[::1]'].includes(u.hostname);
+      } catch { return false; }
+    }).optional()),
+    REDIS_URL: redisConnectionUrl.optional(),
+    REDIS_LOCAL_URL: redisConnectionUrl.optional(),
+    REDIS_SERVER_URL: z.preprocess((v) => v === '' ? undefined : v, redisConnectionUrl.optional()),
     HOST: z.string().trim().min(1).default('127.0.0.1'),
     DATABASE_URL: z
       .string()
@@ -178,6 +193,9 @@ const environmentSchema = z
   });
 
 export interface AppConfig {
+  backendLocalUrl?: string;
+  backendServerUrl?: string;
+  redisUrl?: string;
   sms?: SmsGateConfig;
   email?: SmtpConfig;
   whatsapp?: WahaConfig;
@@ -289,6 +307,10 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
       throw new EnvironmentError('Invalid environment settings: SMSGate API URL');
   }
   return {
+    backendLocalUrl: env.BACKEND_LOCAL_URL ?? `http://localhost:${env.PORT}`,
+    backendServerUrl: env.BACKEND_SERVER_URL,
+    // Optional future cache only. Do not connect or fall back to local Redis in production.
+    redisUrl: env.NODE_ENV === 'production' ? env.REDIS_SERVER_URL : env.REDIS_LOCAL_URL ?? env.REDIS_URL,
     sms: env.SMS_PROVIDER === 'smsgate' ? {
       baseUrl: smsUrl!.replace(/\/$/, ''), connection: env.SMSGATE_CONNECTION,
       deviceId: env.SMSGATE_DEVICE_ID!, username: env.SMSGATE_USERNAME,

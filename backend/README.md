@@ -95,6 +95,9 @@ with `Retry-After`. Unexpected errors are safe `500` responses without raw stack
 | --- | --- |
 | `DATABASE_URL` | Required PostgreSQL URL; backend only |
 | `PORT` | `8080` |
+| `BACKEND_LOCAL_URL` / `BACKEND_SERVER_URL` | Local backend address / optional future hosted HTTPS address |
+| `REDIS_LOCAL_URL` / `REDIS_SERVER_URL` | Optional Redis TCP/TLS endpoints; no local fallback in production |
+| `REDIS_URL` | Legacy local Redis alias; not used as a hosted Redis fallback |
 | `HOST` | `127.0.0.1`; set `0.0.0.0` explicitly when testing over LAN |
 | `NODE_ENV` | `development`, `test`, or `production`; default `development` |
 | `FRONTEND_URL`, `CLIENT_URL` | Optional exact HTTP(S) browser origins; configured examples use `8081`/`3000` |

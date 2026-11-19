@@ -6,6 +6,10 @@
 | --- | --- | --- |
 | `DATABASE_URL` | `backend/.env` only | Supplied Neon PostgreSQL connection; preserve its SSL/channel-binding query parameters |
 | `PORT=8080` | `backend/.env` | Local Express listening port |
+| `BACKEND_LOCAL_URL=http://localhost:8080` | `backend/.env` | Explicit local Dearly backend address |
+| `BACKEND_SERVER_URL=` | `backend/.env` | Future hosted Dearly backend address; empty until supplied |
+| `REDIS_LOCAL_URL=redis://localhost:6379` | `backend/.env` only | Optional local cache connection; existing `REDIS_URL` remains a local alias |
+| `REDIS_SERVER_URL=` | `backend/.env` only | Future hosted Redis TCP/TLS connection; no production fallback to local |
 | `AUTH_MODE=whatsapp` | `backend/.env` | Real login OTP through the paired free WAHA sender; committed default remains disabled |
 | `WHATSAPP_OTP_DAILY_LIMIT=20` | `backend/.env` or default | Separate persistent per-sender OTP limit |
 | `SMS_PROVIDER=disabled` | `backend/.env` | Enable only after physical SMSGate sender setup; see SMS guide |
@@ -109,3 +113,29 @@ access requires the planned hosted HTTPS URL, not replacing loopback development
 
 For SMSGate credentials, device signing key, SIM selection and USB forwarding, see
 [SMS setup](sms-delivery.md). None of those values belong in frontend variables.
+
+
+## Redis and application addresses
+
+Redis remains optional and is not connected by the current runtime. These settings
+prepare configuration; they do not enable a new cache, change durable PostgreSQL
+work, or claim a Redis health check passed. Development selects `REDIS_LOCAL_URL`
+(or legacy `REDIS_URL`); production selects only `REDIS_SERVER_URL` if supplied.
+Accepted Redis schemes are `redis://` and `rediss://`; credentials stay backend-only.
+Use `redis://redis:6379` only for a backend container sharing a Docker network with
+a service named `redis`. The backend currently runs on this Mac, so its existing
+`redis://localhost:6379` setting is preserved.
+
+On 19 November the user supplied `https://zenora-backend-k3ly.onrender.com` as a
+hosted Redis reference. It is an HTTPS service address, not an ioredis Redis
+connection string; public HTTP checks did not return a response. It is preserved
+as a comment in private configuration, and is not silently converted into a Redis
+TCP endpoint or used as Dearly's future backend URL. Hosted Redis remains pending
+an actual Redis connection URL or confirmation/documentation of an HTTP Redis API.
+
+The mobile client already keeps distinct local/server URLs in
+`EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_SERVER_API_URL`. The local value remains
+`http://localhost:8080` for the iOS simulator; the hosted value stays empty. A real
+phone's localhost means that phone, not the Mac: physical-device API testing needs
+an intentionally reachable Mac address or the future hosted backend. Redis URLs
+must never be copied to frontend/public variables.

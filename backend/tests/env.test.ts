@@ -54,3 +54,15 @@ test('origins are normalized and deduplicated without accepting wildcard configu
   assert.deepEqual(config.allowedOrigins, ['http://localhost:8081']);
   assert.throws(() => parseEnvironment({ DATABASE_URL: databaseUrl, CLIENT_URL: '*' }), EnvironmentError);
 });
+
+test('backend and optional Redis addresses remain separate across local and hosted environments', () => {
+  const base = { DATABASE_URL: databaseUrl, BACKEND_LOCAL_URL: 'http://localhost:8080', BACKEND_SERVER_URL: '', REDIS_LOCAL_URL: 'redis://localhost:6379', REDIS_SERVER_URL: '' };
+  assert.equal(parseEnvironment(base).backendLocalUrl, 'http://localhost:8080');
+  assert.equal(parseEnvironment(base).backendServerUrl, undefined);
+  assert.equal(parseEnvironment(base).redisUrl, base.REDIS_LOCAL_URL);
+  assert.equal(parseEnvironment({ ...base, NODE_ENV: 'production' }).redisUrl, undefined);
+  assert.equal(parseEnvironment({ ...base, NODE_ENV: 'production', REDIS_SERVER_URL: 'rediss://cache.example:6379' }).redisUrl, 'rediss://cache.example:6379');
+  assert.equal(parseEnvironment({ DATABASE_URL: databaseUrl, REDIS_URL: 'redis://redis:6379' }).redisUrl, 'redis://redis:6379');
+  for (const fields of [{ REDIS_SERVER_URL: 'https://service.example' }, { REDIS_URL: 'private-invalid-url' }, { REDIS_SERVER_URL: 'private-invalid-url' }, { REDIS_LOCAL_URL: 'http://localhost:6379' }, { BACKEND_SERVER_URL: 'private-invalid-url' }, { BACKEND_SERVER_URL: 'http://service.example' }, { BACKEND_SERVER_URL: 'https://localhost:8080' }])
+    assert.throws(() => parseEnvironment({ ...base, ...fields }), EnvironmentError);
+});
