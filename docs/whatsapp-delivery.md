@@ -245,3 +245,16 @@ Standard checks passed: backend lint/typecheck/build and 69 tests; frontend
 lint/typecheck and 77 tests. Isolated auth/WhatsApp integration passed 25 runner
 entries, with a final focused WhatsApp rerun passing 11. No new migration,
 dependency, Expo configuration, Android launch or device reset was needed.
+
+
+## Designated-recipient test — 19 November 2026
+
+The user explicitly requested one WhatsApp test to a different designated number.
+The existing paired Core GOWS sender reported READY. A synthetic PHONE/WHATSAPP
+message was previewed with explicit consent and confirmed through the normal
+schedule service. The worker submitted it once, and WAHA accepted the outbound
+message. No additional SMS/email channel or login OTP was sent. At this checkpoint,
+notification delivery/read callbacks and actual recipient arrival are not yet
+confirmed; provider acceptance alone is not recorded as delivery. The private
+content URL remains localhost, so it opens on this Mac only. This test does not
+change the completed Phase 13 self-test or start Phase 15.
