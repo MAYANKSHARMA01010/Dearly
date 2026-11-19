@@ -17,6 +17,16 @@ channel and asserts SMS consent during review and confirmation. Consent is bound
 to the review proof and persisted; no implicit WhatsApp, email or SMS fallback.
 WhatsApp login OTP remains separate and unchanged.
 
+Cloud authentication and the selected device were verified during private setup.
+The initial readiness cutoff was too short for the provider's documented 15-minute
+fallback polling cycle. Readiness now accepts activity within 20 minutes, with a
+one-minute future-clock tolerance. Older/missing activity remains offline. This is
+a recent-activity check, not proof that the phone is connected at the exact send
+instant; the five-minute outbound queue TTL still applies. No live SMS was sent.
+The placeholder signing key was replaced privately with a random key; the same
+key must be copied to the phone before receipt callbacks can authenticate. A
+reachable HTTPS callback endpoint remains unconfigured, so SMS stays disabled.
+
 ## Preferred setup: SMSGate Cloud
 
 The user selected Cloud mode on 19 November. USB and USB debugging are not required.

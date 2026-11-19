@@ -59,8 +59,8 @@ test('invalid numbers and multipart links never POST; offline/auth/uncertainty r
   assert.equal((await p.send(phone, link, id)).state, 'UNKNOWN'); assert.equal(calls, 1);
 });
 
-test('cloud readiness checks the selected recent device rather than server health', async () => {
-  for (const [devices, status] of [[[{ id: settings.deviceId, lastSeen: new Date().toISOString() }], 'READY'], [[{ id: settings.deviceId, lastSeen: '2000-01-01' }], 'OFFLINE'], [[{ id: 'other', lastSeen: new Date().toISOString() }], 'OFFLINE']] as const) {
+test('cloud readiness checks the selected device and allows its fifteen-minute polling interval', async () => {
+  for (const [devices, status] of [[[{ id: settings.deviceId, lastSeen: new Date().toISOString() }], 'READY'], [[{ id: settings.deviceId, lastSeen: new Date(Date.now() - 10 * 60000).toISOString() }], 'READY'], [[{ id: settings.deviceId, lastSeen: new Date(Date.now() - 21 * 60000).toISOString() }], 'OFFLINE'], [[{ id: settings.deviceId, lastSeen: new Date(Date.now() + 2 * 60000).toISOString() }], 'OFFLINE'], [[{ id: settings.deviceId, lastSeen: '2000-01-01' }], 'OFFLINE'], [[{ id: 'other', lastSeen: new Date().toISOString() }], 'OFFLINE']] as const) {
     const p = new SmsGateProvider({ ...settings, baseUrl: 'https://sms.example/3rdparty/v1', connection: 'cloud' }, async (url) => { assert.ok(String(url).endsWith('/devices')); return Response.json(devices); });
     assert.equal(await p.readiness(), status);
   }

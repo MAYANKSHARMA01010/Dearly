@@ -36,7 +36,9 @@ export class SmsGateProvider {
       if (!r) return 'OFFLINE';
       if (r.id !== this.config.deviceId) return 'MISCONFIGURED';
       const lastSeen = typeof r.lastSeen === 'string' ? Date.parse(r.lastSeen) : NaN;
-      return Number.isFinite(lastSeen) && Date.now() - lastSeen <= 300000 && lastSeen <= Date.now() + 60000 ? 'READY' : 'OFFLINE';
+      // Cloud fallback polls every 15 minutes. Allow one interval plus five
+      // minutes' grace; lastSeen is recent activity, not a live connection test.
+      return Number.isFinite(lastSeen) && Date.now() - lastSeen <= 1200000 && lastSeen <= Date.now() + 60000 ? 'READY' : 'OFFLINE';
     } catch { return 'OFFLINE'; }
   }
   async send(phone: string, link: string, id: string): Promise<SubmissionResult> {
