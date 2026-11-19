@@ -350,6 +350,7 @@ model ExternalDelivery {
   state EmailState @default(SUBMITTING)
   providerMessageId String? @db.VarChar(255)
   providerScope String? @db.VarChar(64)
+  emailRelaySubmission EmailRelaySubmission?
   smsReceipts SmsReceipt[]
   notificationSentAt DateTime? @db.Timestamptz(3)
   notificationAck Int?
@@ -462,4 +463,14 @@ model PushJob {
   @@unique([notificationId, deviceId])
   @@index([state, submittedAt])
   @@map("push_jobs")
+}
+
+// Claim before SMTP I/O so duplicate HTTP requests cannot resend an uncertain mail.
+model EmailRelaySubmission {
+  id String @id
+  delivery ExternalDelivery @relation(fields: [id], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  completedAt DateTime? @db.Timestamptz(3)
+  result Json?
+  @@map("email_relay_submissions")
 }

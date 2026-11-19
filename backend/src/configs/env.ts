@@ -195,7 +195,16 @@ const environmentSchema = z
       .regex(/^[0-9a-f]{64}$/)
       .optional(),
     EMAIL_DAILY_LIMIT: z.coerce.number().int().min(1).max(500).default(100),
-    EMAIL_MODE: z.enum(['disabled', 'smtp']).default('disabled'),
+    EMAIL_MODE: z.enum(['disabled', 'smtp', 'relay']).default('disabled'),
+    EMAIL_RELAY_URL: z.string().url().refine((value) => {
+      try {
+        const url = new URL(value);
+        return url.protocol === 'https:' && url.hostname.endsWith('.aws.neon.tech') &&
+          url.hostname.includes('.compute.') && !url.username && !url.password &&
+          !url.search && !url.hash && url.pathname === '/';
+      } catch { return false; }
+    }).optional(),
+    EMAIL_RELAY_SECRET: z.string().regex(/^[a-f0-9]{64}$/).optional(),
     SMTP_HOST: z.string().trim().min(1).optional(),
     SMTP_PORT: z.coerce
       .number()
@@ -219,6 +228,14 @@ const environmentSchema = z
         path: ['NEON_STORAGE_ENDPOINT'],
         message: 'Private storage configuration required.',
       });
+    if (env.EMAIL_MODE === 'relay') {
+      for (const field of ['SMTP_USER', 'SMTP_FROM', 'EMAIL_RELAY_URL', 'EMAIL_RELAY_SECRET'] as const) {
+        if (!env[field]) ctx.addIssue({ code: 'custom', path: [field], message: 'Required for authenticated email relay.' });
+      }
+      if (env.SMTP_FROM?.toLowerCase() !== env.SMTP_USER?.toLowerCase()) {
+        ctx.addIssue({ code: 'custom', path: ['SMTP_FROM'], message: 'Gmail sender must match the authenticated account.' });
+      }
+    }
     if (env.EMAIL_MODE === 'smtp') {
       for (const field of [
         'SMTP_HOST',
@@ -276,7 +293,7 @@ export interface AppConfig {
   redisUrl?: string;
   push?: { enabled: boolean; projectId: string; accessToken?: string };
   sms?: SmsGateConfig;
-  email?: SmtpConfig;
+  email?: SmtpConfig | RelayEmailConfig;
   whatsapp?: WahaConfig;
   externalAccess?: { publicUrl: string; secret: string; dailyLimit: number };
   nodeEnv: 'development' | 'test' | 'production';
@@ -317,7 +334,15 @@ export interface SmsGateConfig {
   simNumber: number;
   dailyLimit: number;
 }
+export interface RelayEmailConfig {
+  mode: 'relay';
+  url: string;
+  secret: string;
+  user: string;
+  from: string;
+}
 export interface SmtpConfig {
+  mode?: 'smtp';
   host: string;
   port: 465 | 587;
   user: string;
@@ -461,7 +486,10 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
           }
         : undefined,
     email:
-      env.EMAIL_MODE === 'smtp'
+      env.EMAIL_MODE === 'relay'
+        ? { mode: 'relay', url: new URL(env.EMAIL_RELAY_URL!).origin,
+            secret: env.EMAIL_RELAY_SECRET!, user: env.SMTP_USER!, from: env.SMTP_FROM! }
+        : env.EMAIL_MODE === 'smtp'
         ? {
             host: env.SMTP_HOST!,
             port: env.SMTP_PORT as 465 | 587,

@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
-import type { SmtpConfig } from '../../configs/env';
+import { EmailRelay } from './relay.provider';
+import type { SmtpConfig, RelayEmailConfig } from '../../configs/env';
 import { smtpOptions } from './smtp.transport';
 export type EmailResult = {
   state: 'ACCEPTED' | 'REJECTED' | 'RETRYABLE' | 'UNKNOWN';
@@ -69,7 +70,8 @@ export function smtpFailure(error: unknown): EmailResult {
     };
   return { state: 'UNKNOWN', code: 'SMTP_UNCERTAIN', providerMessageId: null };
 }
-export function createEmailSender(config: SmtpConfig): EmailSender {
+export function createEmailSender(config: SmtpConfig | RelayEmailConfig): EmailSender {
+  if (config.mode === 'relay') return new EmailRelay(config).send;
   return async (to, link, id) => {
     if (!z.email().safeParse(to).success)
       return {

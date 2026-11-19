@@ -26,6 +26,8 @@ test('SMTP defaults disabled and enabled mode requires complete credentials with
 
 test('SMTP enforces TLS, bounded waits and disabled logging/content fetching', () => {
   const config = parseEnvironment(source).email!;
+  assert.notEqual(config.mode, 'relay');
+  if (config.mode === 'relay') throw Error('Expected SMTP test configuration');
   const options = smtpOptions(config);
   assert.equal(options.secure, true);
   assert.equal(smtpOptions({ ...config, port: 587 }).secure, false);
@@ -41,6 +43,8 @@ test('SMTP enforces TLS, bounded waits and disabled logging/content fetching', (
 
 test('connection check never sends messages and closes transport on success and failure', async (t) => {
   const config = parseEnvironment(source).email!;
+  assert.notEqual(config.mode, 'relay');
+  if (config.mode === 'relay') throw Error('Expected SMTP test configuration');
   assert.equal(await verifySmtp(), 'DISABLED');
   for (const [failure, expected] of [
     [undefined, 'READY'], [{ code: 'EAUTH', response: 'private-secret' }, 'AUTH_FAILED'],

@@ -1,4 +1,8 @@
 import assert from 'node:assert/strict';
+import { Pool } from 'pg';
+import { PostgresEmailRelay } from '../../src/providers/postgres/emailRelay.repository';
+import { createEmailRelayHandler } from '../../src/services/emailRelay.service';
+import { EmailRelay } from '../../src/providers/email/relay.provider';
 import { test } from 'node:test';
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -32,6 +36,7 @@ const schema = `dearly_email_test_${randomUUID().replaceAll('-', '')}`,
   url = new URL(databaseUrl);
 url.searchParams.set('schema', schema);
 url.searchParams.set('connection_limit', '5');
+const pool = new Pool({connectionString:databaseUrl,options:`-c search_path=${schema}`,max:2});
 const db = new PrismaClient({
     datasources: { db: { url: url.toString() } },
     log: [],
@@ -82,7 +87,7 @@ test(
           `prisma/migrations/${folder}/migration.sql`,
           'utf8',
         ).replace(
-          /"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|delivery_intents|delivery_work|delivery_attempts|inbox_items|worker_heartbeats|message_events|email_deliveries|email_budgets|waha_receipts|sms_receipts|account_preferences|notifications|push_devices|push_jobs|EmailState|MessageEventKind|WorkState|AttemptState|MessageStatus|RecipientType|AttachmentState|DeliveryChannel)"/g,
+          /"(users|phone_auth_states|otp_challenges|sessions|refresh_tokens|draft_messages|draft_recipients|attachments|delivery_intents|delivery_work|delivery_attempts|inbox_items|worker_heartbeats|message_events|email_deliveries|email_relay_submissions|email_budgets|waha_receipts|sms_receipts|account_preferences|notifications|push_devices|push_jobs|EmailState|MessageEventKind|WorkState|AttemptState|MessageStatus|RecipientType|AttachmentState|DeliveryChannel)"/g,
           `"${schema}"."$1"`,
         );
         for (const statement of sql.replace(/^\s*--.*$/gm, '').split(';').filter((s) => s.trim()))
@@ -110,10 +115,12 @@ test(
           code: null,
           providerMessageId: 'synthetic-gmail-id',
         };
-      const sender = async () => {
-        sends++;
-        return result;
-      };
+      const repository=new PostgresEmailRelay(pool);
+      const relayHandler=createEmailRelayHandler({secret,accessSecret:key,publicUrl:access.publicUrl,repository,
+        send:async()=>{sends++;return result;},verify:async()=> 'READY'});
+      const sender=new EmailRelay({mode:'relay',url:'https://relay.example',secret,user:'synthetic@gmail.com',from:'synthetic@gmail.com'},
+        async(input,init)=>relayHandler.fetch(new Request(String(input),init))).send;
+      assert.equal(await repository.ready(),true);
       const worker = new DeliveryWorker(
         db,
         store,
@@ -524,6 +531,7 @@ test(
         },
       );
     } finally {
+      await pool.end();
       await db.$disconnect();
       await admin.$executeRawUnsafe(
         `DROP SCHEMA IF EXISTS "${schema}" CASCADE`,

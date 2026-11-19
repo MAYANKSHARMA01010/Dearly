@@ -1,3 +1,5 @@
+import { accessToken } from '../utils/externalAccessToken';
+export { accessToken } from '../utils/externalAccessToken';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { ApiError } from '../utils/ApiError';
@@ -10,9 +12,6 @@ const missing = () =>
     'LINK_UNAVAILABLE',
     'This link is unavailable, expired or revoked. Ask the sender for help.',
   );
-export function accessToken(id: string, secret: string) {
-  return `${id}.${createHmac('sha256', secret).update(`dearly.email.access.v1:${id}`).digest('base64url')}`;
-}
 export function accessId(token: string, secret: string): string | null {
   if (!/^[0-9a-f-]{36}\.[A-Za-z0-9_-]{43}$/.test(token)) return null;
   const id = token.slice(0, 36),
