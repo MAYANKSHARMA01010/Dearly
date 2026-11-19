@@ -45,8 +45,14 @@ and test-link revocation. See [SMS setup](docs/sms-delivery.md).
 For development-task attention alerts on this Mac, run
 `sh scripts/attention-sound.sh`. Agents use it before waiting for input and finishing.
 It plays a local sound without changing Focus, volume or output settings. This is
-separate from Dearly's future product notification features in Phase 15.
+separate from Dearly's product notifications.
 
 Phase 15 adds notifications and account preferences; native push acceptance remains
 pending. See [notification contracts](docs/notifications-settings.md) and
 [local Android APK builds](docs/android-apk.md).
+
+All planned code through Phase 16 is implemented. Final device/push checks are
+deferred at the user's request, and hosted deployment awaits the server URL.
+See [release verification and deferred checks](docs/release-verification.md) and
+[production operations, backup and restore](docs/release-operations.md). CI uses
+disposable PostgreSQL and fake providers; no live messages are sent by tests.

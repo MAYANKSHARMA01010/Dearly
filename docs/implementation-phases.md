@@ -51,8 +51,8 @@ and a simulated delivery does not complete a real channel integration.
 | 12 | Email delivery and secure external content access | 10–11 | Complete — real self-inbox, private link and revocation verified 19 November |
 | 13 | WhatsApp message delivery | 10–12 | Complete — scheduled self-delivery and login OTP verified 19 November |
 | 14 | SMS message delivery | 10–12 | Complete — real SMS arrival and signed single-part delivery verified 19 November |
-| 15 | Notifications, preferences, and account settings | 11–14 | Implementation ready — real push/native acceptance pending |
-| 16 | Release verification, operations, and handover | 2–15 | Not started |
+| 15 | Notifications, preferences, and account settings | 11–14 | Engineering complete — device/push acceptance deferred by user |
+| 16 | Release verification, operations, and handover | 2–15 | Non-device work complete — native/hosted acceptance deferred |
 
 Recommended execution order is numeric. Provider evaluation can happen earlier;
 Phases 13 and 14 do not depend on one another. An OTP-specific adapter needed in
@@ -554,7 +554,8 @@ the signed ARM64 APK was built locally and verified.
 [APK build instructions](android-apk.md) preserve local signing and APK output.
 Hosted API/content URLs remain empty by request. Real-device push arrival and
 notification opening after login remain acceptance work. This checkpoint does
-not mark Phase 15 complete or start Phase 16.
+not establish real-device acceptance. The user subsequently requested all remaining
+non-device work; Phase 16 engineering is recorded below.
 
 **Build**
 
@@ -581,6 +582,19 @@ push simulation is reported explicitly.
 links; settings/preference integration with behavioral tests.
 
 ## Phase 16 — Release verification and operations
+
+**Engineering checkpoint — 19 November 2026:** Non-device work is complete at the
+user's request. Added fail-closed production configuration checks, safe operations
+diagnostics, runtime logger filtering, encrypted DB/private-object backup and
+quarantined isolated restore, a real synthetic recovery drill, CI and non-root
+container/migration/worker definitions. Applied migrations remain unchanged.
+Three recommended SDK 58 patches resolve Expo Doctor to 20/20. Backend standard
+and integration suites each pass 90 entries, frontend 81 standard and three
+integration tests pass, both platform exports and runtime container build pass.
+See [verification](release-verification.md) and [operations](release-operations.md).
+APK/phone testing is explicitly deferred by the user; permanent hosted API,
+callbacks, monitoring and backup scheduling await deployment. Neither Phase 15's
+real push acceptance nor Phase 16's full public-release gate is claimed complete.
 
 **Build**
 

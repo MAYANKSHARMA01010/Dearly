@@ -145,8 +145,28 @@ within a phase does not authorize the entire phase.
   Durable push jobs persist before sending; uncertain POSTs are not replayed.
 - Local Android preview builds must produce APK, use private local signing, and
   exclude credentials/backend data from archives. Preserve working SDK 58 patches.
-  Never claim real push/native acceptance from exports or fake transports. Hosted
+  Targeted SDK 58 patch alignment was verified in Phase 16; do not incidentally
+  upgrade major versions or replace styling/navigation setup. Never claim real
+  push/native acceptance from exports or fake transports. Hosted
   backend URLs remain empty until the user provides them.
+
+## Phase 16 operations boundaries
+
+- Follow [release operations](docs/release-operations.md) and the dated
+  [verification record](docs/release-verification.md). The user requested all
+  remaining implementation, then explicitly deferred APK/physical-device testing.
+  Complete non-device work without repeating device prompts. Do not mark real
+  push/native or hosted acceptance as passed from build/export evidence.
+- Production entrypoints run strict preflight; preserve fail-closed configuration,
+  persistent private storage and session/provider boundaries. Keep local port 8080
+  and hosted URLs separate. Do not publish or deploy without authorization.
+- Restore only authenticated backups into separate empty targets. Keep restore
+  quarantine, revoke restored access, pause pending work and reconcile quotas and
+  uncertain submissions before any manual release. Never auto-replay restored work,
+  clean a live DB, rewrite migrations or log database-tool stderr/credentials.
+- Keep the independent backup key, signing files, real production environments
+  and archives private. CI uses disposable databases and fake transports, never
+  live provider sends. Preserve unrelated local Git changes.
 
 ## Verification and documentation
 

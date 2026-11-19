@@ -117,11 +117,12 @@ logout. The full integration sweep found an obsolete table-count expectation and
 an aged-receipt fixture; both were corrected and the affected suites passed on
 rerun. Tests use fake push transports and isolated schemas; no live push was sent.
 The final SMS/WhatsApp receipt suites pass 18 entries, and all three real
-mobile/API integration scenarios pass. The iOS JavaScript export passes. Expo Doctor reports 19/20: three existing SDK 58
-packages have newer recommended patch versions; their working versions were kept.
+mobile/API integration scenarios pass. The iOS JavaScript export passes. At this historical checkpoint Expo Doctor reported 19/20. Phase 16 applied the
+three SDK 58 recommended patches and reverified Doctor at 20/20.
 
 Real target-device push permission/arrival and notification-tap-after-login checks
 remain pending. The hosted backend URL is intentionally empty, so the standalone
 preview APK shows service configuration is needed. Physical push acceptance cannot
 be claimed from compilation, a fake gateway or a token registration. Phase 15 is
-implementation-ready, with native acceptance pending; Phase 16 has not started.
+engineering-complete, with device acceptance deferred by the user. Phase 16
+non-device checks and handover are recorded in [release verification](release-verification.md).

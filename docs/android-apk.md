@@ -61,3 +61,10 @@ SHA-256 for this build:
 `5c3adec58bc967b224686dc20967d8c844aa56dbe341479313f70845150118a6`.
 Physical installation, backend connection and real push acceptance are separate
 checks; they have not been claimed as passed.
+
+## Phase 16 source checkpoint
+
+The APK above predates the SDK 58 patch alignment. Both current platform bundles
+pass, but the existing APK has not been rebuilt or physically tested at this
+checkpoint. Rebuild with the permanent backend URL before the user resumes phone
+acceptance. See [release verification](release-verification.md).

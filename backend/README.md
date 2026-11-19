@@ -254,3 +254,12 @@ Read [notification contracts](../docs/notifications-settings.md). Push dispatch
 defaults to disabled; `npm run push:worker` performs one configured pass and
 `npm run push:worker -- --loop` runs a managed loop. No live push acceptance has
 been claimed. Alert opt-out does not cancel scheduled message delivery.
+
+## Production operations
+
+Phase 16 adds strict `release:check`, read-only `ops:check`, gated compiled API and
+worker startup, CI/container definitions, and encrypted backup/isolated restore.
+Start from `.env.production.example`; keep real values in ignored private files.
+Read [operations and recovery](../docs/release-operations.md) before deployment or
+backup commands, and [release verification](../docs/release-verification.md) for
+passed checks and deferred physical/hosted acceptance. No deployment is implied.
