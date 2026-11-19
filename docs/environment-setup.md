@@ -126,12 +126,14 @@ Use `redis://redis:6379` only for a backend container sharing a Docker network w
 a service named `redis`. The backend currently runs on this Mac, so its existing
 `redis://localhost:6379` setting is preserved.
 
-On 19 November the user supplied `https://zenora-backend-k3ly.onrender.com` as a
-hosted Redis reference. It is an HTTPS service address, not an ioredis Redis
-connection string; public HTTP checks did not return a response. It is preserved
-as a comment in private configuration, and is not silently converted into a Redis
-TCP endpoint or used as Dearly's future backend URL. Hosted Redis remains pending
-an actual Redis connection URL or confirmation/documentation of an HTTP Redis API.
+The user corrected the hosted reference to a Render internal Key Value hostname.
+Private `REDIS_SERVER_URL` now uses that hostname with the standard `redis://`
+scheme and port 6379. This is an internal-only configuration candidate; the exact
+Render Connect URL, any required authentication, workspace and region must be
+confirmed before deployment. It is not verified reachable from this Mac. Use the
+External URL and authorized network access if testing hosted Redis from the Mac.
+The previous HTTPS reference is no longer treated as the Redis address. Redis
+itself remains optional and inactive in the current application.
 
 The mobile client already keeps distinct local/server URLs in
 `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_SERVER_API_URL`. The local value remains
