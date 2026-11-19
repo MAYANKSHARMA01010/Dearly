@@ -133,6 +133,21 @@ within a phase does not authorize the entire phase.
   and requires a remote HTTPS hosted URL for release builds;
   the backend is started separately with the documented scripts.
 
+## Phase 15 notification boundaries
+
+- Follow [notification contracts](docs/notifications-settings.md). Notifications,
+  read state and preferences remain account-owned. Generic push data contains only
+  a notification UUID; resolve it after login through the authenticated API. No
+  private content appears on lock screens or in push logs. Opt-out never silently
+  cancels schedules. Saved schedules retain reviewed channels; no automatic fallback.
+- Device tokens belong to sessions. Check revocation/expiry and current account
+  association before dispatch; stale receipts must not disable rotated tokens.
+  Durable push jobs persist before sending; uncertain POSTs are not replayed.
+- Local Android preview builds must produce APK, use private local signing, and
+  exclude credentials/backend data from archives. Preserve working SDK 58 patches.
+  Never claim real push/native acceptance from exports or fake transports. Hosted
+  backend URLs remain empty until the user provides them.
+
 ## Verification and documentation
 
 - The user requests an audible alert when work finishes or needs their input,

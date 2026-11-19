@@ -246,3 +246,11 @@ expire. Localhost is not reachable from the phone over internet. Optional USB mo
 credentials/signing keys private; current server URLs remain empty. Future hosted
 mode selects only its explicit server URL and requires HTTPS for remote transport.
 Free gateway software does not remove carrier charges, SIM limits or phone uptime.
+
+## Notifications and account preferences
+
+Phase 15 adds authenticated `/notifications` APIs and durable generic push jobs.
+Read [notification contracts](../docs/notifications-settings.md). Push dispatch
+defaults to disabled; `npm run push:worker` performs one configured pass and
+`npm run push:worker -- --loop` runs a managed loop. No live push acceptance has
+been claimed. Alert opt-out does not cancel scheduled message delivery.

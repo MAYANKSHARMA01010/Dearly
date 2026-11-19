@@ -46,3 +46,7 @@ For development-task attention alerts on this Mac, run
 `sh scripts/attention-sound.sh`. Agents use it before waiting for input and finishing.
 It plays a local sound without changing Focus, volume or output settings. This is
 separate from Dearly's future product notification features in Phase 15.
+
+Phase 15 adds notifications and account preferences; native push acceptance remains
+pending. See [notification contracts](docs/notifications-settings.md) and
+[local Android APK builds](docs/android-apk.md).

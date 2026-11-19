@@ -51,7 +51,7 @@ and a simulated delivery does not complete a real channel integration.
 | 12 | Email delivery and secure external content access | 10–11 | Complete — real self-inbox, private link and revocation verified 19 November |
 | 13 | WhatsApp message delivery | 10–12 | Complete — scheduled self-delivery and login OTP verified 19 November |
 | 14 | SMS message delivery | 10–12 | Complete — real SMS arrival and signed single-part delivery verified 19 November |
-| 15 | Notifications, preferences, and account settings | 11–14 | Not started |
+| 15 | Notifications, preferences, and account settings | 11–14 | Implementation ready — real push/native acceptance pending |
 | 16 | Release verification, operations, and handover | 2–15 | Not started |
 
 Recommended execution order is numeric. Provider evaluation can happen earlier;
@@ -539,6 +539,22 @@ or email dispatch. Real OTP readiness is rechecked before release.
 segment handling; operational setup and channel-state UI.
 
 ## Phase 15 — Notifications, preferences, and settings
+
+**Implementation checkpoint — 19 November 2026:** Durable account-owned
+notifications, pagination/read actions, alert preferences, phone-channel defaults,
+session-bound device registration, generic Expo push jobs and receipts, protected
+notification links, mobile notification/settings screens and logout cleanup are
+implemented. An additive migration was applied. New defaults affect only newly
+reviewed schedules; opt-out leaves message delivery unchanged. No automatic
+external fallback is introduced. See [contracts and checks](notifications-settings.md).
+
+The user requested creating free Expo/Firebase projects under personal Gmail and
+building a local preview APK. Projects and Android FCM configuration are prepared;
+the signed ARM64 APK was built locally and verified.
+[APK build instructions](android-apk.md) preserve local signing and APK output.
+Hosted API/content URLs remain empty by request. Real-device push arrival and
+notification opening after login remain acceptance work. This checkpoint does
+not mark Phase 15 complete or start Phase 16.
 
 **Build**
 
