@@ -1,3 +1,4 @@
+import { createNotification } from '../services/notification.service';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { createHash } from 'node:crypto';
 import type { AppConfig } from '../configs/env';
@@ -81,8 +82,8 @@ export class ExternalDelivery {
             : null;
           const valid =
             !!user && ['SELF', 'USER', 'PHONE'].includes(intent.recipient.type);
-          if (valid)
-            await tx.inboxItem.create({
+          if (valid) {
+            const inbox = await tx.inboxItem.create({
               data: {
                 intentId: intent.id,
                 messageId: m.id,
@@ -90,6 +91,8 @@ export class ExternalDelivery {
                 deliveredAt: now,
               },
             });
+            await createNotification(tx, { dedupeKey: `inbox:${inbox.id}`, userId: user!.id, kind: 'RECEIVED', targetId: inbox.id, targetType: 'received' });
+          }
           await tx.deliveryAttempt.updateMany({
             where: {
               workId: c.id,

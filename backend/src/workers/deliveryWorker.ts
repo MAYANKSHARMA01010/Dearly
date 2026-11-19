@@ -1,3 +1,4 @@
+import { createNotification } from '../services/notification.service';
 import type { ExternalDelivery } from './externalDelivery';
 import { recordMessageEvent } from '../services/messageEvent.service';
 import { Prisma, type PrismaClient, type Attachment } from '@prisma/client';
@@ -345,6 +346,8 @@ export class DeliveryWorker {
               deliveredAt: now,
             })),
           });
+          const inboxNotifications = await tx.inboxItem.findMany({ where: { intentId: { in: success.map(i => i.id) } }, select: { id: true, userId: true } });
+          for (const inbox of inboxNotifications) await createNotification(tx, { dedupeKey: `inbox:${inbox.id}`, userId: inbox.userId, kind: 'RECEIVED', targetId: inbox.id, targetType: 'received' });
           await tx.deliveryAttempt.updateMany({
             where: {
               workId: work.id,

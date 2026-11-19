@@ -173,6 +173,7 @@ export class AuthService {
   async logout(identity: AuthIdentity) {
     await this.locked(`session:${identity.sessionId}`, async (tx) => {
       await tx.session.updateMany({ where: { id: identity.sessionId, userId: identity.userId, revokedAt: null }, data: { revokedAt: this.now() } });
+      await tx.pushDevice.updateMany({ where: { sessionId: identity.sessionId, userId: identity.userId }, data: { disabledAt: this.now() } });
     });
     return { loggedOut: true };
   }

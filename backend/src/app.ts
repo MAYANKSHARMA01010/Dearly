@@ -1,3 +1,4 @@
+import { createNotificationRouter } from './routes/notification.routes';
 import { createSmsWebhookRouter } from './routes/smsWebhook.routes';
 import { createWahaWebhookRouter } from './routes/wahaWebhook.routes';
 import { createExternalAccessRouter } from './routes/externalAccess.routes';
@@ -102,6 +103,7 @@ export function createApp(
   const activeAuth =
     config.authMode !== 'disabled' ? (authOverride ?? auth) : undefined;
   app.use('/auth', createAuthRouter(activeAuth));
+  app.use('/notifications', createNotificationRouter(database.prisma, activeAuth, config.push?.projectId));
   app.use(
     '/external',
     createExternalAccessRouter(config, database.prisma, activeAuth),

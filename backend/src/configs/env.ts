@@ -29,6 +29,9 @@ const environmentSchema = z
     NODE_ENV: z
       .enum(['development', 'test', 'production'])
       .default('development'),
+    PUSH_PROVIDER: z.enum(['disabled', 'expo']).default('disabled'),
+    EXPO_PROJECT_ID: z.preprocess(v => v === '' ? undefined : v, z.string().uuid().optional()),
+    EXPO_ACCESS_TOKEN: z.preprocess(v => v === '' ? undefined : v, z.string().min(16).max(512).optional()),
     PORT: z.coerce.number().int().min(1).max(65535).default(8080),
     BACKEND_LOCAL_URL: origin.optional(),
     BACKEND_SERVER_URL: z.preprocess((v) => v === '' ? undefined : v, origin.refine((v) => {
@@ -196,6 +199,7 @@ export interface AppConfig {
   backendLocalUrl?: string;
   backendServerUrl?: string;
   redisUrl?: string;
+  push?: { enabled: boolean; projectId: string; accessToken?: string };
   sms?: SmsGateConfig;
   email?: SmtpConfig;
   whatsapp?: WahaConfig;
@@ -294,6 +298,7 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     throw new EnvironmentError(
       'Invalid environment settings: WAHA_CALLBACK_URL',
     );
+  if (env.PUSH_PROVIDER === 'expo' && !env.EXPO_PROJECT_ID) throw new EnvironmentError('Invalid environment settings: EXPO_PROJECT_ID');
   const smsUrl = env.NODE_ENV === 'production' ? env.SMSGATE_SERVER_API_URL : env.SMSGATE_LOCAL_API_URL;
   if (env.SMS_PROVIDER === 'smsgate') {
     if (!smsUrl || (env.SMSGATE_CONNECTION === 'cloud' && !env.SMSGATE_DEVICE_ID) || !env.SMSGATE_WEBHOOK_SECRET ||
@@ -311,6 +316,7 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     backendServerUrl: env.BACKEND_SERVER_URL,
     // Optional future cache only. Do not connect or fall back to local Redis in production.
     redisUrl: env.NODE_ENV === 'production' ? env.REDIS_SERVER_URL : env.REDIS_LOCAL_URL ?? env.REDIS_URL,
+    push: env.EXPO_PROJECT_ID ? { enabled: env.PUSH_PROVIDER === 'expo', projectId: env.EXPO_PROJECT_ID, accessToken: env.EXPO_ACCESS_TOKEN } : undefined,
     sms: env.SMS_PROVIDER === 'smsgate' ? {
       baseUrl: smsUrl!.replace(/\/$/, ''), connection: env.SMSGATE_CONNECTION,
       deviceId: env.SMSGATE_DEVICE_ID!, username: env.SMSGATE_USERNAME,
