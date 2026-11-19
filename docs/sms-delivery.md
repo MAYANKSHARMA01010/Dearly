@@ -232,16 +232,22 @@ SMS rows keep their unavailable display. The additive migration was applied and 
 checksum verified; no applied migration was rewritten. Test schemas were isolated
 and removed by their runners. No package upgrade, emulator launch or reset occurred.
 
-The physical sender and authenticated callback receiver are configured. The first
-authorized attempt was accepted by the cloud queue but failed on the phone because
-Android denied `SEND_SMS`; its signed failure callback was verified. The user then
-enabled restricted settings/SMS permission and explicitly authorized one fresh
-scheduled self-test. Its exact gateway status reached `Sent`, but actual recipient
-arrival and signed sent/delivered events were not confirmed. The temporary tunnel
-expired and was restored; no SMS was replayed. The user then designated a different
-recipient and explicitly requested one new test. The Cloud queue accepted it,
-and phone pickup is pending. Physical delivery acceptance remains pending. The failed attempt is retained and was not replayed. Native SMS interaction was not verified. The backend,
-updated worker, Metro and existing iPhone simulator remain the development setup.
-Completion requires a scheduled SMS to a designated consenting recipient, actual
-phone arrival and honest carrier evidence. Do not mark this phase complete from
-an emulator, fake transport, health probe or gateway acceptance alone.
+Real physical acceptance completed on 19 November 2026. The user designated a
+recipient and confirmed actual SMS inbox arrival. One scheduled notification was
+submitted through the iQOO Neo 9 Pro's SIM 1. The exact gateway message reached
+`Delivered`; authenticated SENT with `partsCount=1` and DELIVERED callbacks were
+persisted. Carrier delivery was observed at 05:18:52 UTC. No multipart or generic
+queue acceptance was treated as proof of whole-message delivery.
+
+The operator opened the synthetic private content through the local HTTP endpoint
+(200), matched the text, revoked all three test-run links and verified each now
+returns 404. This operator check is not evidence that the recipient read content.
+The first attempt's signed Android SMS-permission failure and the subsequent
+self-test's unconfirmed arrival remain separate history; neither was replayed.
+The callback tunnel expired during phone setup, was restored and authenticated
+before the successful designated-recipient test, and does not publish content.
+
+Phase 14 is complete. The backend, updated worker, callback receiver/tunnel, Metro
+and existing iPhone simulator remain the local development setup. Stable hosted
+API/content and callback URLs are still required for release. No new native UI
+review, Android emulator, device reset or dependency upgrade was performed.

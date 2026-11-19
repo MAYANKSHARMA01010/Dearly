@@ -226,8 +226,9 @@ only the explicitly configured server URL; no local fallback. See
 
 ## SMSGate sender
 
-Phase 14 selects free SMSGate with the user's physical Android/SIM. The physical Cloud sender is configured and enabled for authorized acceptance
-tests; actual recipient arrival and signed delivery evidence remain pending. Read [SMS setup](../docs/sms-delivery.md) before enabling it. The
+Phase 14 selects free SMSGate with the user's physical Android/SIM. The physical
+Cloud sender is configured on SIM 1. A real authorized scheduled SMS arrived, with
+signed single-part sent/delivered receipts and private-link revocation verified. Read [SMS setup](../docs/sms-delivery.md) before enabling it. The
 integration uses a one-segment private-link notification, explicit SMS consent,
 separate durable quota, client-selected submission IDs and signed outbound receipts.
 Gateway queue acceptance, carrier submission/delivery and content opening are

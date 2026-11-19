@@ -64,7 +64,7 @@ within a phase does not authorize the entire phase.
   a recycled number to a replacement account. Phase 12 enables explicitly reviewed
   EMAIL destinations through configured Gmail SMTP. Phase 13 enables explicitly
   chosen PHONE/WHATSAPP destinations through the configured free WAHA Core sender;
-  SMS remains disabled. Follow [WhatsApp contracts](docs/whatsapp-delivery.md) for
+  SMS is enabled separately in Phase 14. Follow [WhatsApp contracts](docs/whatsapp-delivery.md) for
   sender pairing/readiness, scoped HMAC receipts and separate notification/content
   read evidence. Keep gateway credentials and session volumes private, ignore unrelated
   personal-account receipts, and never reset or relink another application's session.
@@ -89,6 +89,10 @@ within a phase does not authorize the entire phase.
   Do not launch an emulator, expose phone APIs publicly, subscribe to incoming SMS,
   copy ShopSmart credentials, or send to undesignated recipients. Real phone arrival
   is required before marking Phase 14 complete; WhatsApp login OTP stays separate.
+  Phase 14 physical acceptance passed on 19 November: user-confirmed arrival, signed
+  single-part sent/delivered receipts and revoked-test-link rejection. The current
+  iQOO sender uses SIM 1. Temporary callback tunneling exposes only port 8082;
+  hosted content/backend URLs remain release work.
 - Track delivery per recipient and channel. Distinguish provider acceptance,
   delivery confirmation, and opening; only claim statuses supported by evidence.
 - Phase 8 uses private filesystem attachments with owner-only APIs, bounded

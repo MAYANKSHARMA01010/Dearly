@@ -34,12 +34,13 @@ feature placement, and the next implementation steps.
 Follow the [implementation phases](docs/implementation-phases.md) for the roadmap
 and [backend setup](backend/README.md) to run the API on port `8080`.
 
-Phases 1–13 are complete within their documented scope. Phase 12 adds real Gmail
+Phases 1–14 are complete within their documented scope. Phase 12 adds real Gmail
 SMTP notifications and private links; Phase 13 adds free WAHA Core WhatsApp delivery
 and immediate login OTP. Live self-tests verified inbox arrival, user-confirmed
 WhatsApp arrival, private content and revoked-link rejection. Hosted URLs remain
-empty; localhost message links open on this Mac only. Phase 14 (SMS) is in progress: SMSGate Cloud and the physical SIM 1 sender are configured;
-real scheduled SMS acceptance is being checked. See [SMS setup](docs/sms-delivery.md).
+empty; localhost message links open on this Mac only. Phase 14 verifies a real scheduled SMS through SMSGate Cloud and the physical
+SIM 1 sender, signed single-part sent/delivered receipts, private content access
+and test-link revocation. See [SMS setup](docs/sms-delivery.md).
 
 For development-task attention alerts on this Mac, run
 `sh scripts/attention-sound.sh`. Agents use it before waiting for input and finishing.
