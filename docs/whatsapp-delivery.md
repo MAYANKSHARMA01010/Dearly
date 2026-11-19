@@ -253,8 +253,8 @@ The user explicitly requested one WhatsApp test to a different designated number
 The existing paired Core GOWS sender reported READY. A synthetic PHONE/WHATSAPP
 message was previewed with explicit consent and confirmed through the normal
 schedule service. The worker submitted it once, and WAHA accepted the outbound
-message. No additional SMS/email channel or login OTP was sent. At this checkpoint,
-notification delivery/read callbacks and actual recipient arrival are not yet
-confirmed; provider acceptance alone is not recorded as delivery. The private
+message. No additional SMS/email channel or login OTP was sent. The user confirmed actual WhatsApp arrival at the designated recipient.
+Notification delivery/read callbacks remain absent, so this is user-confirmed
+arrival rather than an invented signed delivery/read receipt. The private
 content URL remains localhost, so it opens on this Mac only. This test does not
 change the completed Phase 13 self-test or start Phase 15.
