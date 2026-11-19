@@ -31,7 +31,14 @@
     "sms:init": "tsx src/jobs/manageSms.ts init",
     "sms:cleanup": "tsx src/jobs/manageSms.ts cleanup",
     "sms:callback": "tsx src/jobs/runSmsCallback.ts",
-    "push:worker": "tsx src/jobs/runPushWorker.ts"
+    "push:worker": "tsx src/jobs/runPushWorker.ts",
+    "release:check": "tsx src/jobs/checkRelease.ts",
+    "ops:check": "tsx src/jobs/checkOperations.ts",
+    "start:production": "node dist/jobs/checkRelease.js && node dist/server.js",
+    "worker:production": "node dist/jobs/checkRelease.js && node dist/workers/runDeliveryWorker.js",
+    "push:production": "node dist/jobs/checkRelease.js && node dist/jobs/runPushWorker.js --loop",
+    "backup": "tsx src/jobs/manageBackup.ts",
+    "test:backup-drill": "tsx tests/operations/backupDrill.ts"
   },
   "keywords": [],
   "author": "",

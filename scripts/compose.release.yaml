@@ -1,0 +1,49 @@
+name: dearly-release
+x-common: &common
+  image: dearly-backend:local
+  build:
+    context: ..
+    dockerfile: backend/Dockerfile
+    target: runtime
+  env_file:
+    - ${DEARLY_ENV_FILE:-../backend/.env.production}
+  environment:
+    NODE_ENV: production
+    HOST: 0.0.0.0
+    PORT: '8080'
+    STORAGE_ROOT: /var/lib/dearly/attachments
+    PERSISTENT_STORAGE_CONFIRMED: 'true'
+  volumes:
+    - attachments:/var/lib/dearly/attachments
+  restart: unless-stopped
+  init: true
+  stop_grace_period: 30s
+  security_opt:
+    - no-new-privileges:true
+services:
+  api:
+    <<: *common
+    ports:
+      - '127.0.0.1:8080:8080'
+  delivery-worker:
+    <<: *common
+    command: [npm, run, 'worker:production']
+    healthcheck:
+      disable: true
+  push-worker:
+    <<: *common
+    command: [npm, run, 'push:production']
+    healthcheck:
+      disable: true
+  migrate:
+    image: dearly-migration:local
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+      target: migration
+    env_file:
+      - ${DEARLY_ENV_FILE:-../backend/.env.production}
+    profiles: [operations]
+    restart: 'no'
+volumes:
+  attachments:

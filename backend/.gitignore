@@ -7,3 +7,11 @@ logs/*.log
 
 # Private attachment objects and interrupted uploads
 /data/
+
+# Private release configuration and encrypted operator archives
+.env.*
+!.env.example
+!.env.production.example
+/backups/
+*.dearly
+*.dearly.json
