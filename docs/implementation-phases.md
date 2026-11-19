@@ -50,7 +50,7 @@ and a simulated delivery does not complete a real channel integration.
 | 11 | Dashboard, mailboxes, message details, and tracking | 10 | Complete |
 | 12 | Email delivery and secure external content access | 10–11 | Complete — real self-inbox, private link and revocation verified 19 November |
 | 13 | WhatsApp message delivery | 10–12 | Complete — scheduled self-delivery and login OTP verified 19 November |
-| 14 | SMS message delivery | 10–12 | Implementation ready — physical SMSGate sender setup and real delivery acceptance pending |
+| 14 | SMS message delivery | 10–12 | Sender configured — real recipient arrival and signed delivery acceptance pending |
 | 15 | Notifications, preferences, and account settings | 11–14 | Not started |
 | 16 | Release verification, operations, and handover | 2–15 | Not started |
 
@@ -463,6 +463,23 @@ limitations are documented; a logged simulation remains incomplete.
 integration; readiness/recovery and user-facing channel state.
 
 ## Phase 14 — SMS message delivery
+
+**Live acceptance update — 19 November 2026:** The iQOO Neo 9 Pro Cloud sender
+uses SIM 1. Private credentials and the phone signing key are synchronized. Added
+an isolated loopback callback receiver on port 8082 and a temporary free HTTPS
+tunnel; main app/content endpoints remain private. Cloud webhook registration
+pins `deviceId` and preserves other apps/devices. Backend checks now pass 80 tests,
+lint, typecheck and build. The first authorized attempt failed before carrier
+submission because Android denied SMS permission; its signed failure was verified.
+After permission setup, the next authorized self-test reached gateway `Sent`,
+but recipient arrival and signed sent/delivered reports were not confirmed.
+The temporary tunnel expired and was restored without replaying that message.
+The user then explicitly designated a different recipient for one new scheduled
+test. That new test was accepted by the Cloud queue and is waiting for the
+phone to fetch it. Completion remains pending recipient arrival and honest
+delivery evidence. No live acceptance result has been inferred from a fake transport.
+
+The implementation checkpoint below describes the earlier, pre-device setup.
 
 **Implementation checkpoint — 19 November 2026:** The user selected free SMSGate
 with their physical Android/SIM, then chose Cloud Server mode to avoid USB. Cloud

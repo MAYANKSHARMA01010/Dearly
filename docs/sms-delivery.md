@@ -22,10 +22,52 @@ The initial readiness cutoff was too short for the provider's documented 15-minu
 fallback polling cycle. Readiness now accepts activity within 20 minutes, with a
 one-minute future-clock tolerance. Older/missing activity remains offline. This is
 a recent-activity check, not proof that the phone is connected at the exact send
-instant; the five-minute outbound queue TTL still applies. No live SMS was sent.
-The placeholder signing key was replaced privately with a random key; the same
-key must be copied to the phone before receipt callbacks can authenticate. A
-reachable HTTPS callback endpoint remains unconfigured, so SMS stays disabled.
+instant; the five-minute outbound queue TTL still applies.
+The signing key is synchronized with the phone, and a temporary callback-only
+HTTPS tunnel is configured. SMS is enabled for the explicitly authorized physical
+acceptance run; this does not authorize arbitrary future test messages.
+
+## Temporary local Cloud callback receiver
+
+The Phase 14 acceptance run adds `npm run sms:callback` on **127.0.0.1:8082**.
+This separate Express app mounts only exact `POST /webhooks/smsgate`. Other paths,
+methods and query variants return 404. It has no login, message, file, content
+viewer or main-backend health routes. It reuses bounded raw-body/HMAC validation
+and minimal scoped receipt storage. Forwarded IP headers remain untrusted;
+requests share a local rate-limit bucket. Logs exclude bodies, phone numbers,
+signatures and credentials.
+
+The free `cloudflared` tool is installed through Homebrew; a temporary
+[Quick Tunnel](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/)
+targets **only port 8082**, never backend 8080 or Metro 8081. No account, paid
+hosting, domain or automatic startup service is added. The callback URL is private
+configuration, separate from the future hosted backend URL. Before registration,
+checks verify signed synthetic callbacks return 202/ignored, unsigned requests
+return 401, and app/content/health paths stay 404. This tests the boundary without
+inventing a phone delivery report.
+
+```sh
+# From backend/, in separate terminals; keep both running for local receipts.
+npm run sms:callback
+cloudflared --no-autoupdate tunnel --url http://127.0.0.1:8082 --protocol http2
+```
+
+Set `SMSGATE_CALLBACK_URL` to the generated HTTPS origin plus `/webhooks/smsgate`,
+then use `npm run sms:init` to add outbound-only callbacks. Cloud registration
+pins the selected device using `deviceId`. Repeated initialization preserves
+existing scoped callbacks; only legacy unscoped registrations for this exact
+callback URL are replaced. Other applications and devices are untouched. The actual generated
+signing key must match the phone, not the example words used in setup directions.
+An owner-only, Git-ignored `.runtime/sms-signing-key.txt` helper contains only that
+key for user copying; remove the helper after synchronization.
+
+The hostname changes after tunnel restart and has no uptime guarantee. Pause new
+SMS schedules before stopping the receiver. Verify reachability immediately
+before live tests: a running tunnel process can lose its temporary hostname. A
+failed tunnel does not justify resending an already accepted SMS. Update the URL/registrations after a
+restart without deleting another app's callbacks. Use stable hosted HTTPS before
+public release. Current content links still open on this Mac; this tunnel does
+not publish the content viewer.
 
 ## Preferred setup: SMSGate Cloud
 
@@ -37,6 +79,12 @@ another provider or dependency.
    [latest stable release](https://github.com/capcom6/android-sms-gateway/releases/latest)
    and install the standard secure APK, not the insecure variant or a pre-release.
 2. Allow SMS sending and phone-state access for selecting the intended SIM.
+   If Android blocks the permission as restricted, open SMSGate App info → More
+   → Allow restricted settings, then return to Permissions → SMS → Allow. Only
+   enable this for a trusted official APK; see [Android guidance](https://support.google.com/android/answer/12623953).
+   Dearly explicitly sends `SMSGATE_SIM_NUMBER` with each request, so changing the
+   phone's default SMS SIM does not override it. The selected physical phone is an
+   iQOO Neo 9 Pro using SIM 1. Restart its Cloud service after granting permissions.
 3. Turn on **Cloud Server** and tap **Start Service**. On first registration,
    confirm **Sign Up**; the app generates Cloud Server credentials. See the official
    [Cloud setup](https://docs.sms-gate.app/getting-started/public-cloud-server/).
@@ -176,7 +224,7 @@ Sources: [sending](https://docs.sms-gate.app/features/sending-messages/),
 ## Acceptance checkpoint
 
 Implementation and automated verification are ready. Backend lint/typecheck/build
-and 76 tests passed; frontend lint/typecheck and 79 tests passed. All 84 backend
+and 80 tests passed; frontend lint/typecheck and 79 tests passed. All 84 backend
 integration entries, seven focused SMS integration entries and three mobile/API
 integration scenarios passed. The focused suite also verifies signed receipts
 racing an uncertain HTTP response without replaying it. Existing legacy unsupported
@@ -184,8 +232,15 @@ SMS rows keep their unavailable display. The additive migration was applied and 
 checksum verified; no applied migration was rewritten. Test schemas were isolated
 and removed by their runners. No package upgrade, emulator launch or reset occurred.
 
-SMS remains disabled until the physical sender/private configuration is ready.
-No real SMS has been sent, and native SMS interaction was not verified. The backend,
+The physical sender and authenticated callback receiver are configured. The first
+authorized attempt was accepted by the cloud queue but failed on the phone because
+Android denied `SEND_SMS`; its signed failure callback was verified. The user then
+enabled restricted settings/SMS permission and explicitly authorized one fresh
+scheduled self-test. Its exact gateway status reached `Sent`, but actual recipient
+arrival and signed sent/delivered events were not confirmed. The temporary tunnel
+expired and was restored; no SMS was replayed. The user then designated a different
+recipient and explicitly requested one new test. The Cloud queue accepted it,
+and phone pickup is pending. Physical delivery acceptance remains pending. The failed attempt is retained and was not replayed. Native SMS interaction was not verified. The backend,
 updated worker, Metro and existing iPhone simulator remain the development setup.
 Completion requires a scheduled SMS to a designated consenting recipient, actual
 phone arrival and honest carrier evidence. Do not mark this phase complete from

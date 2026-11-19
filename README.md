@@ -38,8 +38,8 @@ Phases 1–13 are complete within their documented scope. Phase 12 adds real Gma
 SMTP notifications and private links; Phase 13 adds free WAHA Core WhatsApp delivery
 and immediate login OTP. Live self-tests verified inbox arrival, user-confirmed
 WhatsApp arrival, private content and revoked-link rejection. Hosted URLs remain
-empty; localhost message links open on this Mac only. Phase 14 (SMS) is in progress: free SMSGate was selected; physical sender setup
-and real scheduled SMS acceptance remain pending. See [SMS setup](docs/sms-delivery.md).
+empty; localhost message links open on this Mac only. Phase 14 (SMS) is in progress: SMSGate Cloud and the physical SIM 1 sender are configured;
+real scheduled SMS acceptance is being checked. See [SMS setup](docs/sms-delivery.md).
 
 For development-task attention alerts on this Mac, run
 `sh scripts/attention-sound.sh`. Agents use it before waiting for input and finishing.

@@ -226,9 +226,8 @@ only the explicitly configured server URL; no local fallback. See
 
 ## SMSGate sender
 
-Phase 14 selects free SMSGate with the user's physical Android/SIM. SMS currently
-stays disabled pending the actual phone/private sender configuration and live
-acceptance. Read [SMS setup](../docs/sms-delivery.md) before enabling it. The
+Phase 14 selects free SMSGate with the user's physical Android/SIM. The physical Cloud sender is configured and enabled for authorized acceptance
+tests; actual recipient arrival and signed delivery evidence remain pending. Read [SMS setup](../docs/sms-delivery.md) before enabling it. The
 integration uses a one-segment private-link notification, explicit SMS consent,
 separate durable quota, client-selected submission IDs and signed outbound receipts.
 Gateway queue acceptance, carrier submission/delivery and content opening are
@@ -239,8 +238,10 @@ phone installation and Cloud Server steps in the SMS guide. The optional direct
 USB alternative uses `sh scripts/connect-smsgate-usb.sh`. From backend/, `npm run sms:status`
 checks readiness, `sms:init` registers outbound-only callbacks, and `sms:cleanup`
 removes expired receipt rows. These commands do not send SMS. The selected local-backend gateway URL is the public SMSGate Cloud API. Cloud
-receipts need a reachable HTTPS backend callback; localhost is not reachable from
-the phone over internet. Optional USB mode uses ports 3102/3103. Keep
+receipts use a temporary HTTPS tunnel to the isolated callback receiver
+(`npm run sms:callback`, loopback port 8082), which exposes no app/content APIs.
+Verify tunnel reachability immediately before a live test; temporary tunnels can
+expire. Localhost is not reachable from the phone over internet. Optional USB mode uses ports 3102/3103. Keep
 credentials/signing keys private; current server URLs remain empty. Future hosted
 mode selects only its explicit server URL and requires HTTPS for remote transport.
 Free gateway software does not remove carrier charges, SIM limits or phone uptime.
