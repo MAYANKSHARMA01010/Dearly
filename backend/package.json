@@ -30,7 +30,8 @@
     "sms:status": "tsx src/jobs/manageSms.ts status",
     "sms:init": "tsx src/jobs/manageSms.ts init",
     "sms:cleanup": "tsx src/jobs/manageSms.ts cleanup",
-    "sms:callback": "tsx src/jobs/runSmsCallback.ts"
+    "sms:callback": "tsx src/jobs/runSmsCallback.ts",
+    "push:worker": "tsx src/jobs/runPushWorker.ts"
   },
   "keywords": [],
   "author": "",
