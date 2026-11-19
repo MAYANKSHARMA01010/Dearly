@@ -6,7 +6,7 @@ import { requireSession } from '../middlewares/requireSession';
 import { ApiError } from '../utils/ApiError';
 import { InboxService } from '../services/inbox.service';
 import { AttachmentService } from '../services/attachment.service';
-import { LocalStorage } from '../providers/storage/local.storage';
+import { createObjectStore } from '../providers/storage/createObjectStore';
 import { inboxController } from '../controllers/inbox.controller';
 export function createInboxRouter(
   config: AppConfig,
@@ -30,7 +30,7 @@ export function createInboxRouter(
       db,
       new AttachmentService(
         db,
-        new LocalStorage(config.storageRoot),
+        createObjectStore(config),
         config.ffprobePath,
       ),
     ),

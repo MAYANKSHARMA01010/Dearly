@@ -1,4 +1,8 @@
 import {
+  objectPath,
+  type ObjectStore,
+} from '../providers/storage/local.storage';
+import {
   createCipheriv,
   createDecipheriv,
   createHash,
@@ -108,6 +112,7 @@ export class BackupService {
     storageRoot: string,
     output: string,
     key: string,
+    remoteStore?: ObjectStore,
   ) {
     const encryption = keyBuffer(key),
       temp = await temporary();
@@ -130,15 +135,24 @@ export class BackupService {
         await dumpHeader.close();
       }
       const names = ['database.dump'];
-      for (const name of await readdir(storageRoot)) {
+      const objects = remoteStore
+        ? await remoteStore.entries()
+        : (await readdir(storageRoot)).map((key) => ({
+            key,
+            bytes: undefined as number | undefined,
+          }));
+      for (const object of objects) {
+        const name = object.key;
         if (/^[0-9a-f-]{36}\.[0-9a-f-]{36}\.part$/.test(name)) continue;
-        if (
-          !/^[0-9a-f-]{36}$/.test(name) ||
-          !(await lstat(join(storageRoot, name))).isFile()
-        )
+        if (!/^[0-9a-f-]{36}$/.test(name))
+          throw Error('Unexpected object in private storage.');
+        const source = remoteStore
+          ? await objectPath(remoteStore, name, object.bytes ?? 0)
+          : join(storageRoot, name);
+        if (!(await lstat(source)).isFile())
           throw Error('Unexpected object in private storage.');
         await copyFile(
-          join(storageRoot, name),
+          source,
           join(payload, 'objects', name),
           constants.COPYFILE_EXCL,
         );

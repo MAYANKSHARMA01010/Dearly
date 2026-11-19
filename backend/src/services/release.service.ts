@@ -50,7 +50,10 @@ export function releaseIssues(
     options.smsCallback !== backend + '/webhooks/smsgate'
   )
     issues.push('SMS_CALLBACK_REQUIRED');
-  if (!isAbsolute(c.storageRoot) || !options.persistentStorage)
+  if (
+    !isAbsolute(c.storageRoot) ||
+    (!options.persistentStorage && !c.remoteStorage)
+  )
     issues.push('PERSISTENT_PRIVATE_STORAGE_REQUIRED');
   if (!/^[0-9a-f]{64}$/.test(options.backupKey ?? ''))
     issues.push('BACKUP_ENCRYPTION_KEY_REQUIRED');

@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { loadEnvironment } from '../configs/loadEnvironment';
+import { createObjectStore } from '../providers/storage/createObjectStore';
 import { BackupService } from '../services/backup.service';
 async function main() {
   const c = loadEnvironment(),
@@ -18,6 +19,7 @@ async function main() {
           resolve(c.storageRoot),
           resolve(path),
           key,
+          c.remoteStorage ? createObjectStore(c) : undefined,
         ),
       ),
     );

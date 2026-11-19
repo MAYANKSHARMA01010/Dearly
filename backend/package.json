@@ -38,12 +38,14 @@
     "worker:production": "node dist/jobs/checkRelease.js && node dist/workers/runDeliveryWorker.js",
     "push:production": "node dist/jobs/checkRelease.js && node dist/jobs/runPushWorker.js --loop",
     "backup": "tsx src/jobs/manageBackup.ts",
-    "test:backup-drill": "tsx tests/operations/backupDrill.ts"
+    "test:backup-drill": "tsx tests/operations/backupDrill.ts",
+    "storage:migrate": "tsx src/jobs/migrateStorage.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1172.0",
     "@js-temporal/polyfill": "^0.5.1",
     "@prisma/client": "^5.22.0",
     "cors": "^2.8.5",

@@ -12,7 +12,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { randomUUID } from 'node:crypto';
 import { loadEnvironment } from '../configs/loadEnvironment';
 import { createDatabase } from '../configs/database';
-import { LocalStorage } from '../providers/storage/local.storage';
+import { createObjectStore } from '../providers/storage/createObjectStore';
 import { enqueueDeliveries } from '../jobs/enqueueDeliveries';
 import { DeliveryWorker, deliveryPolicy } from './deliveryWorker';
 import { createLogger } from '../utils/logger';
@@ -106,7 +106,7 @@ async function main() {
   }
   const worker = new DeliveryWorker(
     db.prisma!,
-    new LocalStorage(config.storageRoot),
+    createObjectStore(config),
     undefined,
     undefined,
     config.externalAccess

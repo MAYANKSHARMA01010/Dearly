@@ -4,7 +4,7 @@ import type { AppConfig } from '../configs/env';
 import type { AuthService } from '../services/auth.service';
 import { ExternalAccessService } from '../services/externalAccess.service';
 import { externalAccessController } from '../controllers/externalAccess.controller';
-import { LocalStorage } from '../providers/storage/local.storage';
+import { createObjectStore } from '../providers/storage/createObjectStore';
 import { requireSession } from '../middlewares/requireSession';
 import { externalViewer, externalScript } from '../views/externalViewer';
 import { ApiError } from '../utils/ApiError';
@@ -51,7 +51,7 @@ export function createExternalAccessRouter(
   }
   const c = externalAccessController(
     new ExternalAccessService(db, config.externalAccess.secret),
-    new LocalStorage(config.storageRoot),
+    createObjectStore(config),
   );
   router.post('/open', c.open);
   router.post('/file', c.file);

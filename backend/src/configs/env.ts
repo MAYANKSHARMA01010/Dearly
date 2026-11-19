@@ -19,10 +19,16 @@ const origin = z
     }
   }, 'Expected an HTTP(S) origin');
 
-const redisConnectionUrl = z.string().url().refine((value) => {
-  try { return ['redis:', 'rediss:'].includes(new URL(value).protocol); }
-  catch { return false; }
-});
+const redisConnectionUrl = z
+  .string()
+  .url()
+  .refine((value) => {
+    try {
+      return ['redis:', 'rediss:'].includes(new URL(value).protocol);
+    } catch {
+      return false;
+    }
+  });
 
 const environmentSchema = z
   .object({
@@ -30,19 +36,38 @@ const environmentSchema = z
       .enum(['development', 'test', 'production'])
       .default('development'),
     PUSH_PROVIDER: z.enum(['disabled', 'expo']).default('disabled'),
-    EXPO_PROJECT_ID: z.preprocess(v => v === '' ? undefined : v, z.string().uuid().optional()),
-    EXPO_ACCESS_TOKEN: z.preprocess(v => v === '' ? undefined : v, z.string().min(16).max(512).optional()),
+    EXPO_PROJECT_ID: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      z.string().uuid().optional(),
+    ),
+    EXPO_ACCESS_TOKEN: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      z.string().min(16).max(512).optional(),
+    ),
     PORT: z.coerce.number().int().min(1).max(65535).default(8080),
     BACKEND_LOCAL_URL: origin.optional(),
-    BACKEND_SERVER_URL: z.preprocess((v) => v === '' ? undefined : v, origin.refine((v) => {
-      try {
-        const u = new URL(v);
-        return u.protocol === 'https:' && !['localhost', '127.0.0.1', '[::1]'].includes(u.hostname);
-      } catch { return false; }
-    }).optional()),
+    BACKEND_SERVER_URL: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      origin
+        .refine((v) => {
+          try {
+            const u = new URL(v);
+            return (
+              u.protocol === 'https:' &&
+              !['localhost', '127.0.0.1', '[::1]'].includes(u.hostname)
+            );
+          } catch {
+            return false;
+          }
+        })
+        .optional(),
+    ),
     REDIS_URL: redisConnectionUrl.optional(),
     REDIS_LOCAL_URL: redisConnectionUrl.optional(),
-    REDIS_SERVER_URL: z.preprocess((v) => v === '' ? undefined : v, redisConnectionUrl.optional()),
+    REDIS_SERVER_URL: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      redisConnectionUrl.optional(),
+    ),
     HOST: z.string().trim().min(1).default('127.0.0.1'),
     DATABASE_URL: z
       .string()
@@ -77,10 +102,36 @@ const environmentSchema = z
       .min(100)
       .max(60000)
       .default(10000),
-    AUTH_MODE: z.enum(['disabled', 'development', 'whatsapp']).default('disabled'),
+    AUTH_MODE: z
+      .enum(['disabled', 'development', 'whatsapp'])
+      .default('disabled'),
     WHATSAPP_OTP_DAILY_LIMIT: z.coerce
-      .number().int().min(1).max(500).default(20),
+      .number()
+      .int()
+      .min(1)
+      .max(500)
+      .default(20),
     STORAGE_ROOT: z.string().trim().min(1).default('./data/attachments'),
+    STORAGE_PROVIDER: z.enum(['local', 'neon']).default('local'),
+    NEON_STORAGE_ENDPOINT: z
+      .string()
+      .url()
+      .refine((v) =>
+        /^https:\/\/br-[a-z0-9-]+\.storage\.c-[0-9]+\.[a-z0-9-]+\.aws\.neon\.tech\/?$/.test(
+          v,
+        ),
+      )
+      .optional(),
+    NEON_STORAGE_REGION: z
+      .string()
+      .regex(/^[a-z]{2}-[a-z]+-[0-9]+$/)
+      .optional(),
+    NEON_STORAGE_ACCESS_KEY_ID: z.string().min(16).max(256).optional(),
+    NEON_STORAGE_SECRET_ACCESS_KEY: z.string().min(32).max(4096).optional(),
+    NEON_STORAGE_BUCKET: z
+      .string()
+      .regex(/^[a-z0-9][a-z0-9-]{2,62}$/)
+      .default('dearly-private'),
     FFPROBE_PATH: z.string().trim().min(1).default('ffprobe'),
     OTP_PEPPER: z
       .string()
@@ -92,9 +143,20 @@ const environmentSchema = z
     SMS_PROVIDER: z.enum(['disabled', 'smsgate']).default('disabled'),
     SMSGATE_CONNECTION: z.enum(['local', 'cloud']).default('local'),
     SMSGATE_LOCAL_API_URL: z.string().url().optional(),
-    SMSGATE_SERVER_API_URL: z.preprocess((v) => v === '' ? undefined : v, z.string().url().optional()),
-    SMSGATE_DEVICE_ID: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/).optional(),
-    SMSGATE_USERNAME: z.string().min(1).max(256).refine((v) => !v.includes(':')).optional(),
+    SMSGATE_SERVER_API_URL: z.preprocess(
+      (v) => (v === '' ? undefined : v),
+      z.string().url().optional(),
+    ),
+    SMSGATE_DEVICE_ID: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{1,64}$/)
+      .optional(),
+    SMSGATE_USERNAME: z
+      .string()
+      .min(1)
+      .max(256)
+      .refine((v) => !v.includes(':'))
+      .optional(),
     SMSGATE_PASSWORD: z.string().min(1).max(256).optional(),
     SMSGATE_TOKEN: z.string().min(16).max(4096).optional(),
     SMSGATE_WEBHOOK_SECRET: z.string().min(16).max(256).optional(),
@@ -145,6 +207,18 @@ const environmentSchema = z
     SMTP_FROM: z.email().optional(),
   })
   .superRefine((env, ctx) => {
+    if (
+      env.STORAGE_PROVIDER === 'neon' &&
+      (!env.NEON_STORAGE_ENDPOINT ||
+        !env.NEON_STORAGE_REGION ||
+        !env.NEON_STORAGE_ACCESS_KEY_ID ||
+        !env.NEON_STORAGE_SECRET_ACCESS_KEY)
+    )
+      ctx.addIssue({
+        code: 'custom',
+        path: ['NEON_STORAGE_ENDPOINT'],
+        message: 'Private storage configuration required.',
+      });
     if (env.EMAIL_MODE === 'smtp') {
       for (const field of [
         'SMTP_HOST',
@@ -196,6 +270,7 @@ const environmentSchema = z
   });
 
 export interface AppConfig {
+  remoteStorage?: import('../providers/storage/neon.storage').NeonStorageConfig;
   backendLocalUrl?: string;
   backendServerUrl?: string;
   redisUrl?: string;
@@ -298,31 +373,73 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     throw new EnvironmentError(
       'Invalid environment settings: WAHA_CALLBACK_URL',
     );
-  if (env.PUSH_PROVIDER === 'expo' && !env.EXPO_PROJECT_ID) throw new EnvironmentError('Invalid environment settings: EXPO_PROJECT_ID');
-  const smsUrl = env.NODE_ENV === 'production' ? env.SMSGATE_SERVER_API_URL : env.SMSGATE_LOCAL_API_URL;
+  if (env.PUSH_PROVIDER === 'expo' && !env.EXPO_PROJECT_ID)
+    throw new EnvironmentError('Invalid environment settings: EXPO_PROJECT_ID');
+  const smsUrl =
+    env.NODE_ENV === 'production'
+      ? env.SMSGATE_SERVER_API_URL
+      : env.SMSGATE_LOCAL_API_URL;
   if (env.SMS_PROVIDER === 'smsgate') {
-    if (!smsUrl || (env.SMSGATE_CONNECTION === 'cloud' && !env.SMSGATE_DEVICE_ID) || !env.SMSGATE_WEBHOOK_SECRET ||
-        (env.SMSGATE_TOKEN ? Boolean(env.SMSGATE_USERNAME || env.SMSGATE_PASSWORD) : !env.SMSGATE_USERNAME || !env.SMSGATE_PASSWORD) ||
-        (env.SMSGATE_CONNECTION === 'local' && env.SMSGATE_TOKEN))
-      throw new EnvironmentError('Invalid environment settings: SMSGate configuration');
+    if (
+      !smsUrl ||
+      (env.SMSGATE_CONNECTION === 'cloud' && !env.SMSGATE_DEVICE_ID) ||
+      !env.SMSGATE_WEBHOOK_SECRET ||
+      (env.SMSGATE_TOKEN
+        ? Boolean(env.SMSGATE_USERNAME || env.SMSGATE_PASSWORD)
+        : !env.SMSGATE_USERNAME || !env.SMSGATE_PASSWORD) ||
+      (env.SMSGATE_CONNECTION === 'local' && env.SMSGATE_TOKEN)
+    )
+      throw new EnvironmentError(
+        'Invalid environment settings: SMSGate configuration',
+      );
     const u = new URL(smsUrl);
-    if (u.username || u.password || u.search || u.hash ||
-        (u.protocol !== 'https:' && !(u.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(u.hostname))) ||
-        (env.SMSGATE_CONNECTION === 'local' ? u.pathname !== '/' : u.pathname.replace(/\/$/, '') !== '/3rdparty/v1'))
-      throw new EnvironmentError('Invalid environment settings: SMSGate API URL');
+    if (
+      u.username ||
+      u.password ||
+      u.search ||
+      u.hash ||
+      (u.protocol !== 'https:' &&
+        !(
+          u.protocol === 'http:' &&
+          ['127.0.0.1', 'localhost', '[::1]'].includes(u.hostname)
+        )) ||
+      (env.SMSGATE_CONNECTION === 'local'
+        ? u.pathname !== '/'
+        : u.pathname.replace(/\/$/, '') !== '/3rdparty/v1')
+    )
+      throw new EnvironmentError(
+        'Invalid environment settings: SMSGate API URL',
+      );
   }
   return {
     backendLocalUrl: env.BACKEND_LOCAL_URL ?? `http://localhost:${env.PORT}`,
     backendServerUrl: env.BACKEND_SERVER_URL,
     // Optional future cache only. Do not connect or fall back to local Redis in production.
-    redisUrl: env.NODE_ENV === 'production' ? env.REDIS_SERVER_URL : env.REDIS_LOCAL_URL ?? env.REDIS_URL,
-    push: env.EXPO_PROJECT_ID ? { enabled: env.PUSH_PROVIDER === 'expo', projectId: env.EXPO_PROJECT_ID, accessToken: env.EXPO_ACCESS_TOKEN } : undefined,
-    sms: env.SMS_PROVIDER === 'smsgate' ? {
-      baseUrl: smsUrl!.replace(/\/$/, ''), connection: env.SMSGATE_CONNECTION,
-      deviceId: env.SMSGATE_DEVICE_ID!, username: env.SMSGATE_USERNAME,
-      password: env.SMSGATE_PASSWORD, token: env.SMSGATE_TOKEN,
-      webhookSecret: env.SMSGATE_WEBHOOK_SECRET!, simNumber: env.SMSGATE_SIM_NUMBER, dailyLimit: env.SMS_DAILY_LIMIT,
-    } : undefined,
+    redisUrl:
+      env.NODE_ENV === 'production'
+        ? env.REDIS_SERVER_URL
+        : (env.REDIS_LOCAL_URL ?? env.REDIS_URL),
+    push: env.EXPO_PROJECT_ID
+      ? {
+          enabled: env.PUSH_PROVIDER === 'expo',
+          projectId: env.EXPO_PROJECT_ID,
+          accessToken: env.EXPO_ACCESS_TOKEN,
+        }
+      : undefined,
+    sms:
+      env.SMS_PROVIDER === 'smsgate'
+        ? {
+            baseUrl: smsUrl!.replace(/\/$/, ''),
+            connection: env.SMSGATE_CONNECTION,
+            deviceId: env.SMSGATE_DEVICE_ID!,
+            username: env.SMSGATE_USERNAME,
+            password: env.SMSGATE_PASSWORD,
+            token: env.SMSGATE_TOKEN,
+            webhookSecret: env.SMSGATE_WEBHOOK_SECRET!,
+            simNumber: env.SMSGATE_SIM_NUMBER,
+            dailyLimit: env.SMS_DAILY_LIMIT,
+          }
+        : undefined,
     whatsapp:
       env.WHATSAPP_MODE === 'waha'
         ? {
@@ -374,6 +491,16 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     whatsappOtpDailyLimit: env.WHATSAPP_OTP_DAILY_LIMIT,
     otpPepper: env.OTP_PEPPER,
     storageRoot: env.STORAGE_ROOT,
+    remoteStorage:
+      env.STORAGE_PROVIDER === 'neon'
+        ? {
+            endpoint: new URL(env.NEON_STORAGE_ENDPOINT!).origin,
+            region: env.NEON_STORAGE_REGION!,
+            accessKeyId: env.NEON_STORAGE_ACCESS_KEY_ID!,
+            secretAccessKey: env.NEON_STORAGE_SECRET_ACCESS_KEY!,
+            bucket: env.NEON_STORAGE_BUCKET,
+          }
+        : undefined,
     ffprobePath: env.FFPROBE_PATH,
   };
 }

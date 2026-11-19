@@ -1,6 +1,6 @@
 import { loadEnvironment } from '../configs/loadEnvironment';
 import { createDatabase } from '../configs/database';
-import { LocalStorage } from '../providers/storage/local.storage';
+import { createObjectStore } from '../providers/storage/createObjectStore';
 import { DeliveryWorker } from '../workers/deliveryWorker';
 import { workerStatus } from '../services/workerStatus.service';
 import { z } from 'zod';
@@ -14,7 +14,7 @@ async function main() {
       if (args.length !== 2 || !id.success) throw Error();
       const retried = await new DeliveryWorker(
         db.prisma!,
-        new LocalStorage(config.storageRoot),
+        createObjectStore(config),
       ).retry(id.data);
       process.stdout.write(`${JSON.stringify({ retried })}\n`);
       if (!retried) process.exitCode = 1;

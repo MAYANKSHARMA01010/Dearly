@@ -2,7 +2,7 @@ import { lockMessage } from '../utils/lockMessage';
 import { Prisma, type PrismaClient, type Attachment } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import type { Readable } from 'node:stream';
-import type { ObjectStore } from '../providers/storage/local.storage';
+import { objectPath, type ObjectStore } from '../providers/storage/local.storage';
 import { inspectFile } from '../providers/storage/inspectFile';
 import { attachmentLimits as limits } from '../constants/attachments';
 import type { Reservation } from '../validators/attachment.validators';
@@ -44,7 +44,7 @@ export class AttachmentService {
         tx.attachment.aggregate({ where: { draftId }, _sum: { bytes: true }, _count: true }),
         tx.attachment.aggregate({ where: { ownerId }, _sum: { bytes: true } }), tx.attachment.aggregate({ _sum: { bytes: true } }),
       ]);
-      if (draft._count >= limits.count || (draft._sum.bytes ?? 0) + input.bytes > limits.draftBytes || (account._sum.bytes ?? 0) + input.bytes > limits.accountBytes || (total._sum.bytes ?? 0) + input.bytes > limits.totalBytes) throw new ApiError(409, 'ATTACHMENT_QUOTA', 'Attachment count or storage allowance is full.');
+      if (draft._count >= limits.count || (draft._sum.bytes ?? 0) + input.bytes > limits.draftBytes || (account._sum.bytes ?? 0) + input.bytes > limits.accountBytes || (total._sum.bytes ?? 0) + input.bytes > Math.min(limits.totalBytes, this.store.capacityBytes ?? limits.totalBytes)) throw new ApiError(409, 'ATTACHMENT_QUOTA', 'Attachment count or storage allowance is full.');
       return publicAttachment(await tx.attachment.create({ data: { ...input, ownerId, draftId, expiresAt: new Date(Date.now() + limits.reservationMs) } }));
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, maxWait: 15000, timeout: 15000 });
   }
@@ -67,7 +67,7 @@ export class AttachmentService {
     const row = (await this.owned(ownerId, draftId, id, true))!;
     if (row.state === 'READY') return publicAttachment(row);
     if (row.state !== 'UPLOADED' || row.expiresAt.getTime() <= Date.now()) throw conflict();
-    await inspectFile(this.store.path(id), row.mime, this.ffprobe);
+    await inspectFile(await objectPath(this.store, id, row.bytes, row.sha256), row.mime, this.ffprobe);
     const changed = await this.db.attachment.updateMany({ where: { id, ownerId, draftId, state: 'UPLOADED', expiresAt: { gt: new Date() } }, data: { state: 'READY' } });
     if (changed.count !== 1) {
       const current = (await this.owned(ownerId, draftId, id))!;
@@ -77,7 +77,7 @@ export class AttachmentService {
   }
   async content(ownerId: string, draftId: string, id: string) {
     const row = (await this.owned(ownerId, draftId, id))!;
-    if (row.state !== 'READY') throw conflict(); return { path: this.store.path(id), mime: row.mime };
+    if (row.state !== 'READY') throw conflict(); return { path: await objectPath(this.store, id, row.bytes, row.sha256), mime: row.mime };
   }
   async remove(ownerId: string, draftId: string, id: string) {
     const removed = await this.db.$transaction(async (tx) => {

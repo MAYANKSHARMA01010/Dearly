@@ -153,3 +153,47 @@ test('failed SQL restore leaves a startup-blocking quarantine marker without ena
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('remote backup includes authoritative objects even when the application cache is empty', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'dearly-cloud-backup-'));
+  try {
+    const storage = join(root, 'empty-cache'),
+      remoteFile = join(root, 'remote-object'),
+      archive = join(root, 'backup.dearly');
+    await mkdir(storage);
+    await writeFile(remoteFile, 'synthetic remote private object');
+    const bytes = (await readFile(remoteFile)).length;
+    const remote = {
+      path: () => remoteFile,
+      prepare: async () => remoteFile,
+      entries: async () => [{ key: id, bytes, modified: 0 }],
+      remove: async () => {},
+      write: async () => {
+        throw Error('No upload expected');
+      },
+    };
+    const service = new BackupService(
+      async (tool, _url, args) => {
+        if (tool === 'pg_dump')
+          await writeFile(
+            args.find((a) => a.startsWith('--file='))!.slice(7),
+            'PGDMPsynthetic',
+          );
+      },
+      async () => {},
+      async () => {},
+    );
+    assert.equal(
+      (await service.create(source, storage, archive, key, remote)).objects,
+      1,
+    );
+    const restored = join(root, 'restored');
+    await service.restore(archive, target, restored, source, storage, key);
+    assert.equal(
+      (await readFile(join(restored, id))).toString(),
+      'synthetic remote private object',
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

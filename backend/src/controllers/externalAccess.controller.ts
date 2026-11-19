@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express';
 import { z } from 'zod';
 import type { ExternalAccessService } from '../services/externalAccess.service';
-import type { ObjectStore } from '../providers/storage/local.storage';
+import { objectPath, type ObjectStore } from '../providers/storage/local.storage';
 import { sendSuccess } from '../utils/response';
 import { ApiError } from '../utils/ApiError';
 const input = z
@@ -44,7 +44,7 @@ export function externalAccessController(
         const f = await service.file(p.data.token, p.data.handle);
         res.type(f.mime).set('Content-Disposition', 'attachment');
         res.sendFile(
-          store.path(f.id),
+          await objectPath(store, f.id, f.bytes, f.sha256),
           { cacheControl: false, dotfiles: 'deny' },
           (error) => {
             if (error)

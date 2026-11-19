@@ -5,7 +5,7 @@ import { Prisma, type PrismaClient, type Attachment } from '@prisma/client';
 import { randomUUID, createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
-import type { ObjectStore } from '../providers/storage/local.storage';
+import { objectPath, type ObjectStore } from '../providers/storage/local.storage';
 import { lockMessage } from '../utils/lockMessage';
 import { databaseTime } from '../utils/databaseTime';
 
@@ -232,11 +232,12 @@ export class DeliveryWorker {
     try {
       const signal = AbortSignal.timeout(20000);
       for (const f of files) {
-        const info = await stat(this.store.path(f.id));
+        const path = await objectPath(this.store, f.id, f.bytes, f.sha256);
+        const info = await stat(path);
         if (!info.isFile() || info.size !== f.bytes) throw Error();
         const hash = createHash('sha256');
         let bytes = 0;
-        for await (const chunk of createReadStream(this.store.path(f.id), {
+        for await (const chunk of createReadStream(path, {
           signal,
         })) {
           bytes += chunk.length;
