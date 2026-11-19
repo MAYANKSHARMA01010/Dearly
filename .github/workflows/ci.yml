@@ -39,6 +39,7 @@ jobs:
             frontend/package-lock.json
       - name: Install media validation tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg postgresql-client
+      - run: node scripts/release.mjs check
       - run: npm ci --prefix backend
       - run: npm ci --prefix frontend
       - run: npm run check --prefix backend
