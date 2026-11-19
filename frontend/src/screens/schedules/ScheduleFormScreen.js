@@ -1,3 +1,4 @@
+import { createNotificationService } from '../../services/notifications/service';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { usePreventRemove, useRouter } from 'expo-router';
@@ -81,9 +82,10 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
     () =>
       run(async (signal) => {
         try {
-          const [message, capabilities] = await Promise.all([
+          const [message, capabilities, preferences] = await Promise.all([
             reschedule ? api.read(id, signal) : api.source(id, signal),
             api.capabilities(signal),
+            createNotificationService(session).preferences(signal),
           ]);
           if (signal.aborted) return;
           const zone = message.timezone ?? user?.timezone ?? 'UTC';
@@ -108,7 +110,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
                 .map((r) => [
                   r.id,
                   message.deliveries.find((d) => d.recipientId === r.id)
-                    ?.channel ?? 'IN_APP',
+                    ?.channel ?? (!reschedule && ((preferences.defaultPhoneChannel === 'SMS' && capabilities.smsAvailable) || (preferences.defaultPhoneChannel === 'WHATSAPP' && capabilities.whatsappAvailable)) ? preferences.defaultPhoneChannel : 'IN_APP'),
                 ]),
             ),
           );
@@ -127,7 +129,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
           if (!signal.aborted) setLoaded(true);
         }
       }),
-    [api, id, reschedule, run, user?.timezone],
+    [api, id, reschedule, run, user?.timezone, session],
   );
   useEffect(() => {
     void load();

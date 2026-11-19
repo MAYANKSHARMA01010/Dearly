@@ -102,6 +102,8 @@ export default function DashboardScreen() {
       <AppButton onPress={() => router.push('/schedules')}>
         Manage schedules
       </AppButton>
+      <AppButton onPress={() => router.push('/notifications')}>Notifications</AppButton>
+      <AppButton onPress={() => router.push('/settings')}>Settings</AppButton>
       <AppButton onPress={() => router.push('/profile')}>
         Your profile
       </AppButton>

@@ -1,3 +1,4 @@
+import NotificationBridge from '../components/common/NotificationBridge';
 import { ThemeProvider } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -35,6 +36,8 @@ function SessionNavigator() {
       <Stack.Screen name="login" options={{ title: 'Sign in' }} />
     </Stack.Protected>
     <Stack.Protected guard={Boolean(user)}>
+      <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
+      <Stack.Screen name="settings" options={{ title: 'Settings' }} />
       <Stack.Screen name="profile" options={{ title: 'Your profile' }} />
       <Stack.Screen name="drafts" options={{ headerShown: false }} />
       <Stack.Screen name="mailboxes" options={{ headerShown: false }} />
@@ -52,7 +55,7 @@ export default function RootLayout() {
       <PaperProvider theme={themes.paper}>
         <ThemeProvider value={themes.navigation}>
           <StatusBar style={dark ? 'light' : 'dark'} />
-          <AuthProvider><DraftWorkspaceProvider><SessionNavigator /></DraftWorkspaceProvider></AuthProvider>
+          <AuthProvider><DraftWorkspaceProvider><SessionNavigator /><NotificationBridge /></DraftWorkspaceProvider></AuthProvider>
         </ThemeProvider>
       </PaperProvider>
     </SafeAreaProvider>

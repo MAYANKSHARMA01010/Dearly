@@ -1,13 +1,14 @@
 {
   "expo": {
     "name": "Dearly",
-    "slug": "frontend",
+    "slug": "dearly",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mayanksharma.dearly"
     },
     "android": {
       "adaptiveIcon": {
@@ -15,7 +16,9 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.mayanksharma.dearly",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -49,8 +52,15 @@
           "microphonePermission": "Allow Dearly to record a voice note when you choose Record voice."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-notifications"
     ],
-    "scheme": "dearly"
+    "scheme": "dearly",
+    "owner": "manku_dada",
+    "extra": {
+      "eas": {
+        "projectId": "b19a93b4-f755-42ec-86a7-115c8b5ac098"
+      }
+    }
   }
 }
