@@ -29,7 +29,8 @@
     "whatsapp:pair": "tsx src/jobs/manageWhatsapp.ts pair",
     "sms:status": "tsx src/jobs/manageSms.ts status",
     "sms:init": "tsx src/jobs/manageSms.ts init",
-    "sms:cleanup": "tsx src/jobs/manageSms.ts cleanup"
+    "sms:cleanup": "tsx src/jobs/manageSms.ts cleanup",
+    "sms:callback": "tsx src/jobs/runSmsCallback.ts"
   },
   "keywords": [],
   "author": "",
