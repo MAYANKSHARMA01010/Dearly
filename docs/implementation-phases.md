@@ -465,7 +465,9 @@ integration; readiness/recovery and user-facing channel state.
 ## Phase 14 — SMS message delivery
 
 **Implementation checkpoint — 19 November 2026:** The user selected free SMSGate
-with their physical Android/SIM. Added separate local/server configuration, private
+with their physical Android/SIM, then chose Cloud Server mode to avoid USB. Cloud
+configuration is prepared in disabled mode; credentials/device linking and a
+reachable HTTPS receipt callback are still pending. Added separate local/server configuration, private
 USB forwarding support, sender readiness/operations, a one-segment private-link
 notification and a separate durable sender budget. SMS requires explicit consent
 bound to schedule review and confirmation. The shared worker records queue

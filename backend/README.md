@@ -231,11 +231,13 @@ separate durable quota, client-selected submission IDs and signed outbound recei
 Gateway queue acceptance, carrier submission/delivery and content opening are
 separate. Unknown sends never automatically replay. WhatsApp login OTP is unchanged.
 
-Use `sh scripts/connect-smsgate-usb.sh` from the root for a single authorized
-physical phone; it does not start an emulator. From backend/, `npm run sms:status`
+Cloud Server mode is now selected; no USB or emulator is required. Follow the
+phone installation and Cloud Server steps in the SMS guide. The optional direct
+USB alternative uses `sh scripts/connect-smsgate-usb.sh`. From backend/, `npm run sms:status`
 checks readiness, `sms:init` registers outbound-only callbacks, and `sms:cleanup`
-removes expired receipt rows. These commands do not send SMS. Local phone access is
-loopback USB port 3102; reverse port 3103 carries callbacks to backend 8080. Keep
+removes expired receipt rows. These commands do not send SMS. The selected local-backend gateway URL is the public SMSGate Cloud API. Cloud
+receipts need a reachable HTTPS backend callback; localhost is not reachable from
+the phone over internet. Optional USB mode uses ports 3102/3103. Keep
 credentials/signing keys private; current server URLs remain empty. Future hosted
 mode selects only its explicit server URL and requires HTTPS for remote transport.
 Free gateway software does not remove carrier charges, SIM limits or phone uptime.

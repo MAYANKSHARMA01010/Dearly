@@ -3,8 +3,8 @@
 ## Provider and cost boundary
 
 The user selected SMSGate with their physical Android/SIM on 19 November 2026.
-Use the free/open-source standard Android app and local USB connection for this
-Mac. SMSGate's [pricing](https://docs.sms-gate.app/pricing/) states local and current
+The user subsequently selected **Cloud Server mode** to avoid USB. Use the
+free/open-source standard Android app with an active internet connection. SMSGate's [pricing](https://docs.sms-gate.app/pricing/) states local and current
 cloud service are free; its [license](https://docs.sms-gate.app/license/) is
 Apache-2.0. The SIM, carrier allowance, powered phone and connectivity remain
 separate requirements. No billing, paid subscription or claim of unlimited free
@@ -17,7 +17,49 @@ channel and asserts SMS consent during review and confirmation. Consent is bound
 to the review proof and persisted; no implicit WhatsApp, email or SMS fallback.
 WhatsApp login OTP remains separate and unchanged.
 
-## Prepare the Android phone
+## Preferred setup: SMSGate Cloud
+
+The user selected Cloud mode on 19 November. USB and USB debugging are not required.
+The existing cloud adapter is already implemented; changing mode does not require
+another provider or dependency.
+
+1. On the Android phone, open the official
+   [latest stable release](https://github.com/capcom6/android-sms-gateway/releases/latest)
+   and install the standard secure APK, not the insecure variant or a pre-release.
+2. Allow SMS sending and phone-state access for selecting the intended SIM.
+3. Turn on **Cloud Server** and tap **Start Service**. On first registration,
+   confirm **Sign Up**; the app generates Cloud Server credentials. See the official
+   [Cloud setup](https://docs.sms-gate.app/getting-started/public-cloud-server/).
+4. Keep the phone online and its service running. Store the Cloud Server username,
+   password, exact device ID and device webhook signing key only in private
+   `backend/.env`. The device ID can be read from the authenticated cloud device
+   list after credentials are configured; Dearly must pin the intended device.
+5. Prepare a reachable HTTPS callback endpoint before registering outbound receipt
+   callbacks. The local Mac's `localhost:8080` is not internet-reachable. No public
+   tunnel is started and no hosted backend URL is invented by this mode change.
+
+Prepared private/public-example settings:
+
+```dotenv
+SMS_PROVIDER=disabled
+SMSGATE_CONNECTION=cloud
+SMSGATE_LOCAL_API_URL=https://api.sms-gate.app/3rdparty/v1
+SMSGATE_SERVER_API_URL=
+# SMSGATE_USERNAME=<private Cloud Server username>
+# SMSGATE_PASSWORD=<private Cloud Server password>
+# SMSGATE_DEVICE_ID=<exact intended cloud device ID>
+# SMSGATE_WEBHOOK_SECRET=<private device webhook signing key>
+SMSGATE_SIM_NUMBER=1
+SMS_DAILY_LIMIT=20
+# SMSGATE_CALLBACK_URL=https://YOUR_REACHABLE_BACKEND/webhooks/smsgate
+```
+
+`LOCAL_API_URL` means the gateway used by Dearly's local backend, even when that
+provider is cloud-hosted. It is separate from the future hosted Dearly backend URL,
+which remains empty. Set `SMS_PROVIDER=smsgate` only after the private credentials,
+exact device and callback setup are ready. No real SMS has been sent.
+
+## Optional alternative: direct USB setup
 
 1. Install the standard SMSGate app from the official
    [installation guide](https://docs.sms-gate.app/installation/). Do not use the
@@ -62,7 +104,7 @@ npm run sms:init --prefix backend
 
 Status checks never send. Initialization preserves other registrations and adds
 only `sms:sent`, `sms:delivered`, `sms:failed` and `sms:cancelled` callbacks, never
-incoming messages, contacts or inbox history. The USB reverse link makes the Mac
+incoming messages, contacts or inbox history. In the optional USB setup, the reverse link makes the Mac
 backend reachable at the phone's loopback address without publishing port 8080.
 The phone must stay connected and the service running. Health means gateway
 reachability, not verified SIM allowance or guaranteed carrier delivery.

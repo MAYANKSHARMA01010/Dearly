@@ -164,7 +164,7 @@ Fill this in when you review the options; leave unselected choices open.
 | --- | --- | --- |
 | OTP channel/provider | Explicit local simulation or immediate real dispatch | WhatsApp via free WAHA Core selected; live OTP self-test passed 19 November |
 | WhatsApp | WAHA Core free edition | Selected: dedicated GOWS sender, private links, signed receipts; live self-delivery confirmed 19 November |
-| SMS | SMSGate; InfiniReach free plan only as an alternative | User selected SMSGate with physical Android/SIM on 19 November; setup pending |
+| SMS | SMSGate; InfiniReach free plan only as an alternative | User selected SMSGate Cloud with physical Android/SIM on 19 November; setup pending |
 | Email | Nodemailer SMTP | Gmail SMTP selected by the user on 17 November 2026; dedicated sending identity and app password stored only in private backend configuration |
 | External content access | Revocable bearer links | Selected for Phase 12: fragment proof, explicit opening, seven-day expiry and owner revocation; forwarding grants access |
 | Missing credentials | Explicit unavailable status | SMTP mode requires credentials; email scheduling also requires public URL and a separate access key; no silent capture fallback |
