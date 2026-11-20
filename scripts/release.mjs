@@ -57,10 +57,14 @@ function checkDeploy(base) {
   if (!changed) return {...current, runtimeChanged:false};
   const previous = execFileSync('git', ['show', `${base}:VERSION`], {cwd:root,encoding:'utf8'}).trim();
   if (!semver.test(previous)) throw Error('Previous release version is invalid.');
-  const a=previous.split('.').map(Number), b=current.version.split('.').map(Number);
-  const index=b.findIndex((part,n)=>part!==a[n]);
-  if(index<0 || b[index]<a[index]) throw Error('Runtime deployment changes require an increased MAJOR.MINOR.PATCH version. Prepare and publish the matching APK release.');
-  return {...current,runtimeChanged:true,previousVersion:previous};
+  const compare=(a,b)=>{const x=a.split('.').map(Number),y=b.split('.').map(Number);const n=x.findIndex((v,i)=>v!==y[i]);return n<0?0:x[n]-y[n];};
+  const tags=execFileSync('git',['tag','--merged',base,'--list','v*'],{cwd:root,encoding:'utf8'}).trim().split('\n');
+  const released=tags.map(t=>t.match(tagPattern)?.[1]).filter(v=>v && semver.test(v)).sort(compare).at(-1);
+  // A pending release can receive fixes before publication; never reuse a
+  // published version or move backwards from the previous source version.
+  const baseline=released ?? previous;
+  if(compare(current.version,previous)<0 || compare(current.version,baseline)<=0) throw Error('Runtime deployment changes require an increased MAJOR.MINOR.PATCH version. Prepare and publish the matching APK release.');
+  return {...current,runtimeChanged:true,previousVersion:previous,releasedVersion:released??null};
 }
 function prepare(next) {
   const current = check();

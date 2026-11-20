@@ -130,8 +130,9 @@ within a phase does not authorize the entire phase.
   copy its credentials into documentation, commits, logs, or frontend variables.
   The local backend port is `8080`. Frontend `EXPO_PUBLIC_API_URL` is the local
   URL (`http://localhost:8080`); `EXPO_PUBLIC_SERVER_API_URL` is now
-  `https://dearly-z8zm.onrender.com` for hosted release builds. The API client selects the local URL for development
-  and requires a remote HTTPS hosted URL for release builds;
+  `https://dearly-z8zm.onrender.com` for hosted release builds. The API client prefers the hosted URL in development too; local is a secondary
+  development configuration or an explicit local override. Releases require
+  a remote HTTPS hosted URL;
   the backend is started separately with the documented scripts.
 
 ## Phase 15 notification boundaries
@@ -286,3 +287,12 @@ unrelated bundle, and do not split every file into a separate commit.
   consuming cooldown/sender budgets. Cold-start polling may retry only GET status
   checks, never OTP POSTs. Keep the wait bounded, abortable and visible to the user.
   No silent SMS fallback, synthetic code or credential/session reset is permitted.
+
+- User API preference: hosted backend first in development and release builds.
+  Development may use the configured local URL only when the hosted URL is absent
+  or EXPO_PUBLIC_API_TARGET=local is deliberately selected. Releases require hosted
+  HTTPS. Never fail over an OTP/write after a network timeout: keep each request
+  on one backend so accounts, challenges and submissions cannot silently split.
+- Version gating compares the most recent reachable published release tag and
+  forbids source-version regression. Iteration on an unpublished version is
+  permitted until its release is published; a published version cannot be reused.

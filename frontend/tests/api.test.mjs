@@ -12,7 +12,7 @@ const expectKind = (kind, status = null) => (error) => {
   return true;
 };
 
-test('development selects the local URL and normalizes a base path', () => {
+test('development uses the local URL only when no hosted URL is configured', () => {
   assert.equal(resolveApiBaseUrl({ localUrl: ' http://localhost:8080/api/ ', isDevelopment: true }),
     'http://localhost:8080/api');
 });
@@ -187,4 +187,13 @@ test('hosted deadline remains bounded and never replays an uncertain OTP', async
   t.mock.timers.tick(180000);
   await pending;
   assert.equal(calls, 1);
+});
+
+test('hosted URL is preferred in development and local requires an explicit development choice',()=>{
+ const settings={isDevelopment:true,appEnv:'development',serverUrl:'https://dearly.example/',localUrl:'http://localhost:8080'};
+ assert.equal(resolveApiBaseUrl(settings),'https://dearly.example');
+ assert.equal(resolveApiBaseUrl({...settings,target:'local'}),'http://localhost:8080');
+ assert.throws(()=>resolveApiBaseUrl({...settings,isDevelopment:false,target:'local'}));
+ assert.throws(()=>resolveApiBaseUrl({...settings,target:'unknown'}));
+ assert.throws(()=>resolveApiBaseUrl({...settings,serverUrl:'https://user:secret@example.com'}));
 });

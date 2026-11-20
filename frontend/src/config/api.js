@@ -1,14 +1,18 @@
 export class ApiConfigurationError extends Error {}
 
 /**
+ * Prefer the hosted URL; local is a development-only secondary configuration.
  * Release builds always require the hosted URL, even with a stale development env.
- * @param {{ localUrl?: string, serverUrl?: string, appEnv?: string, isDevelopment: boolean }} settings
+ * @param {{ localUrl?: string, serverUrl?: string, appEnv?: string, target?: string, isDevelopment: boolean }} settings
  */
-export function resolveApiBaseUrl({ localUrl, serverUrl, appEnv, isDevelopment }) {
+export function resolveApiBaseUrl({ localUrl, serverUrl, appEnv, target, isDevelopment }) {
   if (appEnv && !['development', 'test', 'production'].includes(appEnv)) {
     throw new ApiConfigurationError('The app environment is not configured correctly.');
   }
-  const hosted = !isDevelopment || appEnv === 'production';
+  if (target && !['hosted', 'local'].includes(target)) throw new ApiConfigurationError('The service target is not configured correctly.');
+  const production = !isDevelopment || appEnv === 'production';
+  if (production && target === 'local') throw new ApiConfigurationError('Release builds require the hosted service.');
+  const hosted = production || target === 'hosted' || (target !== 'local' && Boolean(serverUrl?.trim()));
   const value = (hosted ? serverUrl : localUrl)?.trim();
   if (!value) {
     throw new ApiConfigurationError('The service address has not been configured.');
@@ -33,6 +37,7 @@ export function getApiBaseUrl() {
     localUrl: process.env.EXPO_PUBLIC_API_URL,
     serverUrl: process.env.EXPO_PUBLIC_SERVER_API_URL,
     appEnv: process.env.EXPO_PUBLIC_APP_ENV,
+    target: process.env.EXPO_PUBLIC_API_TARGET,
     isDevelopment: __DEV__,
   });
 }
