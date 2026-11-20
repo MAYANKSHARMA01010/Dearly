@@ -234,3 +234,28 @@ Final dark-mode extra-extra-large text check found insufficient separation betwe
 the notification description and switch. Added a dedicated 16-point gap so the
 description wraps before the control. Rechecked the native render; lint/types
 passed. This follows the same focused Stitch/Impeccable settings direction.
+
+## Final verification — 20 November 2026
+
+All 17 screens were refined and committed individually, followed by focused
+larger-text and shared-navigation corrections. The navigation correction combines
+Stitch’s explicit single-back proposal with Impeccable’s native-stack guidance:
+hide the automatic duplicate only where a custom back control exists; retain
+actual destinations, unsaved/busy guards and existing gestures. Draft editor’s
+accessible back label now follows whether it returns through history or to drafts.
+Verified one back control and the unsaved-edit discard guard after pushing from Home.
+
+`npm run check --prefix frontend` passed: lint, strict JavaScript type checking and
+all 83 existing tests. Final presentation-only corrections passed lint/types;
+Impeccable detector returned no findings. `git diff --check` passed. Native checks
+used the existing iPhone 17 Pro Max with light/dark appearances and larger text;
+Settings switch spacing was corrected from the larger-text render. Restored light
+appearance and original text size, then left the app on its ready Home screen.
+
+QA used a disposable local PostgreSQL database and synthetic Alex/Casey records.
+Local preview API (8080) and Metro (8081) remain running; provider sends and workers
+are disabled in that preview process. The private backend environment is unchanged.
+No production message, account, provider setting or hosted deployment was changed.
+No Android launch, APK rebuild, release/version bump or Git push was part of this
+UI pass. Physical Android, push/provider acceptance, populated attachment media and
+all possible server-failure/pagination combinations were not revalidated here.

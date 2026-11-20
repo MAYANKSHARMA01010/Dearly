@@ -36,7 +36,7 @@ export default function MailboxListScreen({ initialBox }) {
   const [boxMenu, setBoxMenu] = useState(false);
   const header = (
     <View style={{ gap: spacing.md }}>
-      <Stack.Screen options={{ title: 'Mailboxes', headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to Dearly" onPress={() => router.replace('/')} /> }} />
+      <Stack.Screen options={{ title: 'Mailboxes', headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to Dearly" onPress={() => router.replace('/')} /> }} />
       <ScreenHeading title={boxLabels[box]} description="Your messages, organized by where they are in their journey." />
       <AppButton mode="contained" icon="pencil-outline" onPress={() => router.push('/drafts/new')}>Write a message</AppButton>
       <Menu visible={boxMenu} onDismiss={() => setBoxMenu(false)} anchor={<AppButton icon="chevron-down" mode="outlined" style={{ borderRadius: 12 }} contentStyle={{ flexDirection: 'row-reverse', justifyContent: 'space-between' }} accessibilityLabel={`Choose mailbox: ${boxLabels[box]}`} onPress={() => setBoxMenu(true)}>{boxLabels[box]}</AppButton>}>

@@ -105,7 +105,7 @@ export default function ScheduleListScreen() {
       edges={['bottom', 'left', 'right']}
       style={{ flex: 1, backgroundColor: theme.colors.background }}
     >
-      <Stack.Screen options={{ headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to Dearly" onPress={() => router.replace('/')} /> }} />
+      <Stack.Screen options={{ headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to Dearly" onPress={() => router.replace('/')} /> }} />
       <FlatList
         data={page.items}
         keyExtractor={(item) => item.id}

@@ -35,7 +35,7 @@ export default function DraftListScreen() {
     finally { if (active.current === controller) { paging.current = false; if (!controller.signal.aborted) setLoadingMore(false); } }
   };
   return <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: theme.colors.background }}>
-    <Stack.Screen options={{ headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to Dearly" onPress={() => router.replace('/')} /> }} />
+    <Stack.Screen options={{ headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to Dearly" onPress={() => router.replace('/')} /> }} />
     <FlatList data={page.items} keyExtractor={(item) => item.id} contentContainerStyle={{ width: '100%', maxWidth: layout.contentWidth, alignSelf: 'center', padding: spacing.lg, gap: spacing.md, flexGrow: 1 }}
       ListHeaderComponent={<View style={{ gap: spacing.lg, paddingBottom: spacing.sm }}>
         <ScreenHeading title="Your drafts" description="Private messages you’re still working on." />

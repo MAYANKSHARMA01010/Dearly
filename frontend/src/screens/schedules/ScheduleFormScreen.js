@@ -214,7 +214,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
     );
   return (
     <Screen>
-      <Stack.Screen options={{ headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to schedules" disabled={action.busy} onPress={() => router.replace('/schedules')} /> }} />
+      <Stack.Screen options={{ headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to schedules" disabled={action.busy} onPress={() => router.replace('/schedules')} /> }} />
       <ScreenHeading title={reschedule ? 'Choose a new time' : 'Plan a delivery time'} description={reschedule ? "Review a new delivery time for this saved message." : "Choose when this message should begin delivery. Confirm the actual time before scheduling."} />
       {reschedule ? <InlineNotice>
         Current schedule: {scheduleLabel(source.scheduledFor ?? '', source.timezone ?? 'UTC')} · {source.timezone}.

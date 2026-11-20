@@ -141,7 +141,7 @@ export default function ScheduleDetailScreen({ id }) {
     );
   return (
     <Screen>
-      <Stack.Screen options={{ headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to schedules" disabled={action.busy} onPress={() => router.replace('/schedules')} /> }} />
+      <Stack.Screen options={{ headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to schedules" disabled={action.busy} onPress={() => router.replace('/schedules')} /> }} />
       <ScreenHeading title={message.status === 'CANCELED' ? 'Schedule canceled' : 'Your scheduled message'} description={scheduleStatusLabel(message.status)} />
       <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: 16, backgroundColor: theme.colors.secondaryContainer }}>
       <Text>

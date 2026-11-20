@@ -38,8 +38,8 @@ export default function DraftEditorScreen({ draftId }) {
   if (!state.loaded) return <Screen><StateView loading={state.loading} title={state.loading ? 'Opening your draft' : 'Draft could not be opened'} description={state.error || 'Loading saved content and recipients.'}
     actionLabel={state.loading ? undefined : 'Try again'} onAction={() => { void model.reload(); }} /></Screen>;
   return <Screen>
-    <Stack.Screen options={{ title: state.id ? 'Edit draft' : 'New draft', gestureEnabled: !busy,
-      headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to drafts" disabled={busy} onPress={() => { if (router.canGoBack()) router.back(); else router.replace('/drafts'); }} />,
+    <Stack.Screen options={{ headerBackVisible: false, title: state.id ? 'Edit draft' : 'New draft', gestureEnabled: !busy,
+      headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel={router.canGoBack() ? "Go back" : "Back to drafts"} disabled={busy} onPress={() => { if (router.canGoBack()) router.back(); else router.replace('/drafts'); }} />,
       headerRight: state.id ? () => <AppButton disabled={recipientPending || busy || state.uncertain || state.conflict || Boolean(state.id && !state.dirty)} onPress={() => { void save(); }}>Save</AppButton> : undefined }} />
     <View style={{ gap: spacing.sm }}>
       <ScreenHeading title={state.id ? 'A message in progress' : 'What would you like to say?'} />
