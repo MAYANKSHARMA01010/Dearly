@@ -30,6 +30,9 @@ test('real mobile client and PostgreSQL auth: login, profile, restart, expiry, r
       .replace(/"(users|sessions|account_preferences|notifications|push_devices|push_jobs)"/g, `"${schema}"."$1"`);
     for (const statement of alertSql.replace(/^\s*--.*$/gm, '').split(';').filter(s => s.trim())) await db.$executeRawUnsafe(statement);
 
+    const emailSql = readFileSync(new URL('../../../backend/prisma/migrations/20261120140000_verified_recipient_email/migration.sql', import.meta.url), 'utf8')
+      .replace(/"(users|email_verifications)"/g, `"${schema}"."$1"`);
+    for (const statement of emailSql.split(';').filter(s=>s.trim())) await db.$executeRawUnsafe(statement);
     const config = parseEnvironment({ NODE_ENV: 'test', DATABASE_URL: url.toString(), AUTH_MODE: 'development', OTP_PEPPER: randomBytes(32).toString('hex') });
     const logger = { info() {}, warn() {}, error() {} };
     server = createServer(createApp(config, { prisma: db, isReady: async () => true, disconnect: async () => {} }, logger));
