@@ -14,11 +14,13 @@ export function createAuthRouter(service?: AuthService) {
     next();
   });
   if (!service) return router;
+  const c = authController(service);
+  // Read-only cold-start polling has its own IP budget, separate from OTP writes.
+  router.get('/otp/status', rateLimit({windowMs:60_000,limit:20,standardHeaders:'draft-7',legacyHeaders:false}), c.status);
   // Supplement durable per-phone throttles. In-memory IP budget is per process.
   router.use(rateLimit({ windowMs: 15 * 60_000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false,
     handler: (_req, _res, next) => next(new ApiError(429, 'AUTH_RATE_LIMITED', 'Too many attempts. Try again later.')),
   }));
-  const c = authController(service);
   router.post('/otp/request', validateBody(requestOtpSchema), c.request);
   router.post('/otp/resend', validateBody(resendOtpSchema), c.resend);
   router.post('/otp/verify', validateBody(verifyOtpSchema), c.verify);

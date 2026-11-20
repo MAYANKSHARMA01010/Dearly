@@ -207,6 +207,27 @@ test('PostgreSQL-backed auth security and HTTP contracts', { timeout: 240_000 },
       assert.ok(await service().verifyOtp(next.challengeId, '123456'));
     });
 
+    await t.test('cold gateway probes never create codes, expire earlier codes or consume budgets', async () => {
+      const readyProvider: OtpProvider = {readiness:async()=> 'READY',dispatch:async()=>({status:'simulated',developmentCode:'123456'})};
+      const original = await service(readyProvider).requestOtp(phone);
+      let sends=0;
+      const cold: OtpProvider = {readiness:async()=> 'WARMING',budget:{key:'cold-gateway-budget',dailyLimit:20},dispatch:async()=>{sends++;return {status:'simulated',developmentCode:'123456'};}};
+      const s=service(cold);
+      assert.equal((await s.otpStatus()).status,'WARMING');
+      await assert.rejects(s.requestOtp(phone),rejectCode('OTP_GATEWAY_WARMING'));
+      await assert.rejects(s.resendOtp(original.challengeId),rejectCode('OTP_GATEWAY_WARMING'));
+      assert.equal(sends,0);assert.equal(await db.otpChallenge.count(),1);
+      assert.equal((await db.otpChallenge.findUniqueOrThrow({where:{id:original.challengeId}})).consumedAt,null);
+      assert.equal((await db.phoneAuthState.findUniqueOrThrow({where:{phone}})).requestCount,1);
+    });
+
+    await t.test('read-only gateway polling does not exhaust the OTP write limit', async () => {
+      const logs=captureLogger(), s=service();
+      const app=createApp({...config,authMode:'development'}, {isReady:async()=>true,disconnect:async()=>{}},logs.logger,s);
+      for(let n=0;n<15;n++)await request(app).get('/auth/otp/status').expect(200);
+      await request(app).post('/auth/otp/request').send({phone,country:'US'}).expect(200);
+    });
+
     await t.test('malformed requests are safe and the auth IP budget is enforced', async () => {
       const logs = captureLogger(); const s = service();
       const app = createApp({ ...config, authMode: 'development' }, { isReady: async () => true, disconnect: async () => {} }, logs.logger, s);

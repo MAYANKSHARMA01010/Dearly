@@ -258,3 +258,23 @@ Notification delivery/read callbacks remain absent, so this is user-confirmed
 arrival rather than an invented signed delivery/read receipt. The private
 content URL remains localhost, so it opens on this Mac only. This test does not
 change the completed Phase 13 self-test or start Phase 15.
+
+## OTP cold-start repair — 20 November 2026
+
+The hosted gateway was asleep during the reported failed phone request. Its
+readiness probe timed out and the stored challenge was marked rejected. A later
+read-only probe returned READY after the service started; no message was submitted
+by that diagnostic. Render Free can spin down after inactivity; no always-on
+service or scheduled keepalive was enabled.
+
+`GET /auth/otp/status` now probes the sender with a bounded ten-second read-only
+request and returns READY, WARMING or UNAVAILABLE. It has its own IP budget, so
+readiness polling does not consume the stricter OTP-write budget. The production
+app polls only that GET while connecting, for at most four minutes. Leaving the
+connecting screen aborts polling. Code request/resend POSTs are made once after
+readiness; uncertain writes are never automatically replayed.
+
+The server also checks readiness before reserving a challenge, superseding an
+existing code, applying cooldown or spending sender quota. This protects older
+clients too, although only the rebuilt app has the clearer connecting state. A
+known unavailable sender and an uncertain code submission remain different errors.

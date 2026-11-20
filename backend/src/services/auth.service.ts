@@ -36,7 +36,14 @@ export class AuthService {
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, maxWait: 5000, timeout: 15000 });
   }
 
+  async otpStatus() {
+    return { status: this.provider.readiness ? await this.provider.readiness() : 'READY', channel: this.provider.channel ?? 'simulated' };
+  }
   async requestOtp(phone: string, previousId?: string) {
+    // Cold-start probes are read-only: do not create a challenge, expire an old
+    // code, consume a cooldown or reserve a sender budget until ready.
+    const readiness = await this.otpStatus();
+    if(readiness.status !== 'READY') throw new ApiError(503, readiness.status === 'WARMING' ? 'OTP_GATEWAY_WARMING' : 'OTP_GATEWAY_UNAVAILABLE', 'WhatsApp verification is connecting or unavailable. No code was requested. Try again shortly.');
     const reservation = await this.locked(`phone:${phone}`, async (tx) => {
       const now = this.now();
       if (previousId) {

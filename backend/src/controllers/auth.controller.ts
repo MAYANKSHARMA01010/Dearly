@@ -10,6 +10,7 @@ export function authController(service: AuthService) {
     };
   return {
     requireSession: requireSession(service),
+    status: action(() => service.otpStatus()),
     request: action((body) => service.requestOtp(body.phone)),
     resend: action((body) => service.resendOtp(body.challengeId)),
     verify: action((body) => service.verifyOtp(body.challengeId, body.code)),

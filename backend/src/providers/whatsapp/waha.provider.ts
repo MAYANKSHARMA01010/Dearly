@@ -166,11 +166,11 @@ export class WahaProvider {
       throw Error('Invalid QR');
     return bytes;
   }
-  async readiness(): Promise<WahaStatus> {
+  async readiness(timeoutMs?: number): Promise<WahaStatus> {
     try {
       const response = await this.http(
         `/api/sessions/${this.config.session}`, {},
-        this.config.baseUrl.startsWith('https://') ? 60000 : 10000,
+        timeoutMs ?? (this.config.baseUrl.startsWith('https://') ? 60000 : 10000),
       );
       if (response.status === 401 || response.status === 403)
         return 'AUTH_FAILED';
