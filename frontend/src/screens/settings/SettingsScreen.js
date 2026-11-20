@@ -26,7 +26,7 @@ function SettingsForm({ initial }) {
         title="In-app notifications"
         description="Keep new activity in your notification list"
         right={() => (
-          <View style={{ minHeight: 48, minWidth: 48, justifyContent: 'center' }}><Switch
+          <View style={{ minHeight: 48, minWidth: 48, marginLeft: 16, justifyContent: 'center' }}><Switch
             accessibilityLabel="In-app notifications"
             value={value.inAppAlerts}
             disabled={action.busy}
@@ -44,7 +44,7 @@ function SettingsForm({ initial }) {
         title="Push alerts"
         description="Generic alerts without private message content"
         right={() => (
-          <View style={{ minHeight: 48, minWidth: 48, justifyContent: 'center' }}><Switch
+          <View style={{ minHeight: 48, minWidth: 48, marginLeft: 16, justifyContent: 'center' }}><Switch
             accessibilityLabel="Push alerts"
             disabled={action.busy || !value.inAppAlerts}
             value={value.pushAlerts}

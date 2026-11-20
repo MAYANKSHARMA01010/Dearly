@@ -227,3 +227,10 @@ Combined Stitch’s focused missing-link recovery with Impeccable’s concise na
 empty-state guidance. Uses the existing icon family, clear explanation and one
 home action. Verified an unknown URL and successful return to Dearly in the
 iPhone simulator. Lint/types passed.
+
+### Settings larger-text follow-up
+
+Final dark-mode extra-extra-large text check found insufficient separation between
+the notification description and switch. Added a dedicated 16-point gap so the
+description wraps before the control. Rechecked the native render; lint/types
+passed. This follows the same focused Stitch/Impeccable settings direction.
