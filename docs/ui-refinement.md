@@ -15,8 +15,8 @@ private screenshots and source are not uploaded.
 | --- | --- | --- |
 | 1 | Home / dashboard `/` | Complete |
 | 2 | Sign-in / OTP `/login` | Complete |
-| 3 | Draft list `/drafts` | Next |
-| 4 | New draft `/drafts/new` | Pending |
+| 3 | Draft list `/drafts` | Complete |
+| 4 | New draft `/drafts/new` | Next |
 | 5 | Edit draft `/drafts/[id]` | Pending |
 | 6 | Schedule list `/schedules` | Pending |
 | 7 | Review schedule `/schedules/new` | Pending |
@@ -62,3 +62,16 @@ code feedback, code correction and successful local simulated sign-in on iPhone
 17 Pro Max. Preview uses a disposable local PostgreSQL database and a synthetic
 account; external providers are disabled. No real OTP was sent. Frontend lint,
 types and all 83 tests passed; detector returned no findings.
+
+## Draft list
+
+Combined Stitch’s document rows and disclosure affordances with Impeccable’s
+native hierarchy and scalable text guidance. Kept truthful account-backed draft
+copy, separated previews from recipient/date metadata, added native back navigation
+and inline stale-list errors, and retained pagination and request cancellation.
+Omitted prototype design notes, recurrence suggestions and local-storage claims.
+
+Verified synthetic populated rows, untitled/long-subject cases, light/dark modes,
+larger text and opening the correct draft on iPhone 17 Pro Max. Existing empty,
+loading and retry behavior is preserved; pagination and server failure were not
+forced in this native check. Frontend lint/types passed.

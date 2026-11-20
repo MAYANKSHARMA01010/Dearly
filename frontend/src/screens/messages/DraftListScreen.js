@@ -1,11 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { List, Text, useTheme } from 'react-native-paper';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { Divider, Icon, IconButton, List, Text, useTheme } from 'react-native-paper';
 import { useDraftWorkspace } from '../../context/DraftWorkspaceContext';
 import StateView from '../../components/common/StateView';
 import AppButton from '../../components/common/AppButton';
+import { InlineNotice, ScreenHeading } from '../../components/layout/ScreenSections';
 import { ApiError } from '../../api/client';
 import { layout, spacing } from '../../theme';
 
@@ -34,14 +35,27 @@ export default function DraftListScreen() {
     finally { if (active.current === controller) { paging.current = false; if (!controller.signal.aborted) setLoadingMore(false); } }
   };
   return <SafeAreaView edges={['bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <Stack.Screen options={{ headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to Dearly" onPress={() => router.replace('/')} /> }} />
     <FlatList data={page.items} keyExtractor={(item) => item.id} contentContainerStyle={{ width: '100%', maxWidth: layout.contentWidth, alignSelf: 'center', padding: spacing.lg, gap: spacing.md, flexGrow: 1 }}
-      ListHeaderComponent={<View style={{ gap: spacing.md }}><AppButton onPress={() => router.replace('/')}>Back to Dearly</AppButton><Text variant="headlineMedium" accessibilityRole="header">Your drafts</Text><Text>Private messages you’re still working on.</Text><AppButton mode="contained" onPress={() => router.push('/drafts/new')}>Create a draft</AppButton></View>}
-      renderItem={({ item }) => <List.Item title={item.subject || 'Untitled draft'} description={`${item.textPreview || 'No message text yet'}\n${item.recipientCount} recipient${item.recipientCount === 1 ? '' : 's'} · Updated ${new Date(item.updatedAt).toLocaleDateString()}`}
-        descriptionNumberOfLines={4} accessibilityRole="button" accessibilityLabel={`Open draft ${item.subject || 'Untitled draft'}`} onPress={() => router.push({ pathname: '/drafts/[id]', params: { id: item.id } })} />}
+      ListHeaderComponent={<View style={{ gap: spacing.lg, paddingBottom: spacing.sm }}>
+        <ScreenHeading title="Your drafts" description="Private messages you’re still working on." />
+        <AppButton mode="contained" icon="pencil-plus-outline" onPress={() => router.push('/drafts/new')}>Create a draft</AppButton>
+      </View>}
+      ItemSeparatorComponent={() => <Divider />}
+      renderItem={({ item }) => <List.Item title={item.subject || 'Untitled draft'} titleNumberOfLines={2}
+        titleStyle={{ fontWeight: '600' }} style={{ paddingVertical: spacing.md, paddingHorizontal: 0 }}
+        description={() => <View style={{ gap: spacing.sm, paddingTop: spacing.xs }}>
+          <Text variant="bodyMedium" numberOfLines={2} style={{ color: theme.colors.onSurfaceVariant }}>{item.textPreview || 'No message text yet'}</Text>
+          <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>{item.recipientCount} recipient{item.recipientCount === 1 ? '' : 's'} · Updated {new Date(item.updatedAt).toLocaleDateString()}</Text>
+        </View>}
+        left={(props) => <List.Icon {...props} icon="file-document-edit-outline" color={theme.colors.primary} />}
+        right={() => <View style={{ justifyContent: 'center' }}><Icon source="chevron-right" size={20} color={theme.colors.onSurfaceVariant} /></View>}
+        accessibilityRole="button" accessibilityLabel={`Open draft ${item.subject || 'Untitled draft'}, ${item.recipientCount} recipient${item.recipientCount === 1 ? '' : 's'}, updated ${new Date(item.updatedAt).toLocaleDateString()}`}
+        onPress={() => router.push({ pathname: '/drafts/[id]', params: { id: item.id } })} />}
       ListEmptyComponent={<StateView loading={loading} title={loading ? 'Loading drafts' : error ? 'Drafts could not be loaded' : 'No drafts yet'} description={error || (loading ? 'Checking your saved messages.' : 'Start a thought for someone, or your future self.')}
         actionLabel={!loading && error ? 'Try again' : undefined} onAction={refresh} />}
-      ListFooterComponent={<View style={{ gap: spacing.md }}>{error && page.items.length ? <Text accessibilityRole="alert">{error}</Text> : null}
-        {page.nextCursor ? <AppButton loading={loadingMore} disabled={loading || loadingMore} onPress={() => { void more(); }}>Load more drafts</AppButton> : null}
-        <AppButton disabled={loading || loadingMore} onPress={refresh}>Refresh drafts</AppButton></View>} />
+      ListFooterComponent={<View style={{ gap: spacing.md, paddingTop: spacing.md }}>{error && page.items.length ? <InlineNotice error>{error}</InlineNotice> : null}
+        {page.nextCursor ? <AppButton mode="outlined" loading={loadingMore} disabled={loading || loadingMore} onPress={() => { void more(); }}>Load more drafts</AppButton> : null}
+        <AppButton icon="refresh" disabled={loading || loadingMore} onPress={refresh}>Refresh drafts</AppButton></View>} />
   </SafeAreaView>;
 }
