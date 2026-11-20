@@ -22,8 +22,8 @@ private screenshots and source are not uploaded.
 | 7 | Review schedule `/schedules/new` | Complete |
 | 8 | Scheduled message `/schedules/[id]` | Complete |
 | 9 | Reschedule `/schedules/reschedule` | Complete |
-| 10 | Mailboxes `/mailboxes` | Next |
-| 11 | Owned message `/mailboxes/owned/[id]` | Pending |
+| 10 | Mailboxes `/mailboxes` | Complete |
+| 11 | Owned message `/mailboxes/owned/[id]` | Next |
 | 12 | Received message `/mailboxes/received/[id]` | Pending |
 | 13 | Profile `/profile` | Pending |
 | 14 | Settings `/settings` | Pending |
@@ -143,3 +143,15 @@ locked recipients/channels explain how to change them. Shared review logic remai
 unified. Stitch provided a textual revision. Verified current summary, prefilled
 new-time fields and disabled recipient selection on iPhone 17 Pro Max. No new time
 was confirmed. Lint/types passed.
+
+## Mailboxes
+
+Combined Stitch’s compact mailbox selector with Impeccable’s native list
+hierarchy. All six mailbox categories remain available; owned status and received
+opened filters remain separate. Rows have envelope/disclosure affordances and
+clear dates/status. Fixed Draft filter wording, retained explicit opened privacy
+copy, pagination and access-error clearing.
+
+Verified Created populated rows, all six selector entries, Received content and
+read filters in the light iPhone simulator. Lint/types passed. No opened receipt
+or message mutation was performed.

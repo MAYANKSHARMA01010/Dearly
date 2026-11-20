@@ -48,6 +48,11 @@
       "proposalSessionId": "18354850621578153272",
       "title": "Reschedule",
       "artifact": "textual proposal"
+    },
+    "mailboxes": {
+      "id": "8f827c688f1f40c78bfd96b083896245",
+      "name": "projects/13022673306304030650/screens/8f827c688f1f40c78bfd96b083896245",
+      "title": "Mailboxes List"
     }
   }
 }
