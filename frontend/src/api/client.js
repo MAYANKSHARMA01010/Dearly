@@ -54,6 +54,8 @@ export function createApiClient({ getBaseUrl = getApiBaseUrl, fetcher = fetch, t
             UNAUTHORIZED: 'Your session ended. Please sign in again.',
             AUTH_RATE_LIMITED: 'Too many attempts. Please wait before trying again.',
             AUTH_DISABLED: 'Sign-in is not enabled on this server yet.',
+            OTP_GATEWAY_WARMING: 'WhatsApp verification is still connecting. No code was requested. Try again shortly.',
+            OTP_GATEWAY_UNAVAILABLE: 'WhatsApp verification is unavailable. No code was requested. Please try again later.',
             OTP_UNAVAILABLE: 'A new code could not be confirmed. Wait a minute before trying again.',
             VALIDATION_ERROR: 'Check the entered details and try again.',
             MESSAGE_NOT_FOUND: 'This message is unavailable.',

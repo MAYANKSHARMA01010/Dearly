@@ -1,3 +1,4 @@
+import { waitForOtpReady } from './otpReadiness.js';
 import { apiClient } from '../../api/client.js';
 import { parseChallenge } from './contracts.js';
 
@@ -6,10 +7,13 @@ export function createAuthService(client = apiClient, development = typeof __DEV
   /** @param {string} path @param {object} body @param {AbortSignal} [signal] */
   const post = (path, body, signal) => client.request(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal });
   return {
-    /** @param {string} phone @param {string} country @param {AbortSignal} [signal] */
-    requestOtp: async (phone, country, signal) => parseChallenge(await post('/auth/otp/request', { phone, country }, signal), development),
-    /** @param {string} challengeId @param {AbortSignal} [signal] */
-    resendOtp: async (challengeId, signal) => parseChallenge(await post('/auth/otp/resend', { challengeId }, signal), development),
+    /** @param {string} phone @param {string} country @param {AbortSignal} [signal] @param {(phase:'connecting'|'requesting')=>void} [onPhase] */
+    requestOtp: async (phone, country, signal, onPhase) => {
+      onPhase?.('connecting'); if(!development) await waitForOtpReady(client,signal);
+      onPhase?.('requesting'); return parseChallenge(await post('/auth/otp/request',{phone,country},signal),development);
+    },
+    /** @param {string} challengeId @param {AbortSignal} [signal] @param {(phase:'connecting'|'requesting')=>void} [onPhase] */
+    resendOtp: async (challengeId, signal, onPhase) => { onPhase?.('connecting'); if(!development) await waitForOtpReady(client,signal); onPhase?.('requesting'); return parseChallenge(await post('/auth/otp/resend', { challengeId }, signal), development); },
     /** @param {string} challengeId @param {string} code @param {AbortSignal} [signal] */
     verifyOtp: (challengeId, code, signal) => post('/auth/otp/verify', { challengeId, code }, signal),
   };

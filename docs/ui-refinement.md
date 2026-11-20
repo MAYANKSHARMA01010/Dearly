@@ -345,3 +345,13 @@ trailing actions. Child-route back navigation configuration remains unchanged.
 Verified one title on the running iPhone 17 Pro Max after refresh. Frontend lint,
 strict types and all 97 tests passed. This source correction does not rebuild or
 replace the published v1.1.0-rc.1 APK.
+
+## OTP connection feedback — 20 November 2026
+
+Combined the focused Stitch proposal with Impeccable's state/error guidance:
+separate read-only connection checking from requesting a WhatsApp code, prevent
+duplicate taps, explain that no new code was requested while connecting, and
+retain the ability to go back during that read-only wait. The dispatch phase
+continues to guard navigation. Resend follows the same preflight and never
+automatically retries an OTP write. No SMS fallback or provider substitution was
+introduced.

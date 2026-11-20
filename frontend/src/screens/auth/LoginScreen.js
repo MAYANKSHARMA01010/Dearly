@@ -21,6 +21,7 @@ export default function LoginScreen() {
   const [challenge, setChallenge] = useState(/** @type {import('../../services/auth/contracts').Challenge | null} */ (null));
   const [now, setNow] = useState(() => Date.now()); const [retryAt, setRetryAt] = useState(0);
   const [fieldError, setFieldError] = useState('');
+  const [requestPhase,setRequestPhase] = useState(/** @type {'connecting'|'requesting'|null} */(null));
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, []);
   const resendSeconds = Math.max(0, Math.ceil((Math.max(challenge?.resendAt ?? 0, retryAt) - now) / 1000));
   const expired = Boolean(challenge && Date.parse(challenge.expiresAt) <= now);
@@ -29,25 +30,25 @@ export default function LoginScreen() {
     if (!parsed?.isValid() || parsed.country !== country || parsed.ext) { setFieldError('Enter a valid phone number for the selected country.'); return; }
     setFieldError(''); Keyboard.dismiss();
     void action.run(async (signal) => {
-      try { const next = await authService.requestOtp(phone.trim(), country, signal); if (!signal.aborted) { setNow(Date.now()); setChallenge(next); } }
+      try { const next = await authService.requestOtp(phone.trim(), country, signal, (phase)=>{if(!signal.aborted)setRequestPhase(phase);}); if (!signal.aborted) { setNow(Date.now()); setChallenge(next); } }
       catch (error) { if (error instanceof ApiError && error.status === 429) setRetryAt(Date.now() + (error.retryAfterSeconds ?? 60) * 1000); throw error; }
     });
   };
   const verify = () => {
     if (!challenge || !/^\d{6}$/.test(code) || expired) { setFieldError(expired ? 'This code expired. Request a new one.' : 'Enter the six-digit code.'); return; }
-    setFieldError(''); Keyboard.dismiss();
+    setFieldError(''); setRequestPhase(null); Keyboard.dismiss();
     void action.run(async (signal) => { const response = await authService.verifyOtp(challenge.challengeId, code, signal); if (!signal.aborted) await auth.session.establish(response, signal); });
   };
   const resend = () => {
     if (!challenge || resendSeconds > 0) return;
     setCode(''); setFieldError('');
     void action.run(async (signal) => {
-      try { const next = await authService.resendOtp(challenge.challengeId, signal); if (!signal.aborted) { setNow(Date.now()); setChallenge(next); } }
+      try { const next = await authService.resendOtp(challenge.challengeId, signal, (phase)=>{if(!signal.aborted)setRequestPhase(phase);}); if (!signal.aborted) { setNow(Date.now()); setChallenge(next); } }
       catch (error) { if (error instanceof ApiError) setRetryAt(Date.now() + (error.retryAfterSeconds ?? 60) * 1000); throw error; }
     });
   };
   return <Screen>
-    <Stack.Screen options={{ title: challenge ? 'Verify phone' : 'Sign in', gestureEnabled: !action.busy, headerBackVisible: !action.busy }} />
+    <Stack.Screen options={{ title: challenge ? 'Verify phone' : 'Sign in', gestureEnabled: !action.busy || requestPhase === 'connecting', headerBackVisible: !action.busy || requestPhase === 'connecting' }} />
     <View style={{ gap: spacing.md }}>
       <ScreenHeading icon={challenge ? 'shield-check-outline' : 'cellphone-key'} title={challenge ? 'Enter your code' : 'Your number, your Dearly'}
         description={challenge ? `Verify ${phone.trim()} to continue.` : 'Sign in or create an account with your phone number.'} />
@@ -59,7 +60,7 @@ export default function LoginScreen() {
         textContentType="telephoneNumber" autoComplete="tel" maxLength={32} disabled={action.busy} errorText={fieldError} />
       <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Use a six-digit code to verify your number. No password needed.</Text>
       <AppButton mode="contained" loading={action.busy} disabled={action.busy || !phone.trim() || resendSeconds > 0} onPress={request}>
-        {resendSeconds > 0 ? `Try again in ${resendSeconds}s` : 'Get verification code'}
+        {action.busy ? requestPhase === 'connecting' ? 'Connecting to verification service…' : 'Requesting your WhatsApp code…' : resendSeconds > 0 ? `Try again in ${resendSeconds}s` : 'Get verification code'}
       </AppButton>
     </View> : <View style={{ gap: spacing.md }}>
       {challenge.developmentCode ? <InlineNotice><Text selectable accessibilityLabel={`Local test code ${challenge.developmentCode}`}>Local test code: {challenge.developmentCode}</Text></InlineNotice> : null}
@@ -68,10 +69,11 @@ export default function LoginScreen() {
         contentStyle={{ textAlign: 'center', letterSpacing: 6, fontVariant: ['tabular-nums'] }}
         errorText={fieldError || (expired ? 'This code expired. Request a new code below.' : '')} />
       <Text variant="bodyMedium" style={{ color: expired ? theme.colors.error : theme.colors.onSurfaceVariant }}>{expired ? 'This code has expired. Request a new code.' : `Expires at ${new Date(challenge.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}</Text>
-      <AppButton mode="contained" loading={action.busy} disabled={action.busy || code.length !== 6 || expired} onPress={verify}>Verify and sign in</AppButton>
-      <AppButton mode="outlined" disabled={action.busy || resendSeconds > 0} onPress={resend}>{resendSeconds > 0 ? `Resend in ${resendSeconds}s` : 'Request a new code'}</AppButton>
+      <AppButton mode="contained" loading={action.busy && requestPhase === null} disabled={action.busy || code.length !== 6 || expired} onPress={verify}>Verify and sign in</AppButton>
+      <AppButton mode="outlined" loading={action.busy && requestPhase !== null} disabled={action.busy || resendSeconds > 0} onPress={resend}>{action.busy && requestPhase ? requestPhase === 'connecting' ? 'Connecting to verification service…' : 'Requesting your WhatsApp code…' : resendSeconds > 0 ? `Resend in ${resendSeconds}s` : 'Request a new code'}</AppButton>
       <AppButton disabled={action.busy} onPress={() => { setChallenge(null); setCode(''); setFieldError(''); action.clearError(); }}>Change phone number</AppButton>
     </View>}
+    {action.busy && requestPhase === 'connecting' ? <Text accessibilityLiveRegion="polite">Connecting to WhatsApp verification. No new code has been requested yet.</Text> : null}
     {action.error ? <InlineNotice error>{action.error}</InlineNotice> : null}
     {auth.message && !challenge ? <Text accessibilityLiveRegion="polite" variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>{auth.message}</Text> : null}
   </Screen>;
