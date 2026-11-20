@@ -19,8 +19,8 @@ private screenshots and source are not uploaded.
 | 4 | New draft `/drafts/new` | Complete |
 | 5 | Edit draft `/drafts/[id]` | Complete |
 | 6 | Schedule list `/schedules` | Complete |
-| 7 | Review schedule `/schedules/new` | Next |
-| 8 | Scheduled message `/schedules/[id]` | Pending |
+| 7 | Review schedule `/schedules/new` | Complete |
+| 8 | Scheduled message `/schedules/[id]` | Next |
 | 9 | Reschedule `/schedules/reschedule` | Pending |
 | 10 | Mailboxes `/mailboxes` | Pending |
 | 11 | Owned message `/mailboxes/owned/[id]` | Pending |
@@ -111,3 +111,15 @@ calendar/disclosure rows, selected-status empty copy and inline stale errors.
 
 Verified populated scheduled data, all nine menu choices and canceled empty state
 on iPhone 17 Pro Max. Lint/types passed. No schedule was changed or dispatched.
+
+## Review schedule
+
+Combined Stitch’s focused grouped-form proposal with Impeccable’s native hierarchy.
+Exact local time, zone/offset, UTC, message, recipients, attachment count and review
+expiry remain visible before confirmation. Review becomes secondary once a review
+exists. Corrected obsolete SMS copy; verified-account requirement is scoped to
+in-app delivery. Stitch returned a textual proposal without a screen artifact.
+
+Verified synthetic in-app review creation, resolved timezone/UTC values and final
+confirmation layout on iPhone 17 Pro Max, including offline-worker feedback. No
+confirmation or provider dispatch was performed. Lint/types passed.

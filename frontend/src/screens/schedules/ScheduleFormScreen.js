@@ -1,9 +1,10 @@
 import { createNotificationService } from '../../services/notifications/service';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { usePreventRemove, useRouter } from 'expo-router';
+import { Stack, usePreventRemove, useRouter } from 'expo-router';
 import {
   Checkbox,
+  IconButton,
   RadioButton,
   Dialog,
   Portal,
@@ -11,6 +12,7 @@ import {
   useTheme,
 } from 'react-native-paper';
 import Screen from '../../components/layout/Screen';
+import { InlineNotice, ScreenHeading, ScreenSection } from '../../components/layout/ScreenSections';
 import AppButton from '../../components/common/AppButton';
 import AppTextField from '../../components/forms/AppTextField';
 import StateView from '../../components/common/StateView';
@@ -212,26 +214,15 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
     );
   return (
     <Screen>
-      <AppButton
-        disabled={action.busy}
-        onPress={() => router.replace('/schedules')}
-      >
-        Back to schedules
-      </AppButton>
-      <Text variant="headlineMedium" accessibilityRole="header">
-        {reschedule ? 'Choose a new time' : 'Plan a delivery time'}
-      </Text>
-      <Text>
-        Confirming enables the selected delivery channels at or after the chosen
-        time. Delivery continues when this app is closed.
-      </Text>
+      <Stack.Screen options={{ headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to schedules" disabled={action.busy} onPress={() => router.replace('/schedules')} /> }} />
+      <ScreenHeading title={reschedule ? 'Choose a new time' : 'Plan a delivery time'} description="Choose when this message should begin delivery. Confirm the actual time before scheduling." />
       {!workerOnline ? (
-        <Text accessibilityRole="alert">
-          The delivery service is offline. Your schedule stays saved and
-          delivery will resume when the service is available.
-        </Text>
+        <InlineNotice>
+          The delivery service is offline. Confirmed schedules stay saved
+          and can begin delivery when the service resumes.
+        </InlineNotice>
       ) : null}
-      <Text variant="titleMedium">{source.subject || 'Untitled message'}</Text>
+      <ScreenSection title="Delivery time" description={source.subject || 'Untitled message'}>
       <AppTextField
         label="Date (YYYY-MM-DD)"
         value={date}
@@ -266,7 +257,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         autoCorrect={false}
         disabled={action.busy}
       />
-      <Text>
+      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
         For example, Asia/Kolkata or America/New_York. Choose at least one
         minute ahead and within ten years. Times skipped or repeated by clock
         changes are rejected.
@@ -280,9 +271,8 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
       >
         Use my profile timezone
       </AppButton>
-      <Text variant="titleLarge" accessibilityRole="header">
-        Delivery choices
-      </Text>
+      </ScreenSection>
+      <ScreenSection title="Delivery choices" description="Choose who receives this message and how.">
       {source.recipients.map((recipient) => {
         const supported =
           ['SELF', 'USER', 'PHONE', 'EMAIL'].includes(recipient.type) &&
@@ -357,13 +347,12 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
           </View>
         );
       })}
-      <Text>
-        Phone recipients need an existing verified Dearly account. In-app does
-        not send an SMS or WhatsApp message. Choose WhatsApp explicitly for a
-        phone recipient; SMS is unavailable. Email recipients receive a private
-        link that expires in seven days; anyone with the link can open it. Gmail
-        acceptance does not confirm inbox delivery. Recipient and attachment
-        changes require returning to drafts and reviewing a new schedule.
+      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+        Dearly inbox delivery needs an existing verified account. It does not send
+        SMS or WhatsApp. Choose a phone channel explicitly. Private links expire
+        after seven days; anyone with the link can open them. Service acceptance
+        does not confirm delivery. Change recipients or attachments in drafts,
+        then review again.
       </Text>
       {source.recipients.some((r) =>
         ['EMAIL', 'WHATSAPP', 'SMS'].includes(channelFor(r)),
@@ -416,8 +405,9 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
           />
         </>
       ) : null}
+      </ScreenSection>
       <AppButton
-        mode="contained"
+        icon="calendar-search" mode={review ? "outlined" : "contained"}
         disabled={
           action.busy ||
           source.recipients.some((r) =>
@@ -443,7 +433,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         Review schedule
       </AppButton>
       {review ? (
-        <View style={{ gap: spacing.md }}>
+        <View style={{ gap: spacing.md, padding: spacing.md, borderRadius: 16, backgroundColor: theme.colors.secondaryContainer }}>
           <Text variant="headlineSmall" accessibilityRole="header">
             Confirm the actual time
           </Text>
@@ -468,7 +458,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
           <Text>
             Occasion: {review.data.message.occasion || 'None'} ·{' '}
             {review.data.message.attachments.length} attachments ·{' '}
-            {review.data.deliveries.length} recipients
+            {review.data.deliveries.length} recipient{review.data.deliveries.length === 1 ? '' : 's'}
           </Text>
           {review.data.message.recipients.map((recipient) => (
             <Text key={recipient.id}>
@@ -510,9 +500,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
       ) : null}
       {action.error ? (
         <>
-          <Text accessibilityRole="alert" style={{ color: theme.colors.error }}>
-            {action.error}
-          </Text>
+          <InlineNotice error>{action.error}</InlineNotice>
           <Text>
             If confirmation could not be verified, check saved schedules before
             changing this request. Retrying the same confirmation does not

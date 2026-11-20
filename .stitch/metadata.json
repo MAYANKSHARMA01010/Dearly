@@ -33,6 +33,11 @@
       "id": "f2bfe80ffc1c488ca16daea082bd1372",
       "name": "projects/13022673306304030650/screens/f2bfe80ffc1c488ca16daea082bd1372",
       "title": "Schedules"
+    },
+    "reviewSchedule": {
+      "proposalSessionId": "13475133772291833583",
+      "title": "Review schedule",
+      "artifact": "textual proposal"
     }
   }
 }
