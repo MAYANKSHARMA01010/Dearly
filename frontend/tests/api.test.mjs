@@ -161,3 +161,30 @@ test('aborted health checks do not publish unavailable status', async () => {
   const client = createApiClient({ getBaseUrl });
   await assert.rejects(checkServiceHealth({ client, signal: controller.signal }), expectKind('aborted'));
 });
+
+test('hosted OTP waits through cold-start latency and submits exactly once', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let calls = 0, signal, complete;
+  const client = createApiClient({ getBaseUrl: () => 'https://dearly.example', fetcher: async (_url, options) => {
+    calls++; signal = options.signal;
+    return new Promise((resolve) => { complete = resolve; });
+  } });
+  const pending = client.request('/auth/otp/request', { method: 'POST' });
+  t.mock.timers.tick(30000);
+  assert.equal(signal.aborted, false);
+  complete(Response.json({ success: true, data: { dispatch: 'accepted' } }));
+  assert.deepEqual(await pending, { dispatch: 'accepted' });
+  assert.equal(calls, 1);
+});
+
+test('hosted deadline remains bounded and never replays an uncertain OTP', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let calls = 0;
+  const client = createApiClient({ getBaseUrl: () => 'https://dearly.example', fetcher: (url, options) => {
+    calls++; return waitForAbort(url, options);
+  } });
+  const pending = assert.rejects(client.request('/auth/otp/request', { method: 'POST' }), expectKind('timeout'));
+  t.mock.timers.tick(180000);
+  await pending;
+  assert.equal(calls, 1);
+});

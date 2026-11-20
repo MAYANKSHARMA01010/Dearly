@@ -18,8 +18,8 @@ export class ApiError extends Error {
  * No automatic retries: later write/OTP requests must not be duplicated silently.
  * @param {{ getBaseUrl?: () => string, fetcher?: typeof fetch, timeoutMs?: number }} [options]
  */
-export function createApiClient({ getBaseUrl = getApiBaseUrl, fetcher = fetch, timeoutMs = 10000 } = {}) {
-  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new RangeError('Invalid request timeout');
+export function createApiClient({ getBaseUrl = getApiBaseUrl, fetcher = fetch, timeoutMs } = {}) {
+  if (timeoutMs !== undefined && (!Number.isFinite(timeoutMs) || timeoutMs <= 0)) throw new RangeError('Invalid request timeout');
   return {
     /** @param {string} path @param {RequestInit} [options] @returns {Promise<unknown>} */
     async request(path, options = {}) {
@@ -37,7 +37,10 @@ export function createApiClient({ getBaseUrl = getApiBaseUrl, fetcher = fetch, t
       let timedOut = false;
       const cancel = () => controller.abort();
       options.signal?.addEventListener('abort', cancel, { once: true });
-      const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+      // Free hosted API and gateway instances can each need a cold start.
+      // One bounded request; never replay a timed-out write or OTP automatically.
+      const deadlineMs = timeoutMs ?? (baseUrl.startsWith('https://') ? 180000 : 10000);
+      const timer = setTimeout(() => { timedOut = true; controller.abort(); }, deadlineMs);
       try {
         const headers = new Headers(options.headers);
         headers.set('Accept', 'application/json');

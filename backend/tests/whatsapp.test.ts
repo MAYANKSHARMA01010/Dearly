@@ -352,3 +352,19 @@ test('Core GOWS minimal send responses accept outbound IDs while mismatches stay
     assert.equal((await gateway.sendOtp('+12025550171', '123456')).state, expected);
   }
 });
+
+test('hosted gateway tolerates slow readiness and confirms a slow OTP submission once', { timeout: 35000 }, async () => {
+  let submissions = 0;
+  const gateway = new WahaProvider({ ...settings, baseUrl: 'https://waha.example' }, async (url, options) => {
+    // Real abort-aware delay exercises AbortSignal.timeout, which uses Node's
+    // internal clock rather than node:test's mocked setTimeout clock. No network.
+    const { setTimeout: delay } = await import('node:timers/promises');
+    await delay(12000, undefined, { signal: options?.signal ?? undefined });
+    if (String(url).endsWith('/api/sessions/default')) return ready();
+    submissions++;
+    return Response.json({ id: messageId, fromMe: true, to: '12025550171@c.us' });
+  });
+  const result = await gateway.sendOtp('+12025550171', '123456');
+  assert.equal(result.state, 'ACCEPTED');
+  assert.equal(submissions, 1);
+});

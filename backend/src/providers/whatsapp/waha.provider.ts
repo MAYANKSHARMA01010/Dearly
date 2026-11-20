@@ -35,11 +35,11 @@ export class WahaProvider {
   ) {
     this.scope = wahaScope(config);
   }
-  private http(path: string, options: RequestInit = {}) {
+  private http(path: string, options: RequestInit = {}, timeoutMs = 10000) {
     return this.request(`${this.config.baseUrl}${path}`, {
       ...options,
       redirect: 'error',
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(timeoutMs),
       headers: {
         'X-Api-Key': this.config.apiKey,
         'Content-Type': 'application/json',
@@ -167,7 +167,10 @@ export class WahaProvider {
   }
   async readiness(): Promise<WahaStatus> {
     try {
-      const response = await this.http(`/api/sessions/${this.config.session}`);
+      const response = await this.http(
+        `/api/sessions/${this.config.session}`, {},
+        this.config.baseUrl.startsWith('https://') ? 60000 : 10000,
+      );
       if (response.status === 401 || response.status === 403)
         return 'AUTH_FAILED';
       if (response.status === 404) return 'STOPPED';
@@ -271,7 +274,7 @@ export class WahaProvider {
           text,
           linkPreview: false,
         }),
-      });
+      }, this.config.baseUrl.startsWith('https://') ? 30000 : 10000);
       if (response.status === 429) return result('RETRYABLE', 'WAHA_THROTTLED');
       if (response.status === 401 || response.status === 403)
         return result('RETRYABLE', 'WAHA_AUTH');
