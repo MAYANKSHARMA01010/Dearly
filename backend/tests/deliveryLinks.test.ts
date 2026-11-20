@@ -18,9 +18,9 @@ test('email includes public app downloads and truthful phone-only registration i
   for (const text of [template.text, template.html]) {
     assert.ok(text.includes(appDownloadUrl));
     assert.match(text, /prerelease/);
-    assert.match(text, /phone number/);
-    assert.match(text, /Email sign-in is not supported/);
-    assert.match(text, /not automatically added/);
+    assert.match(text, /mobile number/);
+    assert.match(text, /Email is not a login method/);
+    assert.match(text, /verify it, then open Received/);
     assert.doesNotMatch(text, /localhost/);
   }
 });

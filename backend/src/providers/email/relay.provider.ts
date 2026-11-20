@@ -27,9 +27,11 @@ export class EmailRelay {
       },
     });
   }
-  readonly send: EmailSender = async (_to, _link, id) => {
+  readonly send: EmailSender = (to, link, id) => this.submit(to, link, id, "/send");
+  readonly sendVerification: EmailSender = (to, code, id) => this.submit(to, code, id, "/verify-email");
+  private submit: (to: string, value: string, id: string, path: string) => ReturnType<EmailSender> = async (_to, _link, id, path) => {
     try {
-      const r = await this.post("/send", JSON.stringify({ id }));
+      const r = await this.post(path, JSON.stringify({ id }));
       if (r.status === 401 || r.status === 403)
         return {
           state: "RETRYABLE",

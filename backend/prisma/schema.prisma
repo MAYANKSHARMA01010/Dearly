@@ -13,6 +13,9 @@ model User {
   phoneVerifiedAt DateTime
   name            String?
   email           String?
+  verifiedEmail   String?          @unique
+  emailVerifiedAt DateTime?
+  emailVerifications EmailVerification[]
   timezone        String           @default("UTC")
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -275,6 +278,7 @@ model InboxItem {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   deliveredAt DateTime @default(now()) @db.Timestamptz(3)
   openedAt DateTime? @db.Timestamptz(3)
+  externalClaimedAt DateTime? @db.Timestamptz(3)
 
   @@index([userId, deliveredAt, id])
   @@map("inbox_items")
@@ -473,4 +477,20 @@ model EmailRelaySubmission {
   completedAt DateTime? @db.Timestamptz(3)
   result Json?
   @@map("email_relay_submissions")
+}
+
+model EmailVerification {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email String @db.VarChar(254)
+  codeHash String @db.Char(64)
+  attempts Int @default(0)
+  dispatchStatus String @default("PENDING")
+  expiresAt DateTime @db.Timestamptz(3)
+  consumedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  @@index([userId, createdAt])
+  @@index([email, createdAt])
+  @@map("email_verifications")
 }

@@ -9,7 +9,7 @@ import { boundedJson } from '../../utils/boundedJson';
 export type SmsGateStatus = 'READY' | 'OFFLINE' | 'AUTH_FAILED' | 'DISABLED' | 'MISCONFIGURED';
 export const smsScope = (c: SmsGateConfig) => createHash('sha256')
   .update(`smsgate:${c.baseUrl}:${c.connection}:${c.deviceId ?? 'local'}:${c.simNumber}:${createHash('sha256').update(c.webhookSecret).digest('hex')}`).digest('hex');
-export const smsText = (link: string) => `Dearly private message: ${link}`;
+export const smsText = (link: string) => `Dearly (7-day link): ${link}`;
 export const smsLinkFits = (origin: string) => publicDeliveryLink(origin) && smsSegments(smsText(`${origin}/external/#00000000-0000-4000-8000-000000000000.${'a'.repeat(43)}`)).segments === 1;
 const outcome = (state: SubmissionResult['state'], code: string | null, providerMessageId: string | null = null): SubmissionResult => ({ state, code, providerMessageId });
 

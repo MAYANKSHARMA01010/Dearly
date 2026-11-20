@@ -261,3 +261,15 @@ test("relay configuration requires a credential-free Neon HTTPS function origin 
       EnvironmentError,
     );
 });
+
+test('verification relay derives its code from the durable ID and never accepts client destinations or repeats a claim', async () => {
+  const { emailVerificationCode } = await import('../src/utils/emailVerificationCode');
+  let claims=0, sends=0, completed=0;
+  const handler=createEmailRelayHandler({secret,accessSecret,publicUrl:'https://dearly.example',verify:async()=>'READY',send:async()=>{throw Error('Wrong transport');},sendVerification:async(to,code,key)=>{
+    sends++;assert.equal(to,'canonical@example.com');assert.equal(key,id);assert.equal(code,emailVerificationCode(id,accessSecret));return accepted;
+  },repository:{ready:async()=>true,claim:async()=>({kind:'inactive'}),complete:async()=>{},claimVerification:async()=>++claims===1?{kind:'claimed',to:'canonical@example.com'}:{kind:'inactive'},completeVerification:async()=>{completed++;}}});
+  const raw=JSON.stringify({id});
+  const first=await handler.fetch(signed('/verify-email',raw));assert.equal(first.status,200);assert.equal((await first.json()).state,'ACCEPTED');
+  await handler.fetch(signed('/verify-email',raw));assert.equal(sends,1);assert.equal(completed,1);
+  assert.equal((await handler.fetch(signed('/verify-email',JSON.stringify({id,to:'other@example.com',code:'123456'})))).status,400);
+});

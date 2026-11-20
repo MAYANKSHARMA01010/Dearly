@@ -1,3 +1,4 @@
+import { syncRecipientInbox, receivedIntentScope } from './recipientInbox.service';
 import { Prisma } from '@prisma/client';
 import { lockMessage } from '../utils/lockMessage';
 import { recordMessageEvent } from './messageEvent.service';
@@ -20,7 +21,7 @@ export class InboxService {
       where: {
         id,
         userId,
-        intent: { channel: 'IN_APP' },
+        AND: [receivedIntentScope],
         deliveredAt: { lte: now },
         message: { scheduledFor: { lte: now } },
       },
@@ -60,8 +61,8 @@ export class InboxService {
           where: {
             id,
             userId,
-            intent: { channel: 'IN_APP' },
-            deliveredAt: { lte: time },
+        AND: [receivedIntentScope],
+                deliveredAt: { lte: time },
             message: { scheduledFor: { lte: time } },
           },
           include: { message: { select: { id: true, ownerId: true } } },
@@ -80,13 +81,14 @@ export class InboxService {
           where: {
             id,
             userId,
-            intent: { channel: 'IN_APP' },
-            openedAt: null,
+        AND: [receivedIntentScope],
+                openedAt: null,
             deliveredAt: { lte: now },
             message: { scheduledFor: { lte: now } },
           },
           data: { openedAt: now },
         });
+        if (changed.count && item.externalClaimedAt) await tx.externalDelivery.updateMany({where:{intentId:item.intentId,openedAt:null},data:{openedAt:now}});
         if (changed.count)
           await recordMessageEvent(
             tx,
@@ -120,12 +122,13 @@ export class InboxService {
     );
   }
   async list(userId: string, input: z.infer<typeof inboxList>) {
+    await syncRecipientInbox(this.db, userId);
     const now = await databaseTime(this.db),
       c = input.cursor;
     const rows = await this.db.inboxItem.findMany({
       where: {
         userId,
-        intent: { channel: 'IN_APP' },
+        AND: [receivedIntentScope],
         deliveredAt: { lte: now },
         message: { scheduledFor: { lte: now } },
         ...(c && {

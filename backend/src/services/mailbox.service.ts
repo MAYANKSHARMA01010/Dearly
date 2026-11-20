@@ -1,3 +1,4 @@
+import { syncRecipientInbox, receivedIntentScope } from './recipientInbox.service';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import type { z } from 'zod';
 import type {
@@ -63,11 +64,12 @@ export class MailboxService {
     });
   }
   async dashboard(ownerId: string) {
+    await syncRecipientInbox(this.db, ownerId);
     return this.snapshot(async (tx) => {
       const now = await databaseTime(tx);
       const due = {
         userId: ownerId,
-        intent: { channel: 'IN_APP' as const },
+        AND: [receivedIntentScope],
         deliveredAt: { lte: now },
         message: { scheduledFor: { lte: now } },
       };
@@ -101,6 +103,7 @@ export class MailboxService {
     });
   }
   async list(ownerId: string, input: z.infer<typeof mailboxQuery>) {
+    if (input.box === 'received') await syncRecipientInbox(this.db, ownerId);
     return this.snapshot(async (tx) => {
       const now = await databaseTime(tx),
         c = input.cursor;
@@ -118,7 +121,7 @@ export class MailboxService {
         const rows = await tx.inboxItem.findMany({
           where: {
             userId: ownerId,
-            intent: { channel: 'IN_APP' },
+        AND: [receivedIntentScope],
             deliveredAt: { lte: now },
             message: { scheduledFor: { lte: now } },
             ...(input.read === 'opened'

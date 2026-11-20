@@ -25,7 +25,7 @@ test('SMSGate sends one short private link with a deterministic reservation ID a
   assert.equal(body.id, id); assert.equal(body.simNumber, 1);
   assert.equal(body.withDeliveryReport, true); assert.equal(body.ttl, 300); assert.equal(body.priority, 0);
   assert.equal(body.scheduleAt, undefined); assert.equal(body.deviceId, undefined);
-  assert.equal(body.textMessage.text, `Dearly private message: ${link}`);
+  assert.equal(body.textMessage.text, `Dearly (7-day link): ${link}`);
   assert.equal(calls[1].options?.redirect, 'error');
   assert.equal(smsLinkFits('http://localhost:8080'), false);
   assert.ok(smsLinkFits('https://dearly.example'));

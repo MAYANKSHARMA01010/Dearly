@@ -121,6 +121,7 @@ export async function quarantineRestoredDatabase(url: string) {
           where: { revokedAt: null },
           data: { revokedAt: now },
         });
+        await tx.emailVerification.updateMany({ where: { consumedAt: null }, data: { consumedAt: now } });
         await tx.otpChallenge.updateMany({
           where: { consumedAt: null },
           data: { consumedAt: now },

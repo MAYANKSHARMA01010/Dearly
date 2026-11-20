@@ -14,7 +14,7 @@ const unauthorized = () => new ApiError(401, 'UNAUTHORIZED', 'A valid session is
 const limited = () => new ApiError(429, 'AUTH_RATE_LIMITED', 'Too many attempts. Try again later.');
 export const publicUser = (u: User) => ({
   id: u.id, phone: u.phone, phoneVerifiedAt: u.phoneVerifiedAt,
-  name: u.name, email: u.email, timezone: u.timezone, createdAt: u.createdAt,
+  name: u.name, email: u.email, emailVerifiedAt: u.emailVerifiedAt, timezone: u.timezone, createdAt: u.createdAt,
 });
 export type AuthIdentity = { sessionId: string; userId: string };
 
@@ -185,6 +185,13 @@ export class AuthService {
   }
 
   async updateProfile(identity: AuthIdentity, input: ProfileInput) {
-    return publicUser(await this.db.user.update({ where: { id: identity.userId }, data: input }));
+    return this.db.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`dearly:email:${identity.userId}`},0))`;
+      const old = await tx.user.findUniqueOrThrow({where:{id:identity.userId}});
+      const email = input.email === undefined ? old.email : input.email?.trim().toLowerCase() ?? null;
+      const changed = email !== old.email;
+      if(changed) await tx.emailVerification.updateMany({where:{userId:identity.userId,consumedAt:null},data:{consumedAt:this.now()}});
+      return publicUser(await tx.user.update({where:{id:identity.userId},data:{...input,email,...(changed?{verifiedEmail:null,emailVerifiedAt:null}:{})}}));
+    });
   }
 }

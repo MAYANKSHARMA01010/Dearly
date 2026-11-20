@@ -1,3 +1,4 @@
+import { emailVerificationCode } from '../utils/emailVerificationCode';
 import { z } from "zod";
 import type {
   EmailResult,
@@ -15,6 +16,8 @@ export type RelayClaim =
   | { kind: "inactive" };
 export interface EmailRelayRepository {
   ready(): Promise<boolean>;
+  claimVerification?(id: string): Promise<RelayClaim>;
+  completeVerification?(id: string, result: EmailResult): Promise<void>;
   claim(id: string): Promise<RelayClaim>;
   complete(id: string, result: EmailResult): Promise<void>;
 }
@@ -30,6 +33,7 @@ export function createEmailRelayHandler(c: {
   accessSecret: string;
   repository: EmailRelayRepository;
   send: EmailSender;
+  sendVerification?: EmailSender;
   verify: () => Promise<SmtpCheck>;
 }) {
   const json = (data: unknown, status = 200) =>
@@ -39,7 +43,7 @@ export function createEmailRelayHandler(c: {
       const path = new URL(request.url).pathname;
       if (request.method === "GET" && path === "/health")
         return json({ status: "ready" });
-      if (request.method !== "POST" || !["/send", "/verify"].includes(path))
+      if (request.method !== "POST" || !["/send", "/verify", "/verify-email"].includes(path))
         return json({ error: "NOT_FOUND" }, 404);
       try {
         if (
@@ -88,8 +92,9 @@ export function createEmailRelayHandler(c: {
           .strict()
           .safeParse(JSON.parse(raw));
         if (!input.success) return json({ error: "INVALID_BODY" }, 400);
-        const id = input.data.id,
-          claim = await c.repository.claim(id);
+        const id = input.data.id, verification = path === '/verify-email';
+        if (verification && (!c.sendVerification || !c.repository.claimVerification || !c.repository.completeVerification)) return json({ error: 'NOT_CONFIGURED' }, 503);
+        const claim = verification ? await c.repository.claimVerification!(id) : await c.repository.claim(id);
         if (claim.kind === "inactive")
           return json({
             state: "REJECTED",
@@ -100,9 +105,9 @@ export function createEmailRelayHandler(c: {
         let result: EmailResult;
         try {
           const parsed = relayResult.safeParse(
-            await c.send(
+            await (verification ? c.sendVerification! : c.send)(
               claim.to,
-              `${c.publicUrl}/external/#${accessToken(id, c.accessSecret)}`,
+              verification ? emailVerificationCode(id, c.accessSecret) : `${c.publicUrl}/external/#${accessToken(id, c.accessSecret)}`,
               id,
             ),
           );
@@ -111,7 +116,8 @@ export function createEmailRelayHandler(c: {
           result = uncertain;
         }
         try {
-          await c.repository.complete(id, result);
+          if (verification) await c.repository.completeVerification!(id, result);
+          else await c.repository.complete(id, result);
         } catch {
           return json(uncertain);
         }

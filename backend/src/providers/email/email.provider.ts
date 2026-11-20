@@ -65,10 +65,14 @@ export function smtpFailure(error: unknown): EmailResult {
     };
   return { state: 'UNKNOWN', code: 'SMTP_UNCERTAIN', providerMessageId: null };
 }
-export function createEmailSender(config: SmtpConfig | RelayEmailConfig): EmailSender {
-  if (config.mode === 'relay') return new EmailRelay(config).send;
+export function verificationEmailTemplate(code: string) {
+  if (!/^\d{6}$/.test(code)) throw Error('Invalid verification code');
+  return { subject: 'Verify your Dearly email address', text: `Your Dearly email verification code is ${code}. It expires in 5 minutes. Enter it in Profile to link this address to your phone-verified account. Do not share it. If you did not request this, ignore this email.`, html: `<h1>Verify your email</h1><p>Your Dearly verification code is <strong>${code}</strong>.</p><p>It expires in 5 minutes. Enter it in Profile to link this address to your phone-verified account. Do not share it. If you did not request this, ignore this email.</p>` };
+}
+export function createEmailSender(config: SmtpConfig | RelayEmailConfig, verification = false): EmailSender {
+  if (config.mode === 'relay') return verification ? new EmailRelay(config).sendVerification : new EmailRelay(config).send;
   return async (to, link, id) => {
-    if (!publicDeliveryLink(link)) return { state: 'REJECTED', code: 'INVALID_CONTENT_URL', providerMessageId: null };
+    if (!(verification ? /^\d{6}$/.test(link) : publicDeliveryLink(link))) return { state: 'REJECTED', code: 'INVALID_CONTENT_URL', providerMessageId: null };
     if (!z.email().safeParse(to).success)
       return {
         state: 'REJECTED',
@@ -84,7 +88,7 @@ export function createEmailSender(config: SmtpConfig | RelayEmailConfig): EmailS
           to: { address: to, name: '' },
           envelope: { from: config.from, to: [to] },
           messageId: `<${id}@dearly.local>`,
-          ...emailTemplate(link),
+          ...(verification ? verificationEmailTemplate(link) : emailTemplate(link)),
         }),
         new Promise<never>((_resolve, reject) => {
           timeout = setTimeout(() => {

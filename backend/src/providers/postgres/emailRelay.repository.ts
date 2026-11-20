@@ -7,6 +7,15 @@ import type { EmailResult } from "../email/email.provider";
 import { relayResult } from "../email/relay.protocol";
 export class PostgresEmailRelay implements EmailRelayRepository {
   constructor(private readonly db: Pool) {}
+  async claimVerification(id: string): Promise<RelayClaim> {
+    const result = await this.db.query<{email: string}>(`UPDATE email_verifications v SET "dispatchStatus"='SUBMITTING' FROM users u WHERE v.id=$1 AND u.id=v."userId" AND lower(u.email)=v.email AND v."dispatchStatus"='PENDING' AND v."consumedAt" IS NULL AND v."expiresAt">CURRENT_TIMESTAMP RETURNING v.email`, [id]);
+    if (result.rows[0]) return { kind: 'claimed', to: result.rows[0].email };
+    return { kind: 'inactive' };
+  }
+  async completeVerification(id: string, result: EmailResult) {
+    const written = await this.db.query(`UPDATE email_verifications SET "dispatchStatus"=$2 WHERE id=$1 AND "dispatchStatus"='SUBMITTING'`, [id, result.state]);
+    if (written.rowCount !== 1) throw Error('Verification outcome was not persisted.');
+  }
   async ready() {
     try {
       return Boolean(

@@ -43,5 +43,6 @@ export default createEmailRelayHandler({
   publicUrl,
   repository: new PostgresEmailRelay(pool),
   send: createEmailSender(smtp),
+  sendVerification: createEmailSender(smtp, true),
   verify: () => verifySmtp(smtp),
 });

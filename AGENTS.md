@@ -240,8 +240,9 @@ unrelated bundle, and do not split every file into a separate commit.
 - Include the public Dearly GitHub Releases download page in email and WhatsApp,
   and on the secure viewer reached from SMS. Preserve the single-segment SMS
   limit. Use accurate phone-number verification instructions. Never claim email
-  login, verified email association or automatic external-message inbox import
-  until those features actually exist and are tested. Never imply an RC is stable.
+  login: email verification links a destination to the existing phone account.
+  Follow docs/verified-recipients.md for proof, inbox matching and immutable
+  recipient binding. Never trust an unverified profile email. Never imply an RC is stable.
 - Use MAJOR.MINOR.PATCH (x.x.x): PATCH for compatible fixes, MINOR for compatible
   features, MAJOR for breaking changes. Before each actual release, use
   `node scripts/release.mjs prepare X.Y.Z` to synchronize VERSION, both package
@@ -253,3 +254,14 @@ unrelated bundle, and do not split every file into a separate commit.
   and record hosted deployment and device acceptance separately. A source commit
   alone does not mean a new APK or deployment exists. Do not bump versions on
   every development commit or label untested artifacts stable.
+
+- Profile email verification is a separate authenticated flow. Use Gmail for email
+  codes and WhatsApp first for phone login codes. Codes expire in five minutes,
+  allow at most five attempts and require durable resend/sender limits. Saving a
+  changed email clears its verification and pending codes. Never expose codes in
+  logs or reuse phone OTP challenges for email. Restore consumes email challenges.
+- Received may include due external phone/email deliveries only after a verified
+  destination is matched and an account-owned inbox row is committed. Never
+  redirect an already bound recipient, reveal undelivered content, or mark a
+  refresh as opened. Explicit app opening updates content-read evidence separately
+  from carrier/provider delivery evidence.

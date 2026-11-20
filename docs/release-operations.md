@@ -191,9 +191,10 @@ Email and WhatsApp include the public GitHub Releases page; the SMS companion
 viewer includes the same download instructions without exceeding the one-segment
 SMS budget. The releases page supports both stable builds and explicitly labeled
 release candidates; `/releases/latest` cannot identify an RC-only release.
-Registration currently verifies a phone number. External email/phone link
-notifications do not automatically appear in the app inbox, and email login or
-verified email association must not be promised until implemented.
+Registration verifies a phone number with WhatsApp login codes first. Matching
+phone deliveries appear in Received; email deliveries require saving and verifying
+that address in Profile first. See [verified recipient contracts](verified-recipients.md)
+for ownership, matching windows and limitations. Email is not a login method.
 
 Use x.x.x semantic versions for releases: PATCH fixes, MINOR compatible features,
 MAJOR breaking changes. Prepare the version through `scripts/release.mjs prepare

@@ -49,8 +49,10 @@ test('PostgreSQL-backed auth security and HTTP contracts', { timeout: 240_000 },
     const alertsSql = readFileSync('prisma/migrations/20261119060000_notifications_preferences/migration.sql', 'utf8')
       .replace(/"(users|sessions|account_preferences|notifications|push_devices|push_jobs)"/g, `"${schema}"."$1"`);
     for (const statement of alertsSql.replace(/^\s*--.*$/gm, '').split(';').filter(s => s.trim())) await db.$executeRawUnsafe(statement);
+    const emailSql = readFileSync('prisma/migrations/20261120140000_verified_recipient_email/migration.sql', 'utf8').replace(/"(users|email_verifications)"/g, `"${schema}"."$1"`);
+    for(const statement of emailSql.split(';').filter(s=>s.trim())) await db.$executeRawUnsafe(statement);
     const tables = await db.$queryRaw<{ table_name: string }[]>`SELECT table_name FROM information_schema.tables WHERE table_schema = ${schema}`;
-    assert.equal(tables.length, 9);
+    assert.equal(tables.length, 10);
     t.beforeEach(async () => {
       await db.refreshToken.deleteMany(); await db.session.deleteMany(); await db.user.deleteMany();
       await db.otpChallenge.deleteMany(); await db.phoneAuthState.deleteMany();
