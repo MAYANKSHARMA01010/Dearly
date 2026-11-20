@@ -63,6 +63,11 @@
       "id": "fb69beb8b91c44659058287fa5d03ff7",
       "name": "projects/13022673306304030650/screens/fb69beb8b91c44659058287fa5d03ff7",
       "title": "Received Message Detail"
+    },
+    "profile": {
+      "id": "bfcf203f83c14cf290ac4a6ddcb4f2f4",
+      "name": "projects/13022673306304030650/screens/bfcf203f83c14cf290ac4a6ddcb4f2f4",
+      "title": "Profile"
     }
   }
 }

@@ -25,8 +25,8 @@ private screenshots and source are not uploaded.
 | 10 | Mailboxes `/mailboxes` | Complete |
 | 11 | Owned message `/mailboxes/owned/[id]` | Complete |
 | 12 | Received message `/mailboxes/received/[id]` | Complete |
-| 13 | Profile `/profile` | Next |
-| 14 | Settings `/settings` | Pending |
+| 13 | Profile `/profile` | Complete |
+| 14 | Settings `/settings` | Next |
 | 15 | Notifications `/notifications` | Pending |
 | 16 | Service status `/status` | Pending |
 | 17 | Page not found | Pending |
@@ -179,3 +179,13 @@ mailbox details. No encrypted-storage claims were adopted from the prototype.
 Verified unavailable-item recovery, navigation from Received to the correct inbox
 item, sender/body/timing and unmarked state in the light iPhone simulator. Viewing
 did not mark opened. Lint/types passed; no receipt was created.
+
+## Profile
+
+Combined Stitch’s account/editable-details separation with Impeccable’s native
+form guidance. Read-only phone and selectable account ID are grouped; actual UUID
+format is retained. Save feedback and validation use inline notices, sign-out is
+separate. Email remains explicitly unverified and phone-only login unchanged.
+
+Verified account details, invalid timezone recovery, corrected successful synthetic
+profile save and saved feedback on iPhone 17 Pro Max. Lint/types passed.
