@@ -36,6 +36,17 @@ export function recipientKey(recipient, ownerId) {
   if (recipient.type === 'USER') return `user:${recipient.userId?.toLowerCase() ?? 'unavailable'}`;
   return recipient.type === 'PHONE' ? `phone:${recipient.phone}` : `email:${recipient.email?.toLowerCase()}`;
 }
+/** Replace one recipient or append a new one without changing the original list.
+ * @param {Recipient[]} recipients @param {Recipient} input @param {string} ownerId
+ * @param {number|null} [editingIndex] @returns {Recipient[]}
+ */
+export function saveRecipient(recipients, input, ownerId, editingIndex = null) {
+  if (editingIndex !== null && (!Number.isInteger(editingIndex) || editingIndex < 0 || editingIndex >= recipients.length)) throw validation('This recipient is no longer available. Cancel and try again.');
+  if (editingIndex === null && recipients.length >= 50) throw validation('Choose up to 50 recipients.');
+  const normalized = normalizeRecipient(input, ownerId);
+  if (recipients.some((r, index) => index !== editingIndex && recipientKey(r, ownerId) === recipientKey(normalized, ownerId))) throw validation('This recipient is already added.');
+  return editingIndex === null ? [...recipients, normalized] : recipients.map((r, index) => index === editingIndex ? normalized : r);
+}
 /** @param {DraftContent} content @param {string} ownerId @returns {DraftContent} */
 export function prepareContent(content, ownerId) {
   if (content.subject && content.subject.trim().length > 160) throw validation('The subject can have up to 160 characters.');

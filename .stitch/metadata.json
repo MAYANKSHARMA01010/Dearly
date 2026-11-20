@@ -88,6 +88,11 @@
       "id": "f207e3cab264400c80a7919467e2b036",
       "name": "projects/13022673306304030650/screens/f207e3cab264400c80a7919467e2b036",
       "title": "Page not found"
+    },
+    "recipientEditing": {
+      "id": "53576feba401431c9b380e2e35744280",
+      "name": "projects/13022673306304030650/screens/53576feba401431c9b380e2e35744280",
+      "title": "Draft recipient editing"
     }
   }
 }

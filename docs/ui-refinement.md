@@ -259,3 +259,23 @@ No production message, account, provider setting or hosted deployment was change
 No Android launch, APK rebuild, release/version bump or Git push was part of this
 UI pass. Physical Android, push/provider acceptance, populated attachment media and
 all possible server-failure/pagination combinations were not revalidated here.
+
+## Recipient corrections — 20 November 2026
+
+Added Edit beside Remove in draft recipient rows, combining Stitch’s focused
+prefilled-form proposal with Impeccable’s inline editing guidance. The form opens
+beneath the selected recipient. Phone/country, email, Dearly ID and optional name
+can be corrected; self recipients can change their display name. Update replaces
+one row locally, Cancel keeps the original, and Save draft persists the changes.
+Other recipient mutations and draft saving are blocked until the entry finishes.
+Schedule review continues to use the saved draft; destinations are not edited on
+an active schedule.
+
+Normalization and duplicate checks apply to corrections while excluding the
+edited row. A full 50-recipient list can still be edited. Six new tests cover
+replacement, immutability, duplicate/self identity, capacity, phone/email validation,
+unavailable-account correction and invalid indexes. All 89 frontend tests, lint and
+types passed; the detector returned no findings. Verified prefilled email editing,
+cancel, successful replacement, invalid input recovery, disabled saving and inline
+placement on iPhone 17 Pro Max. The synthetic unsaved test draft was discarded;
+no real recipient data was saved and no message was sent.
