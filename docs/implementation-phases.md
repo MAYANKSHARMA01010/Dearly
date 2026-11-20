@@ -52,7 +52,7 @@ and a simulated delivery does not complete a real channel integration.
 | 13 | WhatsApp message delivery | 10–12 | Complete — scheduled self-delivery and login OTP verified 19 November |
 | 14 | SMS message delivery | 10–12 | Complete — real SMS arrival and signed single-part delivery verified 19 November |
 | 15 | Notifications, preferences, and account settings | 11–14 | Engineering complete — device/push acceptance deferred by user |
-| 16 | Release verification, operations, and handover | 2–15 | Non-device work complete — native/hosted acceptance deferred |
+| 16 | Release verification, operations, and handover | 2–15 | Engineering and hosted deployment implemented — device/push acceptance deferred |
 
 Recommended execution order is numeric. Provider evaluation can happen earlier;
 Phases 13 and 14 do not depend on one another. An OTP-specific adapter needed in

@@ -1,3 +1,30 @@
+# Hosted release candidate — 20 November 2026
+
+The requested hosted implementation now uses Neon database/private object storage,
+Render API/workers/Key Value/WAHA and Gmail through the authenticated Neon relay.
+The signed ARM64 APK was rebuilt locally as version 1.0.0, Android code 2, with
+`https://dearly-z8zm.onrender.com` embedded in its release profile. It is a release
+candidate while physical Android/push acceptance remains deferred by the user.
+
+- Backend: 102 unit tests, lint/type checks and production build passed.
+- PostgreSQL integration: 90 runner entries passed using disposable PostgreSQL 18
+  and fake transports, including the relay's actual database claim logic.
+- Encrypted backup/restore: all 12 migrations restored, synthetic private media
+  restored, sessions revoked, quarantine created and non-empty target refused.
+- Full GitHub CI passed on `4c091f8`, including frontend's 81 tests, three mobile/API
+  integration checks, both platform bundles and container configuration checks.
+- Neon private-object round trip and unsigned-access denial passed. Both local
+  and hosted WhatsApp senders reached READY after independent pairing.
+- Gmail relay connection/authentication reached READY without submitting an email.
+  The live database migration followed a private encrypted backup with hosted
+  writers stopped. No additional live SMS, WhatsApp or email was sent for release.
+
+See [deployment details and limits](render-deployment.md) and
+[versioned releases](releases/README.md). Public uptime guarantees, real Android
+push/background acceptance and hosted backup scheduling/retention are not claimed.
+The earlier baseline below is retained as a historical record; its deferred-hosting
+statements are superseded by this addendum.
+
 # Release verification — 19 November 2026
 
 All planned implementation through Phase 16 is present. Phases 1–14 retain their

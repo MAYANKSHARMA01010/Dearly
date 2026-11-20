@@ -97,7 +97,8 @@ within a phase does not authorize the entire phase.
   delivery confirmation, and opening; only claim statuses supported by evidence.
 - Phase 8 uses private filesystem attachments with owner-only APIs, bounded
   reservations and an explicit cleanup job. Follow [attachment contracts](docs/attachments.md);
-  keep objects out of public/static serving and require persistent storage when hosted.
+  keep objects out of public/static serving and require durable private storage when hosted. The hosted deployment uses Neon
+  private object storage; Render disk is only a disposable cache.
   Media validation needs ffprobe. Pass the full Expo recording preset when overriding
   a recording filename; filename-only preparation can silently change the container.
   Use synthetic media for checks and ask before capturing the user’s microphone.
@@ -128,8 +129,8 @@ within a phase does not authorize the entire phase.
 - Use the supplied Neon PostgreSQL connection through `backend/.env` only; never
   copy its credentials into documentation, commits, logs, or frontend variables.
   The local backend port is `8080`. Frontend `EXPO_PUBLIC_API_URL` is the local
-  URL (`http://localhost:8080`); `EXPO_PUBLIC_SERVER_API_URL` stays empty until
-  hosting is configured. The API client selects the local URL for development
+  URL (`http://localhost:8080`); `EXPO_PUBLIC_SERVER_API_URL` is now
+  `https://dearly-z8zm.onrender.com` for hosted release builds. The API client selects the local URL for development
   and requires a remote HTTPS hosted URL for release builds;
   the backend is started separately with the documented scripts.
 
@@ -147,8 +148,8 @@ within a phase does not authorize the entire phase.
   exclude credentials/backend data from archives. Preserve working SDK 58 patches.
   Targeted SDK 58 patch alignment was verified in Phase 16; do not incidentally
   upgrade major versions or replace styling/navigation setup. Never claim real
-  push/native acceptance from exports or fake transports. Hosted
-  backend URLs remain empty until the user provides them.
+  push/native acceptance from exports or fake transports. Hosted backend configuration and free-service limits are recorded in
+  [Render deployment](docs/render-deployment.md).
 
 ## Phase 16 operations boundaries
 
