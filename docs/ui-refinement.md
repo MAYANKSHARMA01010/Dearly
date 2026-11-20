@@ -27,8 +27,8 @@ private screenshots and source are not uploaded.
 | 12 | Received message `/mailboxes/received/[id]` | Complete |
 | 13 | Profile `/profile` | Complete |
 | 14 | Settings `/settings` | Complete |
-| 15 | Notifications `/notifications` | Next |
-| 16 | Service status `/status` | Pending |
+| 15 | Notifications `/notifications` | Complete |
+| 16 | Service status `/status` | Next |
 | 17 | Page not found | Pending |
 
 Native evidence uses the existing iPhone 17 Pro Max simulator. No simulator reset,
@@ -201,3 +201,14 @@ list row. Device permission remains explicitly requested by its action only.
 Verified switch accessibility/state changes, restored original local preferences
 and saved feedback on iPhone 17 Pro Max. Lint/types passed. No push permission
 prompt, registration or physical push test was triggered.
+
+## Notifications
+
+Combined Stitch’s unread hierarchy with Impeccable’s native event-list guidance.
+Generic event titles retain privacy, unread weight/icon/text work beyond color,
+rows have disclosures, empty state has recovery context, duplicate unavailable
+errors are suppressed, and notification-read vs message-opened is explicit.
+
+Verified unavailable/retry state, corrected an invalid synthetic fixture target,
+then verified unread row, exact received-item navigation and unchanged message
+opened status. Lint/types passed. No push delivery or real account record changed.

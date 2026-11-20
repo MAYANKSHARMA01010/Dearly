@@ -73,6 +73,11 @@
       "id": "ec5a01907a964e1dbf8dbd9db58dd7a9",
       "name": "projects/13022673306304030650/screens/ec5a01907a964e1dbf8dbd9db58dd7a9",
       "title": "Settings & Preferences"
+    },
+    "notifications": {
+      "id": "385df174d4b24eafafdc0efecfed5469",
+      "name": "projects/13022673306304030650/screens/385df174d4b24eafafdc0efecfed5469",
+      "title": "Notifications List"
     }
   }
 }
