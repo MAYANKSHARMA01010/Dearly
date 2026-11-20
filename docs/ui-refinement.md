@@ -23,8 +23,8 @@ private screenshots and source are not uploaded.
 | 8 | Scheduled message `/schedules/[id]` | Complete |
 | 9 | Reschedule `/schedules/reschedule` | Complete |
 | 10 | Mailboxes `/mailboxes` | Complete |
-| 11 | Owned message `/mailboxes/owned/[id]` | Next |
-| 12 | Received message `/mailboxes/received/[id]` | Pending |
+| 11 | Owned message `/mailboxes/owned/[id]` | Complete |
+| 12 | Received message `/mailboxes/received/[id]` | Next |
 | 13 | Profile `/profile` | Pending |
 | 14 | Settings `/settings` | Pending |
 | 15 | Notifications `/notifications` | Pending |
@@ -155,3 +155,15 @@ copy, pagination and access-error clearing.
 Verified Created populated rows, all six selector entries, Received content and
 read filters in the light iPhone simulator. Lint/types passed. No opened receipt
 or message mutation was performed.
+
+## Owned message
+
+Combined Stitch’s delivery/timeline grouping with Impeccable’s readable message
+hierarchy. Timing, recipient outcomes, attachments and activity are distinct;
+actual status/version and immutable-state controls remain intact. Stale errors
+are inline and obsolete claims that external receipts are unavailable were removed.
+
+Verified delivered synthetic message, exact recipient outcome, no opened receipt,
+empty attachments and recorded activity in the light iPhone simulator. Lint/types
+passed after correcting a fallback-branch edit caught by type checking. No link
+revocation, external send or account-owned data mutation was performed.

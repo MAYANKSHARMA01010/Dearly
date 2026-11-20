@@ -53,6 +53,11 @@
       "id": "8f827c688f1f40c78bfd96b083896245",
       "name": "projects/13022673306304030650/screens/8f827c688f1f40c78bfd96b083896245",
       "title": "Mailboxes List"
+    },
+    "ownedMessage": {
+      "id": "aec054cbbdad416697a20c84a9ffafb5",
+      "name": "projects/13022673306304030650/screens/aec054cbbdad416697a20c84a9ffafb5",
+      "title": "Owned Message Detail"
     }
   }
 }
