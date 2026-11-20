@@ -203,3 +203,17 @@ commit, and publish a matching `vX.Y.Z` tag or `vX.Y.Z-rc.N` prerelease with ver
 APK, source ZIP, release manifest and checksums. Never replace published assets
 or reuse build numbers. Record deployment commit/version separately from mobile
 artifacts; do not claim a newly committed UI exists in an older downloadable APK.
+
+## Enforced deployment version gate
+
+Main-branch runtime pushes run `node scripts/release.mjs check-deploy BASE_SHA`.
+CI compares the previous commit's VERSION with the new synchronized manifests and
+rejects runtime changes without a larger MAJOR.MINOR.PATCH version. Tests/docs-only
+changes do not require a new app version. Render's backend Auto-Deploy policy was
+changed to **After CI Checks Pass** and read back to verify the saved choice. This
+keeps failed checks from automatically becoming a new hosted deployment.
+
+For a user-facing deployed fix, finish with a matching signed APK and GitHub
+release unless the user explicitly defers it. Do not overwrite old release assets
+or say the installed app contains a source-only fix. This repair is patch 1.1.1
+with Android versionCode 5 and iOS build number 5.

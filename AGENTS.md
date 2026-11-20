@@ -265,3 +265,24 @@ unrelated bundle, and do not split every file into a separate commit.
   redirect an already bound recipient, reveal undelivered content, or mark a
   refresh as opened. Explicit app opening updates content-read evidence separately
   from carrier/provider delivery evidence.
+
+## Required closeout for deployed fixes
+
+- A user-visible runtime fix is not finished when only committed or deployed.
+  Unless the user explicitly defers the release, prepare the appropriate
+  MAJOR.MINOR.PATCH increase, increment native build numbers, build and verify
+  the signed APK, deploy the matching server code, then publish the matching
+  GitHub release with APK/source ZIP/manifest/checksums and provide its link.
+  Include all completed local fixes, including navigation corrections. Never end
+  a deployment task with an older downloadable APK missing the fix.
+- Main-branch runtime pushes must pass `scripts/release.mjs check-deploy BASE_SHA`;
+  CI rejects a runtime deployment whose VERSION did not increase. Keep tests/docs
+  commits scoped and do not mutate existing release tags or assets.
+- Real OTP acceptance requires evidence beyond API liveness and fake tests. Check
+  hosted sender readiness, request one specifically authorized real test, and
+  distinguish gateway acceptance from arrival on the phone. If that permission or
+  phone confirmation is pending, state it rather than calling OTP verified.
+- Phone login must check read-only gateway readiness before generating an OTP or
+  consuming cooldown/sender budgets. Cold-start polling may retry only GET status
+  checks, never OTP POSTs. Keep the wait bounded, abortable and visible to the user.
+  No silent SMS fallback, synthetic code or credential/session reset is permitted.

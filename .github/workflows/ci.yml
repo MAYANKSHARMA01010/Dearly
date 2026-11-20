@@ -33,6 +33,13 @@ jobs:
       DRILL_DATABASE_URL: postgresql://dearly_ci:ci-disposable-only@127.0.0.1:5432/dearly_ci
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+      - name: Require a semantic version for runtime deployments
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.before != '0000000000000000000000000000000000000000'
+        env:
+          DEPLOY_BASE_SHA: ${{ github.event.before }}
+        run: node scripts/release.mjs check-deploy "$DEPLOY_BASE_SHA"
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '22'
