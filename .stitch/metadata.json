@@ -38,6 +38,11 @@
       "proposalSessionId": "13475133772291833583",
       "title": "Review schedule",
       "artifact": "textual proposal"
+    },
+    "scheduledMessage": {
+      "id": "74cf8afb0e804c4ba9938f6cf9bf1d81",
+      "name": "projects/13022673306304030650/screens/74cf8afb0e804c4ba9938f6cf9bf1d81",
+      "title": "Scheduled Message Detail"
     }
   }
 }

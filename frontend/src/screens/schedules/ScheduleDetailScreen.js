@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { usePreventRemove, useRouter } from 'expo-router';
-import { Dialog, Portal, Text, useTheme } from 'react-native-paper';
+import { View } from 'react-native';
+import { Stack, usePreventRemove, useRouter } from 'expo-router';
+import { Dialog, IconButton, Portal, Text, useTheme } from 'react-native-paper';
 import Screen from '../../components/layout/Screen';
+import { InlineNotice, ScreenHeading, ScreenSection } from '../../components/layout/ScreenSections';
+import { spacing } from '../../theme';
 import StateView from '../../components/common/StateView';
 import AppButton from '../../components/common/AppButton';
 import AppTextField from '../../components/forms/AppTextField';
@@ -138,17 +141,9 @@ export default function ScheduleDetailScreen({ id }) {
     );
   return (
     <Screen>
-      <AppButton
-        disabled={action.busy}
-        onPress={() => router.replace('/schedules')}
-      >
-        Back to schedules
-      </AppButton>
-      <Text variant="headlineMedium" accessibilityRole="header">
-        {message.status === 'CANCELED'
-          ? 'Schedule canceled'
-          : 'Your scheduled message'}
-      </Text>
+      <Stack.Screen options={{ headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to schedules" disabled={action.busy} onPress={() => router.replace('/schedules')} /> }} />
+      <ScreenHeading title={message.status === 'CANCELED' ? 'Schedule canceled' : 'Your scheduled message'} description={scheduleStatusLabel(message.status)} />
+      <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: 16, backgroundColor: theme.colors.secondaryContainer }}>
       <Text>
         Version {message.version} · {scheduleStatusLabel(message.status)}
       </Text>
@@ -159,24 +154,25 @@ export default function ScheduleDetailScreen({ id }) {
         {message.timezone} · {message.localDateTime}
       </Text>
       <Text selectable>Universal time: {message.scheduledFor}</Text>
-      <Text>
+      </View>
+      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
         Once delivery starts, editing and cancellation are locked. Delivered
         means available in the recipient’s Dearly inbox; it does not mean
         opened.
       </Text>
       {message.status === 'SCHEDULED' && !message.deliveryEnabled ? (
-        <Text accessibilityRole="alert">
+        <InlineNotice>
           This older plan is paused. Reschedule and confirm a new review to
           enable delivery.
-        </Text>
+        </InlineNotice>
       ) : null}
       {message.status === 'SCHEDULED' &&
       message.deliveryEnabled &&
       Date.parse(message.scheduledFor ?? '') < checkedAt ? (
-        <Text accessibilityRole="alert">
+        <InlineNotice>
           The scheduled time has passed. This message is waiting to be claimed.
           You can still reschedule or cancel until dispatch starts.
-        </Text>
+        </InlineNotice>
       ) : null}
       {message.status === 'CANCELED' ? (
         <Text>
@@ -184,6 +180,7 @@ export default function ScheduleDetailScreen({ id }) {
           This schedule will not be dispatched.
         </Text>
       ) : null}
+      <ScreenSection title="Message">
       {editing ? (
         <>
           <Text>Unsaved edits — save before leaving.</Text>
@@ -234,9 +231,8 @@ export default function ScheduleDetailScreen({ id }) {
           <Text>Occasion: {message.occasion || 'None'}</Text>
         </>
       )}
-      <Text variant="titleLarge" accessibilityRole="header">
-        Recipients
-      </Text>
+      </ScreenSection>
+      <ScreenSection title="Recipients">
       {message.recipients.map((r) => (
         <Text key={r.id}>
           {r.label ||
@@ -253,14 +249,15 @@ export default function ScheduleDetailScreen({ id }) {
             : message.deliveries.find((d) => d.recipientId === r.id)
                   ?.channel === 'WHATSAPP'
               ? 'WhatsApp'
-              : 'In-app'}
+              : message.deliveries.find((d) => d.recipientId === r.id)?.channel === 'SMS' ? 'SMS' : 'In-app'}
           {r.unavailable ? ' · Account unavailable' : ''}
         </Text>
       ))}
+      </ScreenSection>
       {message.status === 'SCHEDULED' ? (
         <>
           <AppButton
-            disabled={action.busy || editing}
+            icon="pencil-outline" mode="outlined" disabled={action.busy || editing}
             onPress={() => setEditing(true)}
           >
             Edit message
@@ -278,7 +275,7 @@ export default function ScheduleDetailScreen({ id }) {
             Reschedule
           </AppButton>
           <AppButton
-            mode="outlined"
+            textColor={theme.colors.error} icon="calendar-remove"
             disabled={action.busy || dirty}
             onPress={() => setConfirm('cancel')}
           >
@@ -304,10 +301,10 @@ export default function ScheduleDetailScreen({ id }) {
         </Text>
       )}
       {action.error ? (
-        <Text accessibilityRole="alert" style={{ color: theme.colors.error }}>
+        <InlineNotice error>
           {action.error} Your local edits remain here. Reload to check the saved
           state before retrying an uncertain action.
-        </Text>
+        </InlineNotice>
       ) : null}
       <AppButton
         disabled={action.busy}
@@ -346,7 +343,7 @@ export default function ScheduleDetailScreen({ id }) {
             <AppButton onPress={() => setConfirm(null)}>
               Keep current view
             </AppButton>
-            <AppButton onPress={perform}>
+            <AppButton textColor={confirm === 'cancel' ? theme.colors.error : undefined} onPress={perform}>
               {confirm === 'cancel'
                 ? 'Confirm cancellation'
                 : confirm === 'reopen'

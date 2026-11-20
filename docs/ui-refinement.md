@@ -20,8 +20,8 @@ private screenshots and source are not uploaded.
 | 5 | Edit draft `/drafts/[id]` | Complete |
 | 6 | Schedule list `/schedules` | Complete |
 | 7 | Review schedule `/schedules/new` | Complete |
-| 8 | Scheduled message `/schedules/[id]` | Next |
-| 9 | Reschedule `/schedules/reschedule` | Pending |
+| 8 | Scheduled message `/schedules/[id]` | Complete |
+| 9 | Reschedule `/schedules/reschedule` | Next |
 | 10 | Mailboxes `/mailboxes` | Pending |
 | 11 | Owned message `/mailboxes/owned/[id]` | Pending |
 | 12 | Received message `/mailboxes/received/[id]` | Pending |
@@ -123,3 +123,14 @@ in-app delivery. Stitch returned a textual proposal without a screen artifact.
 Verified synthetic in-app review creation, resolved timezone/UTC values and final
 confirmation layout on iPhone 17 Pro Max, including offline-worker feedback. No
 confirmation or provider dispatch was performed. Lint/types passed.
+
+## Scheduled message
+
+Combined Stitch’s time/status emphasis with Impeccable’s native grouping and
+destructive-action hierarchy. Message and recipients are separate sections;
+cancel controls use error color and preserve confirmation. Corrected SMS channel
+labeling. Omitted prototype encrypted/verified claims and invented sync controls.
+
+Verified a saved synthetic schedule and cancellation-dialog dismissal on iPhone
+17 Pro Max. Actual time/timezone, recipients and permitted controls render clearly.
+Lint/types passed; schedule mutations and delivery were not needed for this pass.
