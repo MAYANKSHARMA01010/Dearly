@@ -21,8 +21,8 @@ private screenshots and source are not uploaded.
 | 6 | Schedule list `/schedules` | Complete |
 | 7 | Review schedule `/schedules/new` | Complete |
 | 8 | Scheduled message `/schedules/[id]` | Complete |
-| 9 | Reschedule `/schedules/reschedule` | Next |
-| 10 | Mailboxes `/mailboxes` | Pending |
+| 9 | Reschedule `/schedules/reschedule` | Complete |
+| 10 | Mailboxes `/mailboxes` | Next |
 | 11 | Owned message `/mailboxes/owned/[id]` | Pending |
 | 12 | Received message `/mailboxes/received/[id]` | Pending |
 | 13 | Profile `/profile` | Pending |
@@ -134,3 +134,12 @@ labeling. Omitted prototype encrypted/verified claims and invented sync controls
 Verified a saved synthetic schedule and cancellation-dialog dismissal on iPhone
 17 Pro Max. Actual time/timezone, recipients and permitted controls render clearly.
 Lint/types passed; schedule mutations and delivery were not needed for this pass.
+
+## Reschedule
+
+Combined Stitch’s current/new-time distinction with Impeccable’s state clarity.
+The existing time is explicit, active/paused wording follows the actual plan, and
+locked recipients/channels explain how to change them. Shared review logic remains
+unified. Stitch provided a textual revision. Verified current summary, prefilled
+new-time fields and disabled recipient selection on iPhone 17 Pro Max. No new time
+was confirmed. Lint/types passed.

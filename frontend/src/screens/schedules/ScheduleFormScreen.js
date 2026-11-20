@@ -215,14 +215,18 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
   return (
     <Screen>
       <Stack.Screen options={{ headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to schedules" disabled={action.busy} onPress={() => router.replace('/schedules')} /> }} />
-      <ScreenHeading title={reschedule ? 'Choose a new time' : 'Plan a delivery time'} description="Choose when this message should begin delivery. Confirm the actual time before scheduling." />
+      <ScreenHeading title={reschedule ? 'Choose a new time' : 'Plan a delivery time'} description={reschedule ? "Review a new delivery time for this saved message." : "Choose when this message should begin delivery. Confirm the actual time before scheduling."} />
+      {reschedule ? <InlineNotice>
+        Current schedule: {scheduleLabel(source.scheduledFor ?? '', source.timezone ?? 'UTC')} · {source.timezone}.
+        {' '}{source.deliveryEnabled ? 'Your existing schedule stays active until you confirm a new time.' : 'This existing plan stays paused until you confirm a new time.'}
+      </InlineNotice> : null}
       {!workerOnline ? (
         <InlineNotice>
           The delivery service is offline. Confirmed schedules stay saved
           and can begin delivery when the service resumes.
         </InlineNotice>
       ) : null}
-      <ScreenSection title="Delivery time" description={source.subject || 'Untitled message'}>
+      <ScreenSection title={reschedule ? "New delivery time" : "Delivery time"} description={source.subject || 'Untitled message'}>
       <AppTextField
         label="Date (YYYY-MM-DD)"
         value={date}
@@ -272,7 +276,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         Use my profile timezone
       </AppButton>
       </ScreenSection>
-      <ScreenSection title="Delivery choices" description="Choose who receives this message and how.">
+      <ScreenSection title="Delivery choices" description={reschedule ? "Recipients and channels stay unchanged. To change them, cancel the schedule and return it to drafts." : "Choose who receives this message and how."}>
       {source.recipients.map((recipient) => {
         const supported =
           ['SELF', 'USER', 'PHONE', 'EMAIL'].includes(recipient.type) &&
