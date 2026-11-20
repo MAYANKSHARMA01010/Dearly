@@ -279,3 +279,31 @@ types passed; the detector returned no findings. Verified prefilled email editin
 cancel, successful replacement, invalid input recovery, disabled saving and inline
 placement on iPhone 17 Pro Max. The synthetic unsaved test draft was discarded;
 no real recipient data was saved and no message was sent.
+
+## Scheduling controls — 20 November 2026
+
+Combined Stitch's focused scheduling revision with Impeccable's native form
+and error-recovery guidance. iOS now opens a calendar and clock picker with
+Cancel/Done; Android uses its native calendar/clock dialogs. Picker values retain
+the selected wall-clock fields independently of the phone timezone. The server
+still resolves the named delivery timezone and rejects invalid or ambiguous times.
+
+Every saved draft recipient remains included, matching the scheduling contract.
+Recipient groups show destinations and one explicit channel choice per phone.
+Round channel controls and square permission controls remain visible on iOS.
+Unavailable channels and missing WhatsApp/SMS permission explain why Review is
+disabled directly above the action. Longer privacy details are expandable. The
+resolved-time review and separate final confirmation remain required.
+
+All 95 frontend tests, lint and types passed, including six new selection,
+permission, date/time and timezone cases. Eight scheduler integration checks passed
+against the disposable local PostgreSQL instance with fake transports. Native
+checks on iPhone 17 Pro Max verified calendar selection, clock opening/cancel,
+recipient grouping and the unchecked-permission blocker. Android interaction and
+clock-wheel value changes were not separately verified. Expo Doctor passed all
+20 checks and the iOS production bundle exported successfully. No real schedule was
+confirmed and no external message was sent.
+
+The normal local API and delivery worker were restored using the existing private
+environment; the earlier isolated UI-preview provider settings no longer apply to
+those running processes. No hosted deployment, release or APK rebuild was made.

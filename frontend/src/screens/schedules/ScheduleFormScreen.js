@@ -5,6 +5,7 @@ import { Stack, usePreventRemove, useRouter } from 'expo-router';
 import {
   Checkbox,
   IconButton,
+  List,
   RadioButton,
   Dialog,
   Portal,
@@ -15,6 +16,8 @@ import Screen from '../../components/layout/Screen';
 import { InlineNotice, ScreenHeading, ScreenSection } from '../../components/layout/ScreenSections';
 import AppButton from '../../components/common/AppButton';
 import AppTextField from '../../components/forms/AppTextField';
+import ScheduleDateTimeFields from '../../components/forms/ScheduleDateTimeFields';
+import { recipientChannel, reviewBlockers } from '../../services/schedules/selection';
 import StateView from '../../components/common/StateView';
 import { useAuth } from '../../context/AuthContext';
 import { useDraftWorkspace } from '../../context/DraftWorkspaceContext';
@@ -54,13 +57,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
     [whatsappAvailable, setWhatsappAvailable] = useState(false),
     [whatsappStatus, setWhatsappStatus] = useState('DISABLED');
   /** @param {import('../../services/schedules/contracts').ScheduleRecipient} r */
-  const channelFor = (r) =>
-    r.type === 'EMAIL'
-      ? 'EMAIL'
-      : r.type === 'PHONE'
-        ? (phoneChannels[r.id] ?? 'IN_APP')
-        : 'IN_APP';
-  const [selected, setSelected] = useState(/** @type {string[]} */ ([]));
+  const channelFor = (r) => recipientChannel(r, phoneChannels);
   const [emailAvailable, setEmailAvailable] = useState(false),
     [emailLocalOnly, setEmailLocalOnly] = useState(false);
   const [workerOnline, setWorkerOnline] = useState(false);
@@ -96,15 +93,6 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
           setTimezone(zone);
           setDate(wall.slice(0, 10));
           setTime(wall.slice(11, 16));
-          setSelected(
-            message.recipients
-              .filter(
-                (r) =>
-                  ['SELF', 'USER', 'PHONE', 'EMAIL'].includes(r.type) &&
-                  !r.unavailable,
-              )
-              .map((r) => r.id),
-          );
           setPhoneChannels(
             Object.fromEntries(
               message.recipients
@@ -145,6 +133,11 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
     setReview(null);
     action.clearError();
   };
+  const included = source?.recipients ?? [];
+  const hasWhatsapp = included.some((r) => channelFor(r) === 'WHATSAPP');
+  const hasSms = included.some((r) => channelFor(r) === 'SMS');
+  const hasExternal = included.some((r) => ['EMAIL', 'WHATSAPP', 'SMS'].includes(channelFor(r)));
+  const blockers = reviewBlockers({ recipients: included, phoneChannels, available, emailAvailable, whatsappAvailable, smsAvailable, whatsappConsent, smsConsent, date, time, timezone });
   const preview = () =>
     run(async (signal) => {
       if (!source) return;
@@ -152,13 +145,12 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         version: source.version,
         localDateTime: `${date}T${time}`,
         timezone,
-        ...(source.recipients.some((r) => channelFor(r) === 'WHATSAPP')
+        ...(hasWhatsapp
           ? { whatsappConsent }
           : {}),
-        ...(source.recipients.some((r) => channelFor(r) === 'SMS') ? { smsConsent } : {}),
+        ...(hasSms ? { smsConsent } : {}),
         ...(!reschedule && {
-          deliveries: source.recipients
-            .filter((r) => selected.includes(r.id))
+          deliveries: included
             .map((r) => ({
               recipientId: r.id,
               channels: [channelFor(r)],
@@ -227,28 +219,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         </InlineNotice>
       ) : null}
       <ScreenSection title={reschedule ? "New delivery time" : "Delivery time"} description={source.subject || 'Untitled message'}>
-      <AppTextField
-        label="Date (YYYY-MM-DD)"
-        value={date}
-        onChangeText={(value) => {
-          changed();
-          setDate(value);
-        }}
-        maxLength={10}
-        autoCapitalize="none"
-        disabled={action.busy}
-      />
-      <AppTextField
-        label="Time (24-hour HH:mm)"
-        value={time}
-        onChangeText={(value) => {
-          changed();
-          setTime(value);
-        }}
-        maxLength={5}
-        autoCapitalize="none"
-        disabled={action.busy}
-      />
+      <ScheduleDateTimeFields date={date} time={time} timezone={timezone} disabled={action.busy} onChange={(next) => { changed(); setDate(next.date); setTime(next.time); }} />
       <AppTextField
         label="Timezone"
         value={timezone}
@@ -262,9 +233,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         disabled={action.busy}
       />
       <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-        For example, Asia/Kolkata or America/New_York. Choose at least one
-        minute ahead and within ten years. Times skipped or repeated by clock
-        changes are rejected.
+        Times use this timezone. Choose at least one minute ahead. The next step confirms the exact delivery time.
       </Text>
       <AppButton
         disabled={action.busy}
@@ -276,159 +245,49 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
         Use my profile timezone
       </AppButton>
       </ScreenSection>
-      <ScreenSection title="Delivery choices" description={reschedule ? "Recipients and channels stay unchanged. To change them, cancel the schedule and return it to drafts." : "Choose who receives this message and how."}>
+      <ScreenSection title="Delivery choices" description={reschedule ? "Recipients and channels stay unchanged. To change them, cancel the schedule and return it to drafts." : "Every recipient saved in this draft is included. Change recipients in the draft."}>
       {source.recipients.map((recipient) => {
-        const supported =
-          ['SELF', 'USER', 'PHONE', 'EMAIL'].includes(recipient.type) &&
-          !recipient.unavailable;
-        const label =
-          recipient.label ||
-          (recipient.type === 'SELF'
-            ? 'Myself'
-            : recipient.type === 'PHONE'
-              ? recipient.phone
-              : recipient.type === 'EMAIL'
-                ? recipient.email
-                : `Dearly account ${recipient.userId}`);
-        return (
-          <View key={recipient.id} style={{ gap: spacing.sm }}>
-            <Checkbox.Item
-              label={`${label} · ${recipient.type === 'EMAIL' ? 'Email' : channelFor(recipient) === 'WHATSAPP' ? 'WhatsApp' : channelFor(recipient) === 'SMS' ? 'SMS' : 'In-app'}`}
-              status={selected.includes(recipient.id) ? 'checked' : 'unchecked'}
-              disabled={
-                action.busy ||
-                reschedule ||
-                !supported ||
-                !(recipient.type === 'EMAIL'
-                  ? emailAvailable
-                  : channelFor(recipient) === 'SMS'
-                    ? smsAvailable
-                    : channelFor(recipient) === 'WHATSAPP'
-                    ? whatsappAvailable
-                    : available)
-              }
-              onPress={() => {
-                changed();
-                setSelected((old) =>
-                  old.includes(recipient.id)
-                    ? old.filter((value) => value !== recipient.id)
-                    : [...old, recipient.id],
-                );
-              }}
-            />
-            {recipient.type === 'PHONE' ? (
-              <RadioButton.Group
-                value={channelFor(recipient)}
-                onValueChange={(value) => {
-                  changed();
-                  setWhatsappConsent(false);
-                  setSmsConsent(false);
-                  setPhoneChannels((old) => ({
-                    ...old,
-                    [recipient.id]: value,
-                  }));
-                }}
-              >
-                <RadioButton.Item
-                  label="Dearly inbox"
-                  value="IN_APP"
-                  disabled={action.busy || reschedule || !available}
-                />
-                <RadioButton.Item
-                  label="WhatsApp private link"
-                  value="WHATSAPP"
-                  disabled={action.busy || reschedule || !whatsappAvailable}
-                />
-                <RadioButton.Item label="SMS private link" value="SMS" disabled={action.busy || reschedule || !smsAvailable} />
-              </RadioButton.Group>
-            ) : null}
-            {!supported ? (
-              <Text style={{ color: theme.colors.error }}>
-                This recipient cannot use the selected delivery channel. Update
-                recipients in drafts.
-              </Text>
-            ) : null}
-          </View>
-        );
+        const label = recipient.label || (recipient.type === 'SELF' ? 'Myself' : recipient.type === 'PHONE' ? recipient.phone : recipient.type === 'EMAIL' ? recipient.email : 'Dearly user');
+        const destination = recipient.type === 'PHONE' ? recipient.phone : recipient.type === 'EMAIL' ? recipient.email : recipient.type === 'USER' ? `Dearly ID: ${recipient.userId}` : 'Your Dearly inbox';
+        return <View key={recipient.id} style={{ gap: spacing.sm, borderWidth: 1, borderColor: theme.colors.outlineVariant, borderRadius: 12, padding: spacing.sm }}>
+          <Text variant="titleMedium" style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm, fontWeight: '600' }}>{label || 'Recipient'}</Text>
+          <Text variant="bodyMedium" style={{ paddingHorizontal: spacing.md, color: theme.colors.onSurfaceVariant }}>{destination}</Text>
+          {recipient.type === 'PHONE' ? <View>
+            <Text variant="labelLarge" style={{ paddingHorizontal: spacing.md }}>Send through</Text>
+            <RadioButton.Group value={channelFor(recipient)} onValueChange={(value) => { changed(); setWhatsappConsent(false); setSmsConsent(false); setPhoneChannels((old) => ({ ...old, [recipient.id]: value })); }}>
+              <RadioButton.Item mode="android" position="leading" labelStyle={{ textAlign: 'left' }} label={available ? 'Dearly inbox' : 'Dearly inbox · unavailable'} value="IN_APP" disabled={action.busy || reschedule || !available} />
+              <RadioButton.Item mode="android" position="leading" labelStyle={{ textAlign: 'left' }} label={whatsappAvailable ? 'WhatsApp' : 'WhatsApp · sender unavailable'} value="WHATSAPP" disabled={action.busy || reschedule || !whatsappAvailable} />
+              <RadioButton.Item mode="android" position="leading" labelStyle={{ textAlign: 'left' }} label={smsAvailable ? 'SMS' : 'SMS · phone unavailable'} value="SMS" disabled={action.busy || reschedule || !smsAvailable} />
+            </RadioButton.Group>
+          </View> : <Text variant="bodyMedium" style={{ paddingHorizontal: spacing.md }}>Send through: {recipient.type === 'EMAIL' ? 'Email' : 'Dearly inbox'}</Text>}
+          {recipient.unavailable ? <Text style={{ color: theme.colors.error, paddingHorizontal: spacing.md }}>Account unavailable. Correct or remove this recipient in the draft.</Text> : null}
+        </View>;
       })}
-      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-        Dearly inbox delivery needs an existing verified account. It does not send
-        SMS or WhatsApp. Choose a phone channel explicitly. Private links expire
-        after seven days; anyone with the link can open them. Service acceptance
-        does not confirm delivery. Change recipients or attachments in drafts,
-        then review again.
-      </Text>
-      {source.recipients.some((r) =>
-        ['EMAIL', 'WHATSAPP', 'SMS'].includes(channelFor(r)),
-      ) ? (
-        <Text accessibilityRole="alert">
-          {source.recipients.some((r) => r.type === 'EMAIL') && !emailAvailable
-            ? 'Email is not configured on the server.'
-            : emailLocalOnly
-              ? 'Email links currently open only on this Mac. Use a hosted HTTPS address before sending links to other devices.'
-              : 'You can revoke private links from message details.'}
-        </Text>
-      ) : null}
-      {source.recipients.some((r) => channelFor(r) === 'SMS') ? <>
-        <Text>SMS sender: {smsStatus === 'READY' ? 'Gateway reachable' : smsStatus === 'DISABLED' ? 'Not configured' : 'Needs attention'}. The Android phone and SIM must stay online. Each notification is limited to one SMS segment; carrier limits still apply.</Text>
-        <Checkbox.Item label="These recipients agreed to receive SMS messages from me" status={smsConsent ? 'checked' : 'unchecked'} disabled={action.busy} onPress={() => { changed(); setSmsConsent((v) => !v); }} />
-      </> : null}
-      {source.recipients.some((r) => channelFor(r) === 'WHATSAPP') ? (
-        <>
-          <Text>
-            WhatsApp sender:{' '}
-            {
-              {
-                READY: 'Ready',
-                UNPAIRED: 'Pair your sender phone',
-                STOPPED: 'Stopped',
-                OFFLINE: 'Offline',
-                AUTH_FAILED: 'Configuration needs attention',
-                RESTRICTED: 'Sending restricted',
-                MISCONFIGURED: 'Configuration needs attention',
-                DISABLED: 'Not configured',
-              }[
-                /** @type {'READY'|'UNPAIRED'|'STOPPED'|'OFFLINE'|'AUTH_FAILED'|'RESTRICTED'|'MISCONFIGURED'|'DISABLED'} */ (
-                  whatsappStatus
-                )
-              ]
-            }
-            .{' '}
-            {whatsappStatus !== 'READY'
-              ? 'Messages stay scheduled; due delivery can fail if the sender is not ready.'
-              : ''}
-          </Text>
-          <Checkbox.Item
-            label="These recipients agreed to receive WhatsApp messages from me"
-            status={whatsappConsent ? 'checked' : 'unchecked'}
-            disabled={action.busy}
-            onPress={() => {
-              changed();
-              setWhatsappConsent((v) => !v);
-            }}
-          />
-        </>
-      ) : null}
+      {!source.recipients.length ? <InlineNotice>Add at least one recipient in the draft before scheduling.</InlineNotice> : null}
+      <List.Accordion title="Privacy and delivery details" titleNumberOfLines={2} style={{ backgroundColor: theme.colors.background }}>
+        <View style={{ gap: spacing.sm, padding: spacing.md }}>
+          <Text variant="bodyMedium">Dearly inbox delivery needs an existing verified account. It does not send SMS or WhatsApp.</Text>
+          <Text variant="bodyMedium">Private links expire after seven days. Anyone with the link can open them. Provider acceptance does not confirm delivery. You can revoke links from message details.</Text>
+          <Text variant="bodyMedium">To change recipients or attachments, return to the draft and save it, then review again. Clock-change times that are skipped or repeated must be adjusted.</Text>
+        </View>
+      </List.Accordion>
+      {hasExternal && emailLocalOnly ? <InlineNotice>Private links from this local backend open only on this Mac. Use the hosted backend for recipients on other devices.</InlineNotice> : null}
+      {hasWhatsapp || hasSms ? <View style={{ gap: spacing.sm }}>
+        <Text variant="titleMedium" accessibilityRole="header">Permission to send</Text>
+        {hasWhatsapp ? <>
+          <Text variant="bodyMedium">WhatsApp sender: {whatsappStatus === 'READY' ? 'Ready' : 'Needs attention'}.</Text>
+          <Checkbox.Item mode="android" position="leading" labelStyle={{ textAlign: 'left' }} label="I have permission to send WhatsApp messages to these recipients" status={whatsappConsent ? 'checked' : 'unchecked'} disabled={action.busy} onPress={() => { changed(); setWhatsappConsent((v) => !v); }} />
+        </> : null}
+        {hasSms ? <>
+          <Text variant="bodyMedium">SMS sender: {smsStatus === 'READY' ? 'Ready' : 'Phone needs attention'}. The sender phone and SIM must stay online. Carrier limits apply.</Text>
+          <Checkbox.Item mode="android" position="leading" labelStyle={{ textAlign: 'left' }} label="I have permission to send SMS to these recipients" status={smsConsent ? 'checked' : 'unchecked'} disabled={action.busy} onPress={() => { changed(); setSmsConsent((v) => !v); }} />
+        </> : null}
+      </View> : null}
       </ScreenSection>
+      {blockers.length ? <InlineNotice>{blockers.join('\n')}</InlineNotice> : <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Ready to review {included.length} recipient{included.length === 1 ? '' : 's'}. You’ll confirm before anything is scheduled.</Text>}
       <AppButton
         icon="calendar-search" mode={review ? "outlined" : "contained"}
-        disabled={
-          action.busy ||
-          source.recipients.some((r) =>
-            r.type === 'EMAIL'
-              ? !emailAvailable
-              : channelFor(r) === 'SMS'
-                ? !smsAvailable
-                : channelFor(r) === 'WHATSAPP'
-                ? !whatsappAvailable
-                : !available,
-          ) ||
-          (source.recipients.some((r) => channelFor(r) === 'SMS') && !smsConsent) ||
-          (source.recipients.some((r) => channelFor(r) === 'WHATSAPP') &&
-            !whatsappConsent) ||
-          !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-          !/^\d{2}:\d{2}$/.test(time)
-        }
+        disabled={action.busy || blockers.length > 0}
         loading={action.busy && !review}
         onPress={() => {
           void preview();
@@ -464,7 +323,7 @@ export default function ScheduleFormScreen({ id, reschedule = false }) {
             {review.data.message.attachments.length} attachments ·{' '}
             {review.data.deliveries.length} recipient{review.data.deliveries.length === 1 ? '' : 's'}
           </Text>
-          {review.data.message.recipients.map((recipient) => (
+          {review.data.message.recipients.filter((r) => review.data.deliveries.some((d) => d.recipientId === r.id)).map((recipient) => (
             <Text key={recipient.id}>
               {recipient.label ||
                 (recipient.type === 'SELF'
