@@ -1,3 +1,4 @@
+import EmailVerificationForm from '../../components/forms/EmailVerificationForm';
 import { useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
@@ -42,7 +43,7 @@ export default function ProfileScreen() {
     <AppTextField label="Your name" value={name} onChangeText={setName} autoComplete="name" textContentType="name" maxLength={80} disabled={action.busy} />
     <AppTextField label="Email for delivery (optional)" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none"
       autoCorrect={false} autoComplete="email" textContentType="emailAddress" maxLength={254} disabled={action.busy} />
-    <Text variant="bodyMedium">Email is an unverified delivery destination. You always sign in with your phone.</Text>
+    {email.trim().toLowerCase() && email.trim().toLowerCase() === user?.email?.toLowerCase() ? <EmailVerificationForm key={user.email} /> : <Text variant="bodyMedium">Save your email address, then verify it here to receive messages addressed to that email. Login uses your mobile number.</Text>}
     <AppTextField label="Timezone" value={timezone} onChangeText={setTimezone} autoCapitalize="none" autoCorrect={false} maxLength={100} disabled={action.busy} />
     <Text variant="bodyMedium">For example, Asia/Kolkata or Europe/London.</Text>
     </ScreenSection>

@@ -320,3 +320,18 @@ unchanged.
 Lint, strict type checking and all 95 frontend tests passed. The iPhone simulator
 rendered the new AM/PM caption and formatted time. Picker interaction verification
 was interrupted by a desktop-control timeout; no schedule was changed by this check.
+
+## Profile verified email — 20 November 2026
+
+Added an inline email verification flow to the existing Profile screen. The
+focused Stitch proposal and Impeccable copy guidance were reconciled into one
+save-then-verify flow, a single accessible six-digit field, resend countdown,
+expired/error states and a verified status. Speculative encryption, secure-enclave
+and automatic SMS-fallback claims from the proposal were excluded. Phone sign-in
+remains unchanged; the new proof enables account-owned email inbox matching.
+
+Frontend lint/types and 97 tests passed. The iPhone app refreshed its dashboard
+successfully, but desktop control could not click the Profile navigation because
+the Simulator window became unavailable. The Profile verification layout and live
+email-code acceptance are not claimed as interactively tested. No test email,
+WhatsApp notification or SMS was submitted for this work.

@@ -1,6 +1,6 @@
 import { ApiError } from '../../api/client.js';
 
-/** @typedef {{ id: string, phone: string, name: string | null, email: string | null, timezone: string, phoneVerifiedAt: string, createdAt: string }} User */
+/** @typedef {{ id: string, phone: string, name: string | null, email: string | null, emailVerifiedAt?: string | null, timezone: string, phoneVerifiedAt: string, createdAt: string }} User */
 /** @typedef {{ accessToken: string, refreshToken: string, accessExpiresAt: string, sessionExpiresAt: string }} Tokens */
 /** @typedef {{ challengeId: string, expiresAt: string, resendAt: number, dispatch: 'simulated' | 'accepted', channel?: 'whatsapp', developmentCode?: string }} Challenge */
 const invalid = () => new ApiError('The service returned an unexpected response. Please try again.', 'invalid_response');
@@ -13,8 +13,9 @@ export function parseUser(value) {
   const u = record(value);
   if (typeof u.id !== 'string' || typeof u.phone !== 'string' || !/^\+[1-9]\d{5,14}$/.test(u.phone) ||
     !(u.name === null || typeof u.name === 'string') || !(u.email === null || typeof u.email === 'string') ||
+    (u.emailVerifiedAt !== undefined && u.emailVerifiedAt !== null && (!date(u.emailVerifiedAt) || !u.email)) ||
     typeof u.timezone !== 'string' || !date(u.phoneVerifiedAt) || !date(u.createdAt)) throw invalid();
-  return /** @type {User} */ ({ id: u.id, phone: u.phone, name: u.name, email: u.email, timezone: u.timezone, phoneVerifiedAt: u.phoneVerifiedAt, createdAt: u.createdAt });
+  return /** @type {User} */ ({ id: u.id, phone: u.phone, name: u.name, email: u.email, timezone: u.timezone, phoneVerifiedAt: u.phoneVerifiedAt, createdAt: u.createdAt, ...(u.emailVerifiedAt !== undefined ? { emailVerifiedAt: u.emailVerifiedAt } : {}) });
 }
 /** @param {unknown} value @returns {Tokens} */
 export function parseTokens(value) {

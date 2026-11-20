@@ -67,7 +67,8 @@
     "profile": {
       "id": "bfcf203f83c14cf290ac4a6ddcb4f2f4",
       "name": "projects/13022673306304030650/screens/bfcf203f83c14cf290ac4a6ddcb4f2f4",
-      "title": "Profile"
+      "title": "Profile",
+      "emailVerificationProposalSessionId": "15865443092670981184"
     },
     "settings": {
       "id": "ec5a01907a964e1dbf8dbd9db58dd7a9",
