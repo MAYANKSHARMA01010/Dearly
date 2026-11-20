@@ -29,7 +29,7 @@ private screenshots and source are not uploaded.
 | 14 | Settings `/settings` | Complete |
 | 15 | Notifications `/notifications` | Complete |
 | 16 | Service status `/status` | Complete |
-| 17 | Page not found | Next |
+| 17 | Page not found | Complete |
 
 Native evidence uses the existing iPhone 17 Pro Max simulator. No simulator reset,
 Android launch, live message send or new provider configuration is part of this UI
@@ -220,3 +220,10 @@ guidance. Connection headline, two storage/server checks and retry action are
 clear; scope copy avoids implying provider readiness from database health.
 Verified available server/storage and repeat check on iPhone 17 Pro Max. Lint/types
 passed; external-provider availability was not inferred or tested by this screen.
+
+## Page not found
+
+Combined Stitch’s focused missing-link recovery with Impeccable’s concise native
+empty-state guidance. Uses the existing icon family, clear explanation and one
+home action. Verified an unknown URL and successful return to Dearly in the
+iPhone simulator. Lint/types passed.
