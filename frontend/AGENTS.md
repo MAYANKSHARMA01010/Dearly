@@ -39,3 +39,12 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Attachment viewing
+
+Use the shared `AttachmentViewer` for saved and pending image/video/audio previews;
+keep playback controls out of the surrounding draft/message action list. Preserve
+native video controls and accessible audio seeking. Viewer dismissal must unmount
+players and clean downloaded private cache files; it must retain a pending upload's
+selection. Use only synthetic media for visual checks, and remove temporary test
+routes before release. Do not add fake waveforms or unsupported encryption claims.

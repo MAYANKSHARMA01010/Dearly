@@ -6,7 +6,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import AppButton from '../common/AppButton';
 import { InlineNotice } from '../layout/ScreenSections';
 import VoiceRecorder from './VoiceRecorder';
-import MediaPreview from './MediaPreview';
+import AttachmentViewer from './AttachmentViewer';
+import AttachmentRow from './AttachmentRow';
 import { useAuth } from '../../context/AuthContext';
 import { ApiError } from '../../api/client';
 import { createAttachmentService, completeUpload } from '../../services/attachments/service';
@@ -21,7 +22,7 @@ export default function AttachmentPanel({ draftId, disabled, onGuardChange, read
   const { session } = useAuth(); const theme = useTheme();
   const api = useMemo(() => createAttachmentService(session, draftId), [session, draftId]);
   const [items, setItems] = useState(/** @type {Attachment[]} */ ([])); const [selected, setSelected] = useState(/** @type {Selection|null} */ (null));
-  const [preview, setPreview] = useState(/** @type {{item:Attachment,uri:string}|null} */ (null));
+  const [preview, setPreview] = useState(/** @type {{item:Pick<Attachment,'name'|'mime'|'bytes'>,uri:string}|null} */ (null));
   const [confirm, setConfirm] = useState(/** @type {Attachment|null} */ (null));
   const [busy, setBusy] = useState(''); const [error, setError] = useState(''); const [progress, setProgress] = useState(0); const [loaded, setLoaded] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -95,20 +96,27 @@ export default function AttachmentPanel({ draftId, disabled, onGuardChange, read
       </View>
     </List.Accordion>
     {!items.length && loaded ? <Text>No saved attachments yet.</Text> : null}
-    {items.map((item) => <View key={item.id} style={{ gap:spacing.sm, padding:spacing.md, borderRadius:12, borderWidth:1, borderColor:theme.colors.outlineVariant }}>
-      <Text variant="titleMedium">{item.name}</Text><Text>{(item.bytes/MiB).toFixed(2)} MB · {item.state === 'READY' ? 'Saved privately' : item.state === 'UPLOADED' ? 'Uploaded — validation needed' : item.state === 'UPLOADING' ? 'Upload active or interrupted — refresh status' : 'Awaiting upload'}</Text>
-      {item.state === 'READY' ? <AppButton disabled={disabled || Boolean(busy) || recording} onPress={() => { void view(item); }}>Open {item.name}</AppButton> : null}
-      {!readOnly && item.state === 'UPLOADED' ? <AppButton disabled={disabled || Boolean(busy) || recording} onPress={() => { void finalize(item); }}>Validate {item.name}</AppButton> : null}
-      {!readOnly ? <AppButton disabled={disabled || Boolean(busy) || recording} onPress={() => setConfirm(item)}>Remove {item.name}</AppButton> : null}
+    {items.map((item) => <View key={item.id} style={{ borderBottomWidth: 1, borderBottomColor: theme.colors.outlineVariant }}>
+      {item.state === 'READY' ? <AttachmentRow name={item.name} mime={item.mime} bytes={item.bytes}
+        disabled={disabled || Boolean(busy) || recording} onPress={() => { void view(item); }} /> :
+        <View style={{ padding: spacing.md, gap: spacing.sm }}><Text variant="titleMedium">{item.name}</Text>
+          <Text>{(item.bytes/MiB).toFixed(2)} MB · {item.state === 'UPLOADED' ? 'Uploaded — validation needed' : item.state === 'UPLOADING' ? 'Upload active or interrupted — refresh status' : 'Awaiting upload'}</Text></View>}
+      {!readOnly ? <View style={{ flexDirection: 'row', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+        {item.state === 'UPLOADED' ? <AppButton disabled={disabled || Boolean(busy) || recording} onPress={() => { void finalize(item); }}>Validate attachment</AppButton> : null}
+        <AppButton icon="trash-can-outline" textColor={theme.colors.error} disabled={disabled || Boolean(busy) || recording} onPress={() => setConfirm(item)} accessibilityLabel={`Remove ${item.name}`}>Remove</AppButton>
+      </View> : null}
     </View>)}
-    {preview ? <View style={{ gap:spacing.sm }}><Text variant="titleMedium">{preview.item.name}</Text><MediaPreview uri={preview.uri} mime={preview.item.mime} name={preview.item.name} />
-      <AppButton onPress={() => { const uri = viewed.current; viewed.current = ''; setPreview(null); void discardLocal(uri); }}>Close preview</AppButton></View> : null}
+    {preview ? <AttachmentViewer uri={preview.uri} mime={preview.item.mime} name={preview.item.name}
+      onClose={() => { const uri = viewed.current; viewed.current = ''; setPreview(null); if (uri) void discardLocal(uri); }} /> : null}
     {!readOnly ? <>
     <AppButton icon="image-multiple-outline" mode="outlined" disabled={disabled || Boolean(busy) || recording || Boolean(selected) || items.length >= 10} onPress={() => { void pickMedia(); }}>Choose photo or video</AppButton>
     <AppButton icon="file-upload-outline" mode="outlined" disabled={disabled || Boolean(busy) || recording || Boolean(selected) || items.length >= 10} onPress={() => { void pickFile(); }}>Choose file or audio</AppButton>
     <VoiceRecorder disabled={disabled || Boolean(busy) || Boolean(selected) || items.length >= 10} onReady={receiveVoice} onPending={setRecording} />
-    {selected ? <View style={{ gap:spacing.sm }}><Text variant="titleMedium">Ready to upload: {selected.name}</Text><Text>{(selected.bytes/MiB).toFixed(2)} MB · Not saved yet</Text><MediaPreview key={selected.uri} uri={selected.uri} mime={selected.mime} name={selected.name} />
-      <AppButton mode="contained" disabled={disabled || Boolean(busy) || recording} onPress={() => { void upload(); }}>Upload or retry selected file</AppButton>
+    {selected ? <View style={{ gap:spacing.sm }}>
+      <Text variant="titleMedium">Ready to upload</Text>
+      <AttachmentRow name={selected.name} mime={selected.mime} bytes={selected.bytes} subtitle="Not saved yet · Tap to preview"
+        disabled={Boolean(busy)} onPress={() => setPreview({ item: selected, uri: selected.uri })} />
+      <AppButton mode="contained" disabled={disabled || Boolean(busy) || recording} onPress={() => { void upload(); }}>Upload selected file</AppButton>
       <AppButton disabled={Boolean(busy)} onPress={() => { const file = local.current; local.current = null; setSelected(null); if (file) void discardLocal(file.uri); }}>Discard selected file</AppButton></View> : null}
     </> : null}
     {busy ? <><Text accessibilityLiveRegion="polite">{busy}{busy.includes('Uploading') || busy.includes('Opening') ? ` · ${Math.round(progress*100)}% transferred` : '…'}</Text><ProgressBar progress={progress} accessibilityLabel={busy} />

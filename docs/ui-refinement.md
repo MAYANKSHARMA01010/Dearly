@@ -355,3 +355,38 @@ retain the ability to go back during that read-only wait. The dispatch phase
 continues to guard navigation. Resend follows the same preflight and never
 automatically retries an OTP write. No SMS fallback or provider substitution was
 introduced.
+
+
+## Attachment viewers — 20 November 2026
+
+Images, video and audio now open in a shared, dedicated full-screen viewer from
+saved draft and message attachment rows, including received messages. Unsaved
+selections use the same preview without deleting the pending upload when closed.
+The toolbar has one close action, the filename and media type. Rows have a
+consistent media icon, readable filename/size and a disclosure; draft removal
+remains a separate confirmed action.
+
+Photo viewing preserves aspect ratio, supports bounded 1–4x pinch zoom, double
+tap, panning and accessible zoom/fit buttons. Video uses Expo Video's native
+playback, seek and fullscreen controls. Audio has a prominent play/pause/replay
+control, bounded 15-second skips, an adjustable seek timeline and mm:ss labels.
+Audio rearranges into two columns in short landscape windows. Loading and decode
+errors remain explicit and can be retried. Playback pauses when the app leaves the
+foreground; player hooks release on viewer unmount. Downloaded private cache
+files retain existing close/unmount cleanup; pending selections remain available
+for upload. No provider, access-control or delivery contracts changed.
+
+Stitch proposal 13567769298172318605 (screen 4e44868d06ea43148b1fb5a09d7e47ac)
+and Impeccable polish/Operate guidance informed the same implementation. Accepted
+focus, control grouping, media rows and accessibility guidance; rejected invented
+encryption/enclave claims, fake waveforms, extra tabs and obsolete player-library
+suggestions. Actual Expo SDK 58 audio/video APIs remain in use.
+
+Verification used synthetic locally generated media through a temporary test
+route, removed before commit: iPhone 17 Pro Max rendered photo and audio, photo
+zoom/fit worked, audio played/paused/skipped to 0:20, and native video controls
+showed playback reaching 0:03 of 0:03. Browser phone/landscape checks covered
+photo zoom, video playback to completion, audio seek to 0:21 of 0:35 and a missing
+photo's retry/close state. The first native screen-capture attempt failed, then
+recovered for the native checks. Physical Android acceptance and multi-touch pinch
+acceptance are not inferred from these checks.

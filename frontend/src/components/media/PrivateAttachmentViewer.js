@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { ProgressBar, Text, useTheme } from 'react-native-paper';
+import { ProgressBar, Text } from 'react-native-paper';
 import { useAuth } from '../../context/AuthContext';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { downloadFile, discardLocal } from '../../services/attachments/device';
-import MediaPreview from './MediaPreview';
-import AppButton from '../common/AppButton';
+import AttachmentViewer from './AttachmentViewer';
+import AttachmentRow from './AttachmentRow';
 import { InlineNotice } from '../layout/ScreenSections';
 import { spacing } from '../../theme';
 /** @param {{items:import('../../services/attachments/contracts').Attachment[],contentPath:(id:string)=>string}} props */
 export default function PrivateAttachmentViewer({ items, contentPath }) {
-  const { session } = useAuth(),
-    theme = useTheme();
+  const { session } = useAuth();
   const action = useAsyncAction();
   const [progress, setProgress] = useState(0),
     [preview, setPreview] = useState(
@@ -54,19 +53,8 @@ export default function PrivateAttachmentViewer({ items, contentPath }) {
       </Text>
       {!items.length ? <Text>No attachments.</Text> : null}
       {items.map((item) => (
-        <View key={item.id} style={{ gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: theme.colors.outlineVariant }}>
-          <Text>
-            {item.name} · {(item.bytes / (1024 * 1024)).toFixed(2)} MB
-          </Text>
-          <AppButton
-            icon="file-eye-outline" mode="outlined" disabled={action.busy}
-            onPress={() => {
-              void open(item);
-            }}
-          >
-            Open {item.name}
-          </AppButton>
-        </View>
+        <AttachmentRow key={item.id} name={item.name} mime={item.mime} bytes={item.bytes}
+          disabled={action.busy} onPress={() => { void open(item); }} />
       ))}
       {action.busy ? (
         <>
@@ -82,24 +70,13 @@ export default function PrivateAttachmentViewer({ items, contentPath }) {
         </InlineNotice>
       ) : null}
       {preview ? (
-        <>
-          <Text variant="titleMedium">{preview.item.name}</Text>
-          <MediaPreview
-            uri={preview.uri}
-            mime={preview.item.mime}
-            name={preview.item.name}
-          />
-          <AppButton
-            onPress={() => {
-              const uri = cached.current;
-              cached.current = '';
-              setPreview(null);
-              void discardLocal(uri);
-            }}
-          >
-            Close attachment
-          </AppButton>
-        </>
+        <AttachmentViewer uri={preview.uri} mime={preview.item.mime} name={preview.item.name}
+          onClose={() => {
+            const uri = cached.current;
+            cached.current = '';
+            setPreview(null);
+            void discardLocal(uri);
+          }} />
       ) : null}
     </View>
   );
