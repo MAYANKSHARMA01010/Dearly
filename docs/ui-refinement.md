@@ -307,3 +307,16 @@ confirmed and no external message was sent.
 The normal local API and delivery worker were restored using the existing private
 environment; the earlier isolated UI-preview provider settings no longer apply to
 those running processes. No hosted deployment, release or APK rebuild was made.
+
+## 12-hour scheduling clock — 20 November 2026
+
+Changed the mobile scheduling time button and accessible label to explicit AM/PM
+format. Android requests its 12-hour clock; iOS uses the English-US locale only
+for the supported time spinner, preserving the calendar's existing locale. This
+focused correction follows the paired Stitch and Impeccable review. Internal
+HH:mm wall-clock values, named timezone resolution and delivery instants remain
+unchanged.
+
+Lint, strict type checking and all 95 frontend tests passed. The iPhone simulator
+rendered the new AM/PM caption and formatted time. Picker interaction verification
+was interrupted by a desktop-control timeout; no schedule was changed by this check.
