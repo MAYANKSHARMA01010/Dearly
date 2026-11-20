@@ -1,0 +1,13 @@
+{
+  "projectId": "13022673306304030650",
+  "title": "Dearly \u2014 Native UI refinement",
+  "designSystem": "assets/ad9448bd9e374d81863f57317ce42587",
+  "designSource": "../DESIGN.md",
+  "screens": {
+    "home": {
+      "id": "ee61307369a945f383202fc9e2c1d544",
+      "name": "projects/13022673306304030650/screens/ee61307369a945f383202fc9e2c1d544",
+      "title": "Dearly Home Dashboard"
+    }
+  }
+}

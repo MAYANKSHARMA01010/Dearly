@@ -1,7 +1,7 @@
 import DashboardScreen from '../mailboxes/DashboardScreen';
 import { View } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
-import { Divider, Text, useTheme } from 'react-native-paper';
+import { Divider, Icon, Text, useTheme } from 'react-native-paper';
 import Screen from '../../components/layout/Screen';
 import AppButton from '../../components/common/AppButton';
 import { spacing } from '../../theme';
@@ -16,7 +16,8 @@ export default function HomeScreen() {
   return (
     <Screen>
       <View className="flex-1 justify-center" style={{ gap: spacing.lg, paddingVertical: spacing.xxl }}>
-        <Text variant="displaySmall" accessibilityRole="header"><>For a moment{ '\n' }that matters.</></Text>
+        <Icon source="email-heart-outline" size={48} color={theme.colors.primary} />
+        <Text variant="displaySmall" accessibilityRole="header" style={{ fontWeight: '600' }}><>For a moment{ '\n' }that matters.</></Text>
         <Text variant="titleLarge" style={{ color: theme.colors.primary }}>Some messages are worth waiting for.</Text>
         <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
           A thought for your future self. A birthday wish. A little love, saved for the right day.
@@ -27,8 +28,8 @@ export default function HomeScreen() {
         </Text>
       </View>
       {message ? <Text accessibilityLiveRegion="polite">{message}</Text> : null}
-      <AppButton mode="contained" onPress={() => router.push('/login')}>Sign in with your phone</AppButton>
-      <AppButton mode="outlined" onPress={() => router.push('/status')}>Check service status</AppButton>
+      <AppButton mode="contained" icon="arrow-right" onPress={() => router.push('/login')}>Sign in with your phone</AppButton>
+      <AppButton icon="connection" onPress={() => router.push('/status')}>Check service status</AppButton>
     </Screen>
   );
 }
