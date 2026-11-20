@@ -18,8 +18,8 @@ private screenshots and source are not uploaded.
 | 3 | Draft list `/drafts` | Complete |
 | 4 | New draft `/drafts/new` | Complete |
 | 5 | Edit draft `/drafts/[id]` | Complete |
-| 6 | Schedule list `/schedules` | Next |
-| 7 | Review schedule `/schedules/new` | Pending |
+| 6 | Schedule list `/schedules` | Complete |
+| 7 | Review schedule `/schedules/new` | Next |
 | 8 | Scheduled message `/schedules/[id]` | Pending |
 | 9 | Reschedule `/schedules/reschedule` | Pending |
 | 10 | Mailboxes `/mailboxes` | Pending |
@@ -101,3 +101,13 @@ Verified a saved synthetic draft, attachment-limit disclosure, enabled schedulin
 and delete-confirmation cancellation in the dark iPhone simulator. Shared new/edit
 form still uses the same editor model and guards. Lint/types passed; no new live
 media capture, upload or deletion was needed for this presentation change.
+
+## Schedule list
+
+Combined Stitch’s single status selector with Impeccable’s native utility-list
+guidance. All nine statuses remain available through one menu; long channel-neutral
+labels no longer compete in a segmented row. Added clear creation hierarchy,
+calendar/disclosure rows, selected-status empty copy and inline stale errors.
+
+Verified populated scheduled data, all nine menu choices and canceled empty state
+on iPhone 17 Pro Max. Lint/types passed. No schedule was changed or dispatched.

@@ -28,6 +28,11 @@
       "id": "6fa5c8205058452eb04d9fbc47ce198a",
       "name": "projects/13022673306304030650/screens/6fa5c8205058452eb04d9fbc47ce198a",
       "title": "Edit Saved Draft"
+    },
+    "schedules": {
+      "id": "f2bfe80ffc1c488ca16daea082bd1372",
+      "name": "projects/13022673306304030650/screens/f2bfe80ffc1c488ca16daea082bd1372",
+      "title": "Schedules"
     }
   }
 }
