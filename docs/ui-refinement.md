@@ -26,8 +26,8 @@ private screenshots and source are not uploaded.
 | 11 | Owned message `/mailboxes/owned/[id]` | Complete |
 | 12 | Received message `/mailboxes/received/[id]` | Complete |
 | 13 | Profile `/profile` | Complete |
-| 14 | Settings `/settings` | Next |
-| 15 | Notifications `/notifications` | Pending |
+| 14 | Settings `/settings` | Complete |
+| 15 | Notifications `/notifications` | Next |
 | 16 | Service status `/status` | Pending |
 | 17 | Page not found | Pending |
 
@@ -189,3 +189,15 @@ separate. Email remains explicitly unverified and phone-only login unchanged.
 
 Verified account details, invalid timezone recovery, corrected successful synthetic
 profile save and saved feedback on iPhone 17 Pro Max. Lint/types passed.
+
+## Settings
+
+Combined Stitch’s grouped preferences with Impeccable’s native control hierarchy.
+Alert switches and phone-channel choices have separate groups, device push setup
+is explained below saving, account navigation is grouped, and errors/success are
+inline. Exposed individual switches to accessibility instead of a disabled parent
+list row. Device permission remains explicitly requested by its action only.
+
+Verified switch accessibility/state changes, restored original local preferences
+and saved feedback on iPhone 17 Pro Max. Lint/types passed. No push permission
+prompt, registration or physical push test was triggered.
