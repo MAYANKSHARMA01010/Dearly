@@ -335,3 +335,13 @@ successfully, but desktop control could not click the Profile navigation because
 the Simulator window became unavailable. The Profile verification layout and live
 email-code acceptance are not claimed as interactively tested. No test email,
 WhatsApp notification or SMS was submitted for this work.
+
+## Single Home title — 20 November 2026
+
+The root Home route explicitly hides the native back button. iOS could otherwise
+render its previous-screen label “Dearly” beside the Home title, duplicating the
+brand. The paired design review agreed to keep one Home title and all three
+trailing actions. Child-route back navigation configuration remains unchanged.
+Verified one title on the running iPhone 17 Pro Max after refresh. Frontend lint,
+strict types and all 97 tests passed. This source correction does not rebuild or
+replace the published v1.1.0-rc.1 APK.
