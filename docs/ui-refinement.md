@@ -16,8 +16,8 @@ private screenshots and source are not uploaded.
 | 1 | Home / dashboard `/` | Complete |
 | 2 | Sign-in / OTP `/login` | Complete |
 | 3 | Draft list `/drafts` | Complete |
-| 4 | New draft `/drafts/new` | Next |
-| 5 | Edit draft `/drafts/[id]` | Pending |
+| 4 | New draft `/drafts/new` | Complete |
+| 5 | Edit draft `/drafts/[id]` | Next |
 | 6 | Schedule list `/schedules` | Pending |
 | 7 | Review schedule `/schedules/new` | Pending |
 | 8 | Scheduled message `/schedules/[id]` | Pending |
@@ -75,3 +75,16 @@ Verified synthetic populated rows, untitled/long-subject cases, light/dark modes
 larger text and opening the correct draft on iPhone 17 Pro Max. Existing empty,
 loading and retry behavior is preserved; pagination and server failure were not
 forced in this native check. Frontend lint/types passed.
+
+## New draft
+
+Combined Stitch’s focused writing form with Impeccable’s native form hierarchy:
+grouped subject/message/count, distinct optional occasion and recipient sections,
+native back navigation, one primary save action for new messages, and truthful
+attachment availability. Kept existing occasion options and manual save semantics;
+omitted invented presets and recurrence. Shared editor structure stays unified.
+
+Verified new-message fields, unsaved feedback, adding self and successfully saving
+a synthetic draft to the isolated preview database. The saved route exposes
+attachments and scheduling. Frontend lint/types and all 83 tests passed; detector
+returned no findings. No recording, upload, schedule confirmation or live send.

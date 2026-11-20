@@ -11,7 +11,7 @@ export default function OccasionPicker({ value, onChange, disabled }) {
   const [visible, setVisible] = useState(false);
   const custom = value !== null && !options.includes(value);
   return <View style={{ gap: spacing.md }}>
-    <Menu visible={visible} onDismiss={() => setVisible(false)} anchor={<AppButton mode="outlined" disabled={disabled} onPress={() => setVisible(true)}>Occasion: {custom ? 'Custom' : value || 'None'}</AppButton>}>
+    <Menu visible={visible} onDismiss={() => setVisible(false)} anchor={<AppButton icon="chevron-down" contentStyle={{ flexDirection: 'row-reverse', justifyContent: 'space-between' }} style={{ borderRadius: 12 }} mode="outlined" disabled={disabled} onPress={() => setVisible(true)}>Occasion: {custom ? 'Custom' : value || 'None'}</AppButton>}>
       {[null, ...options, ''].map((option) => <Menu.Item key={option ?? 'none'} title={option === null ? 'No occasion' : option === '' ? 'Custom occasion' : option}
         onPress={() => { onChange(option); setVisible(false); }} />)}
     </Menu>
