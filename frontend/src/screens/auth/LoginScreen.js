@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { ApiError } from '../../api/client';
 import { spacing } from '../../theme';
+import { ScreenHeading, InlineNotice } from '../../components/layout/ScreenSections';
 
 export default function LoginScreen() {
   const auth = useAuth(); const theme = useTheme(); const action = useAsyncAction();
@@ -48,28 +49,30 @@ export default function LoginScreen() {
   return <Screen>
     <Stack.Screen options={{ title: challenge ? 'Verify phone' : 'Sign in', gestureEnabled: !action.busy, headerBackVisible: !action.busy }} />
     <View style={{ gap: spacing.md }}>
-      <Text variant="headlineMedium" accessibilityRole="header">{challenge ? 'Enter your code' : 'Your number, your Dearly'}</Text>
-      <Text variant="bodyLarge">{challenge ? `Verify ${phone.trim()} to continue.` : 'Sign in or create an account with your phone number.'}</Text>
+      <ScreenHeading icon={challenge ? 'shield-check-outline' : 'cellphone-key'} title={challenge ? 'Enter your code' : 'Your number, your Dearly'}
+        description={challenge ? `Verify ${phone.trim()} to continue.` : 'Sign in or create an account with your phone number.'} />
       {challenge?.channel === 'whatsapp' ? <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Check WhatsApp for your six-digit verification code.</Text> : challenge?.dispatch === 'simulated' ? <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Local test login. No message was sent.</Text> : null}
     </View>
-    {!challenge ? <>
+    {!challenge ? <View style={{ gap: spacing.md }}>
       <CountryPicker value={country} onChange={setCountry} disabled={action.busy} />
       <AppTextField label="Phone number" value={phone} onChangeText={(text) => { setPhone(text); setFieldError(''); }} keyboardType="phone-pad"
         textContentType="telephoneNumber" autoComplete="tel" maxLength={32} disabled={action.busy} errorText={fieldError} />
+      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Use a six-digit code to verify your number. No password needed.</Text>
       <AppButton mode="contained" loading={action.busy} disabled={action.busy || !phone.trim() || resendSeconds > 0} onPress={request}>
         {resendSeconds > 0 ? `Try again in ${resendSeconds}s` : 'Get verification code'}
       </AppButton>
-    </> : <>
-      {challenge.developmentCode ? <Text variant="bodyLarge" selectable accessibilityLabel={`Local test code ${challenge.developmentCode}`}>Local test code: {challenge.developmentCode}</Text> : null}
+    </View> : <View style={{ gap: spacing.md }}>
+      {challenge.developmentCode ? <InlineNotice><Text selectable accessibilityLabel={`Local test code ${challenge.developmentCode}`}>Local test code: {challenge.developmentCode}</Text></InlineNotice> : null}
       <AppTextField label="Verification code" value={code} onChangeText={(text) => { setCode(text.replace(/\D/g, '').slice(0, 6)); setFieldError(''); }}
         keyboardType="number-pad" textContentType="oneTimeCode" autoComplete="sms-otp" maxLength={6} disabled={action.busy}
+        contentStyle={{ textAlign: 'center', letterSpacing: 6, fontVariant: ['tabular-nums'] }}
         errorText={fieldError || (expired ? 'This code expired. Request a new code below.' : '')} />
-      <Text variant="bodyMedium">{expired ? 'Code expired.' : `Code expires in ${Math.max(0, Math.ceil((Date.parse(challenge.expiresAt) - now) / 60000))} min.`}</Text>
+      <Text variant="bodyMedium" style={{ color: expired ? theme.colors.error : theme.colors.onSurfaceVariant }}>{expired ? 'This code has expired. Request a new code.' : `Expires at ${new Date(challenge.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}</Text>
       <AppButton mode="contained" loading={action.busy} disabled={action.busy || code.length !== 6 || expired} onPress={verify}>Verify and sign in</AppButton>
       <AppButton mode="outlined" disabled={action.busy || resendSeconds > 0} onPress={resend}>{resendSeconds > 0 ? `Resend in ${resendSeconds}s` : 'Request a new code'}</AppButton>
       <AppButton disabled={action.busy} onPress={() => { setChallenge(null); setCode(''); setFieldError(''); action.clearError(); }}>Change phone number</AppButton>
-    </>}
-    {action.error ? <Text accessibilityRole="alert" style={{ color: theme.colors.error }}>{action.error}</Text> : null}
-    {auth.message ? <Text accessibilityLiveRegion="polite">{auth.message}</Text> : null}
+    </View>}
+    {action.error ? <InlineNotice error>{action.error}</InlineNotice> : null}
+    {auth.message && !challenge ? <Text accessibilityLiveRegion="polite" variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>{auth.message}</Text> : null}
   </Screen>;
 }

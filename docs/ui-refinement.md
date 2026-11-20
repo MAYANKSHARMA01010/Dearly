@@ -14,8 +14,8 @@ private screenshots and source are not uploaded.
 | Order | Screen / route | Status |
 | --- | --- | --- |
 | 1 | Home / dashboard `/` | Complete |
-| 2 | Sign-in / OTP `/login` | Next |
-| 3 | Draft list `/drafts` | Pending |
+| 2 | Sign-in / OTP `/login` | Complete |
+| 3 | Draft list `/drafts` | Next |
 | 4 | New draft `/drafts/new` | Pending |
 | 5 | Edit draft `/drafts/[id]` | Pending |
 | 6 | Schedule list `/schedules` | Pending |
@@ -48,3 +48,17 @@ Verified on iPhone 17 Pro Max in light/dark appearance and larger text. The comp
 route opens without creating a draft. Frontend lint/types and all 83 existing
 tests passed. The native screen still uses actual account data; no provider send
 or message mutation was performed.
+
+## Sign-in / OTP
+
+Combined Stitch’s tighter form grouping and clearer verification status with
+Impeccable’s native keyboard/autofill guidance. Country selection uses an explicit
+disclosure control, code input supports paste/autofill, expiry is shown once, and
+inline errors/recovery remain distinct from primary actions. Prototype state
+switchers, artificial design notes and unsupported login methods were omitted.
+
+Verified country search/selection, phone entry, disabled resend countdown, invalid
+code feedback, code correction and successful local simulated sign-in on iPhone
+17 Pro Max. Preview uses a disposable local PostgreSQL database and a synthetic
+account; external providers are disabled. No real OTP was sent. Frontend lint,
+types and all 83 tests passed; detector returned no findings.
