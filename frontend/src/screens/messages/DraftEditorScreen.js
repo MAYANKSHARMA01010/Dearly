@@ -57,11 +57,11 @@ export default function DraftEditorScreen({ draftId }) {
     {state.error ? <InlineNotice error>{state.error}</InlineNotice> : null}
     {state.conflict ? <><Text>This draft changed elsewhere. Your edits are still here. Reloading will discard them and open the saved version.</Text><AppButton disabled={busy} onPress={() => setConfirm('reload')}>Reload saved version</AppButton></> : null}
     {state.uncertain ? <><Text>We couldn’t confirm the save or deletion. Check saved drafts before creating another copy or trying again.</Text><AppButton disabled={busy} onPress={() => router.push('/drafts')}>Check saved drafts</AppButton>{state.id ? <AppButton disabled={busy} onPress={() => setConfirm('reload')}>Reload saved version</AppButton> : null}</> : null}
-    <AppButton mode="contained" loading={state.saving} disabled={recipientPending || busy || state.uncertain || state.conflict || Boolean(state.id && !state.dirty)} onPress={() => { void save(); }} icon="content-save-outline">Save draft</AppButton>
-    {state.id ? <AppButton mode="outlined" disabled={busy || state.conflict || state.uncertain} onPress={() => setConfirm('delete')}>Delete draft</AppButton> : null}
+    <AppButton mode={!state.id || state.dirty ? "contained" : "outlined"} loading={state.saving} disabled={recipientPending || busy || state.uncertain || state.conflict || Boolean(state.id && !state.dirty)} onPress={() => { void save(); }} icon="content-save-outline">Save draft</AppButton>
     {state.id ? <AttachmentPanel draftId={state.id} disabled={state.saving || state.loading || state.deleting || state.uncertain || state.conflict} onGuardChange={setMediaGuard} /> : <InlineNotice>Save your draft to add photos, videos, voice recordings or files. Saving does not send it.</InlineNotice>}
-    {state.id ? <AppButton mode="contained" disabled={busy || dirty || state.conflict} onPress={() => router.replace({pathname:'/schedules/new',params:{draftId:state.id}})}>Schedule this draft</AppButton> : null}
+    {state.id ? <AppButton icon="calendar-clock" mode={dirty ? "outlined" : "contained"} disabled={busy || dirty || state.conflict} onPress={() => router.replace({pathname:'/schedules/new',params:{draftId:state.id}})}>Schedule this draft</AppButton> : null}
     {state.id ? <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Save changes and finish uploads before scheduling. Confirming a schedule enables in-app delivery.</Text> : null}
+    {state.id ? <View style={{ borderTopWidth: 1, borderTopColor: theme.colors.outlineVariant, paddingTop: spacing.md }}><AppButton icon="trash-can-outline" textColor={theme.colors.error} disabled={busy || state.conflict || state.uncertain} onPress={() => setConfirm('delete')}>Delete draft</AppButton></View> : null}
     <Portal>
       <Dialog visible={Boolean(repeat)} onDismiss={() => setRepeat(null)}>
         <Dialog.Title>{busy ? 'Please wait' : 'Discard local changes?'}</Dialog.Title>
@@ -71,7 +71,7 @@ export default function DraftEditorScreen({ draftId }) {
       <Dialog visible={confirm !== null} onDismiss={() => setConfirm(null)}>
         <Dialog.Title>{confirm === 'delete' ? 'Delete this draft?' : 'Reload saved version?'}</Dialog.Title>
         <Dialog.Content><Text>{confirm === 'delete' ? 'The draft and its recipients will be removed.' : 'Your local changes will be discarded. The latest saved version will replace them.'}</Text></Dialog.Content>
-        <Dialog.Actions><AppButton onPress={() => setConfirm(null)}>Cancel</AppButton><AppButton onPress={() => { if (confirm === 'delete') void remove(); else { setConfirm(null); void model.reload(); } }}>{confirm === 'delete' ? 'Delete draft' : 'Reload draft'}</AppButton></Dialog.Actions>
+        <Dialog.Actions><AppButton onPress={() => setConfirm(null)}>Cancel</AppButton><AppButton textColor={confirm === 'delete' ? theme.colors.error : undefined} onPress={() => { if (confirm === 'delete') void remove(); else { setConfirm(null); void model.reload(); } }}>{confirm === 'delete' ? 'Delete draft' : 'Reload draft'}</AppButton></Dialog.Actions>
       </Dialog>
     </Portal>
   </Screen>;

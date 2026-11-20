@@ -17,8 +17,8 @@ private screenshots and source are not uploaded.
 | 2 | Sign-in / OTP `/login` | Complete |
 | 3 | Draft list `/drafts` | Complete |
 | 4 | New draft `/drafts/new` | Complete |
-| 5 | Edit draft `/drafts/[id]` | Next |
-| 6 | Schedule list `/schedules` | Pending |
+| 5 | Edit draft `/drafts/[id]` | Complete |
+| 6 | Schedule list `/schedules` | Next |
 | 7 | Review schedule `/schedules/new` | Pending |
 | 8 | Scheduled message `/schedules/[id]` | Pending |
 | 9 | Reschedule `/schedules/reschedule` | Pending |
@@ -88,3 +88,16 @@ Verified new-message fields, unsaved feedback, adding self and successfully savi
 a synthetic draft to the isolated preview database. The saved route exposes
 attachments and scheduling. Frontend lint/types and all 83 tests passed; detector
 returned no findings. No recording, upload, schedule confirmation or live send.
+
+## Edit draft
+
+Combined Stitch’s saved/dirty action hierarchy with Impeccable’s destructive-action
+separation. Schedule is primary only when clean; save is primary while editing.
+Deletion is separated at the bottom with error color and its existing confirmation.
+Attachments have concise privacy/capacity copy, an expandable type/limit reference,
+clear chooser icons and inline transfer errors. No invented sync/retry behavior.
+
+Verified a saved synthetic draft, attachment-limit disclosure, enabled scheduling
+and delete-confirmation cancellation in the dark iPhone simulator. Shared new/edit
+form still uses the same editor model and guards. Lint/types passed; no new live
+media capture, upload or deletion was needed for this presentation change.

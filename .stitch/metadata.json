@@ -23,6 +23,11 @@
       "id": "77373da7115048dd85e5be04d34fb179",
       "name": "projects/13022673306304030650/screens/77373da7115048dd85e5be04d34fb179",
       "title": "New Draft"
+    },
+    "editDraft": {
+      "id": "6fa5c8205058452eb04d9fbc47ce198a",
+      "name": "projects/13022673306304030650/screens/6fa5c8205058452eb04d9fbc47ce198a",
+      "title": "Edit Saved Draft"
     }
   }
 }
