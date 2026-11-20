@@ -18,7 +18,8 @@ requirements. No free always-on hosting, unlimited messages or delivery-time SLA
 promised. Local and hosted WAHA URLs are separate private backend settings. Remote
 WAHA connections require HTTPS. Keep WAHA behind private networking/authentication,
 and configure a reachable HTTPS Dearly content origin before sending links to
-other devices. The current localhost content origin works on this Mac only.
+other devices. Real notifications now reject localhost content links; see
+[public notification links](release-operations.md#public-notification-links-and-app-downloads).
 
 ## Integration decisions (before implementation)
 
@@ -108,9 +109,8 @@ checked; the development-auth backend remains bound to 127.0.0.1. Keep backend,
 worker, Docker and internet connectivity running for due delivery. The normal
 mobile app remains on Metro 8081; Android is not started.
 
-The current `localhost:8080` private-content link opens on this Mac only. A WhatsApp
-notification can reach a phone once paired, but tapping localhost on that phone
-cannot reach this Mac. Use the later hosted HTTPS content URL for other devices.
+Use the hosted HTTPS content URL even when the sender gateway and API run locally.
+The sender now rejects localhost/private-network content links before submission.
 Do not expose the development OTP backend publicly to work around this limitation.
 
 ## Same integration on a server

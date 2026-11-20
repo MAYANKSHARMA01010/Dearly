@@ -227,3 +227,29 @@ unrelated bundle, and do not split every file into a separate commit.
    history unless requested. Do not fabricate tests, authorship, or commit dates.
 7. Verify the resulting status and report commit IDs with their purpose. If a
    check or commit is blocked, explain it and leave the affected work visible.
+
+## Recipient links and semantic releases
+
+- Real email, WhatsApp and SMS notifications must use the reachable hosted HTTPS
+  content origin, including when dispatched by the local worker. Never send a
+  localhost, loopback, LAN IP or local hostname to a recipient. Keep the app's
+  development API URL separate from outgoing notification URLs. Prefer explicit
+  CONTENT_PUBLIC_URL, then BACKEND_SERVER_URL, then the legacy EMAIL_PUBLIC_URL.
+  The hosted viewer must share the same database, access-signing key and private
+  storage as the dispatching worker. Do not rewrite or resend old deliveries.
+- Include the public Dearly GitHub Releases download page in email and WhatsApp,
+  and on the secure viewer reached from SMS. Preserve the single-segment SMS
+  limit. Use accurate phone-number verification instructions. Never claim email
+  login, verified email association or automatic external-message inbox import
+  until those features actually exist and are tested. Never imply an RC is stable.
+- Use MAJOR.MINOR.PATCH (x.x.x): PATCH for compatible fixes, MINOR for compatible
+  features, MAJOR for breaking changes. Before each actual release, use
+  `node scripts/release.mjs prepare X.Y.Z` to synchronize VERSION, both package
+  manifests/lockfiles and Expo version, and increment Android/iOS build numbers.
+  Validate with `node scripts/release.mjs check`; publish matching `vX.Y.Z` tags
+  or explicitly marked `vX.Y.Z-rc.N` prereleases. Never overwrite published assets
+  or reuse a native build number. Build from the release commit, verify APK
+  identity/signature, package/checksum the assets with the existing release tool,
+  and record hosted deployment and device acceptance separately. A source commit
+  alone does not mean a new APK or deployment exists. Do not bump versions on
+  every development commit or label untested artifacts stable.

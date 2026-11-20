@@ -1,3 +1,4 @@
+import { publicDeliveryLink } from '../../utils/deliveryLinks';
 import { createHash } from 'node:crypto';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import type { SmsGateConfig } from '../../configs/env';
@@ -9,7 +10,7 @@ export type SmsGateStatus = 'READY' | 'OFFLINE' | 'AUTH_FAILED' | 'DISABLED' | '
 export const smsScope = (c: SmsGateConfig) => createHash('sha256')
   .update(`smsgate:${c.baseUrl}:${c.connection}:${c.deviceId ?? 'local'}:${c.simNumber}:${createHash('sha256').update(c.webhookSecret).digest('hex')}`).digest('hex');
 export const smsText = (link: string) => `Dearly private message: ${link}`;
-export const smsLinkFits = (origin: string) => smsSegments(smsText(`${origin}/external/#00000000-0000-4000-8000-000000000000.${'a'.repeat(43)}`)).segments === 1;
+export const smsLinkFits = (origin: string) => publicDeliveryLink(origin) && smsSegments(smsText(`${origin}/external/#00000000-0000-4000-8000-000000000000.${'a'.repeat(43)}`)).segments === 1;
 const outcome = (state: SubmissionResult['state'], code: string | null, providerMessageId: string | null = null): SubmissionResult => ({ state, code, providerMessageId });
 
 export class SmsGateProvider {
@@ -46,6 +47,7 @@ export class SmsGateProvider {
     if (!parsed?.isValid() || parsed.number !== phone || !/^\+[1-9]\d{5,14}$/.test(phone))
       return outcome('REJECTED', 'INVALID_RECIPIENT');
     try {
+      if (!publicDeliveryLink(link)) return outcome('REJECTED', 'INVALID_CONTENT_URL');
       const u = new URL(link);
       if (!['http:', 'https:'].includes(u.protocol) || u.username || u.password || !/^[0-9a-f-]{36}$/.test(id)) throw Error();
     } catch { return outcome('REJECTED', 'INVALID_RECIPIENT'); }

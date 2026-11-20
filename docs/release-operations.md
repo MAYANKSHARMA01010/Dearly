@@ -177,3 +177,28 @@ remain distinct evidence. Do not replay a timed-out external submission blindly.
 Keep published privacy/deletion promises consistent with these rules. A support
 workflow for account erasure and agreed hosted backup expiry is required before
 public distribution; do not claim a regulatory review or an in-app deletion flow.
+
+## Public notification links and app downloads
+
+All real notifications, including local-worker sends, use CONTENT_PUBLIC_URL or
+BACKEND_SERVER_URL before the legacy EMAIL_PUBLIC_URL alias. Configure the same
+hosted HTTPS origin, database, access-signing key and attachment storage for the
+API, worker and Gmail relay. Local API access remains on port 8080; this is not a
+recipient-facing URL. Provider adapters reject local-only content links before
+submission. Previously delivered notifications are not rewritten or replayed.
+
+Email and WhatsApp include the public GitHub Releases page; the SMS companion
+viewer includes the same download instructions without exceeding the one-segment
+SMS budget. The releases page supports both stable builds and explicitly labeled
+release candidates; `/releases/latest` cannot identify an RC-only release.
+Registration currently verifies a phone number. External email/phone link
+notifications do not automatically appear in the app inbox, and email login or
+verified email association must not be promised until implemented.
+
+Use x.x.x semantic versions for releases: PATCH fixes, MINOR compatible features,
+MAJOR breaking changes. Prepare the version through `scripts/release.mjs prepare
+X.Y.Z`, validate all manifests/native build numbers, build from the matching
+commit, and publish a matching `vX.Y.Z` tag or `vX.Y.Z-rc.N` prerelease with verified
+APK, source ZIP, release manifest and checksums. Never replace published assets
+or reuse build numbers. Record deployment commit/version separately from mobile
+artifacts; do not claim a newly committed UI exists in an older downloadable APK.

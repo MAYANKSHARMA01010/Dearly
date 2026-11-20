@@ -180,8 +180,9 @@ or disable TLS validation. Refer to the provider's
 [API](https://docs.sms-gate.app/integration/api/) contracts.
 
 Register callbacks at the hosted HTTPS `/webhooks/smsgate` endpoint and set the
-existing `CONTENT_PUBLIC_URL` to the hosted HTTPS backend. Current localhost links
-open on this Mac only. No public tunnel or hosted address is created by this phase.
+existing `CONTENT_PUBLIC_URL` to the hosted HTTPS backend. Real SMS sends now reject
+localhost/private-network content links. No public tunnel is needed for content
+when the local worker uses the same hosted database, signing key and storage.
 
 ## Length, scheduling and delivery evidence
 

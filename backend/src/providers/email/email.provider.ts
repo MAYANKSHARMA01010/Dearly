@@ -1,3 +1,4 @@
+import { appDownloadUrl, appDownloadInstructions, publicDeliveryLink } from '../../utils/deliveryLinks';
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
 import { EmailRelay } from './relay.provider';
@@ -22,17 +23,11 @@ export const escapeHtml = (value: string) =>
       ]!,
   );
 export function emailTemplate(link: string) {
-  const url = new URL(link);
-  if (
-    !['http:', 'https:'].includes(url.protocol) ||
-    url.username ||
-    url.password
-  )
-    throw Error('Invalid email link');
+  if (!publicDeliveryLink(link)) throw Error('Invalid public message link');
   return {
     subject: 'Your Dearly message is ready',
-    text: `Someone has sent you a private Dearly message.\n\nOpen message: ${link}\n\nThis link expires in seven days. Anyone with the link can open this message. The sender can revoke it.`,
-    html: `<h1>Your Dearly message is ready</h1><p>Someone has sent you a private message.</p><p><a href="${escapeHtml(link)}">Open message</a></p><p>This link expires in seven days. Anyone with the link can open this message. The sender can revoke it.</p>`,
+    text: `Someone has sent you a private Dearly message.\n\nOpen message: ${link}\n\nDownload Android app: ${appDownloadUrl}\n${appDownloadInstructions}\n\nThis link expires in seven days. Anyone with the link can open this message. The sender can revoke it.`,
+    html: `<h1>Your Dearly message is ready</h1><p>Someone has sent you a private message.</p><p><a href="${escapeHtml(link)}">Open message</a></p><h2>Get the Dearly app</h2><p><a href="${appDownloadUrl}">Download Android app from GitHub Releases</a></p><p>${appDownloadInstructions}</p><p>This link expires in seven days. Anyone with the link can open this message. The sender can revoke it.</p>`,
   };
 }
 export function smtpFailure(error: unknown): EmailResult {
@@ -73,6 +68,7 @@ export function smtpFailure(error: unknown): EmailResult {
 export function createEmailSender(config: SmtpConfig | RelayEmailConfig): EmailSender {
   if (config.mode === 'relay') return new EmailRelay(config).send;
   return async (to, link, id) => {
+    if (!publicDeliveryLink(link)) return { state: 'REJECTED', code: 'INVALID_CONTENT_URL', providerMessageId: null };
     if (!z.email().safeParse(to).success)
       return {
         state: 'REJECTED',

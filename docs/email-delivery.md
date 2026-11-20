@@ -32,9 +32,10 @@ Reserve a durable conservative rolling 24-hour sender budget (default 100, maxim
 
 ## Local and hosted URLs
 
-`EMAIL_PUBLIC_URL=http://localhost:8080` is local testing only: links open on this
-Mac. A remotely accessible HTTPS URL must be configured before sending usable links
-to other devices. Hosted URL remains unconfigured until hosting is arranged.
+All real outgoing links now require a reachable public HTTPS origin, including
+local-worker sends. Set `CONTENT_PUBLIC_URL` to the hosted backend; otherwise
+`BACKEND_SERVER_URL` takes precedence over the legacy `EMAIL_PUBLIC_URL` alias.
+Provider adapters reject localhost and private-network links before submission.
 Configuration is not proof of inbox delivery. The user chose to perform the real
 email test themselves; automated checks must not submit any live email.
 

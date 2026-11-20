@@ -364,7 +364,7 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     );
   }
   const env = result.data;
-  const contentUrl = env.CONTENT_PUBLIC_URL ?? env.EMAIL_PUBLIC_URL;
+  const contentUrl = env.CONTENT_PUBLIC_URL ?? env.BACKEND_SERVER_URL ?? env.EMAIL_PUBLIC_URL;
   const wahaUrl =
     env.NODE_ENV === 'production'
       ? env.WAHA_SERVER_API_URL

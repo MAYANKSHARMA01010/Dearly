@@ -9,7 +9,7 @@ import { parseEnvironment, type SmsGateConfig } from '../src/configs/env';
 import { createApp } from '../src/app';
 import { config, captureLogger } from './helpers';
 const settings: SmsGateConfig = { baseUrl: 'http://127.0.0.1:3102', connection: 'local', deviceId: 'synthetic-device', username: 'synthetic', password: 'synthetic-password', webhookSecret: 'synthetic-signing-key', simNumber: 1, dailyLimit: 20 };
-const phone = '+12025550181', id = randomUUID(), link = 'http://localhost:8080/external/#synthetic';
+const phone = '+12025550181', id = randomUUID(), link = 'https://dearly.example/external/#synthetic';
 const accepted = () => Response.json({ id, deviceId: settings.deviceId, recipients: [{ phoneNumber: phone.slice(1), state: 'Pending' }], state: 'Pending' }, { status: 202 });
 
 test('SMSGate sends one short private link with a deterministic reservation ID and bounded device TTL', async () => {
@@ -27,7 +27,8 @@ test('SMSGate sends one short private link with a deterministic reservation ID a
   assert.equal(body.scheduleAt, undefined); assert.equal(body.deviceId, undefined);
   assert.equal(body.textMessage.text, `Dearly private message: ${link}`);
   assert.equal(calls[1].options?.redirect, 'error');
-  assert.ok(smsLinkFits('http://localhost:8080'));
+  assert.equal(smsLinkFits('http://localhost:8080'), false);
+  assert.ok(smsLinkFits('https://dearly.example'));
   assert.equal(smsLinkFits(`https://${'a'.repeat(150)}.example`), false);
 });
 

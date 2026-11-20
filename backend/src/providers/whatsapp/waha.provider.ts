@@ -1,3 +1,4 @@
+import { appDownloadUrl, appDownloadInstructions, publicDeliveryLink } from '../../utils/deliveryLinks';
 import { boundedJson } from '../../utils/boundedJson';
 export { boundedJson } from '../../utils/boundedJson';
 import { createHash } from 'node:crypto';
@@ -218,6 +219,7 @@ export class WahaProvider {
     let chatId: string;
     try {
       chatId = whatsappJid(to);
+      if (!publicDeliveryLink(link)) return result('REJECTED', 'INVALID_CONTENT_URL');
       const url = new URL(link);
       if (
         !['http:', 'https:'].includes(url.protocol) ||
@@ -230,7 +232,7 @@ export class WahaProvider {
     }
     return this.sendText(
       chatId,
-      `Your private Dearly message is ready.\n\n${link}\n\nThis link expires in seven days. Anyone with the link can open it; the sender can revoke it.`,
+      `Your private Dearly message is ready.\n\n${link}\n\nDownload Android app: ${appDownloadUrl}\n${appDownloadInstructions}\n\nThis link expires in seven days. Anyone with the link can open it; the sender can revoke it.`,
     );
   }
   async sendOtp(phone: string, code: string): Promise<SubmissionResult> {
