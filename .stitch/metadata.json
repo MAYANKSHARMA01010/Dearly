@@ -58,6 +58,11 @@
       "id": "aec054cbbdad416697a20c84a9ffafb5",
       "name": "projects/13022673306304030650/screens/aec054cbbdad416697a20c84a9ffafb5",
       "title": "Owned Message Detail"
+    },
+    "receivedMessage": {
+      "id": "fb69beb8b91c44659058287fa5d03ff7",
+      "name": "projects/13022673306304030650/screens/fb69beb8b91c44659058287fa5d03ff7",
+      "title": "Received Message Detail"
     }
   }
 }

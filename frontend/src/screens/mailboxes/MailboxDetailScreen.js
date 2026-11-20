@@ -67,7 +67,7 @@ function OwnedMessage({ id }) {
     );
   return (
     <Screen>
-      <Stack.Screen options={{ headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to mailboxes" onPress={() => router.replace('/mailboxes')} /> }} />
+      <Stack.Screen options={{ headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to mailboxes" onPress={() => router.replace('/mailboxes')} /> }} />
       <ScreenHeading title={data.subject || 'Untitled message'} description={`${data.status === 'DRAFT' ? 'Draft' : scheduleStatusLabel(data.status)} · Version ${data.version}`} />
       {data.status === 'PARTIALLY_DELIVERED' ? (
         <InlineNotice>
@@ -347,39 +347,30 @@ function ReceivedMessage({ id }) {
     );
   return (
     <Screen>
-      <AppButton
-        onPress={() =>
-          router.replace({
-            pathname: '/mailboxes',
-            params: { box: 'received' },
-          })
-        }
-      >
-        Back to received
-      </AppButton>
-      <Text variant="headlineMedium" accessibilityRole="header">
-        {data.subject || 'Untitled message'}
-      </Text>
+      <Stack.Screen options={{ headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to received" onPress={() => router.replace({ pathname: '/mailboxes', params: { box: 'received' } })} /> }} />
+      <ScreenHeading title={data.subject || 'Untitled message'} />
+      <View style={{ gap: spacing.xs }}>
       <Text variant="titleMedium">
         From{' '}
         {data.senderIsSelf ? 'yourself' : data.senderName || 'a Dearly member'}
       </Text>
-      <Text>Delivered {when(data.deliveredAt)}</Text>
-      <Text selectable>{data.text || 'Attachment-only message'}</Text>
-      <Text>Occasion: {data.occasion || 'None'}</Text>
+      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Delivered {when(data.deliveredAt)}</Text>
+      </View>
+      <Text variant="bodyLarge" selectable>{data.text || 'Attachment-only message'}</Text>
+      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Occasion: {data.occasion || 'None'}</Text>
+      <ScreenSection title="Scheduled time">
       <Text>
         {scheduleLabel(data.scheduledFor, data.timezone)}
         {'\n'}
         {data.timezone} · Universal time {data.scheduledFor}
       </Text>
+      </ScreenSection>
       <PrivateAttachmentViewer
         key={data.attachments.map((a) => a.id).join(':')}
         items={data.attachments}
         contentPath={(aid) => api.contentPath(id, aid, true)}
       />
-      <Text variant="titleLarge" accessibilityRole="header">
-        Your delivery activity
-      </Text>
+      <ScreenSection title="Your delivery activity">
       <Text>Delivered in Dearly: {when(data.deliveredAt)}</Text>
       <Text>
         {data.openedAt
@@ -388,10 +379,10 @@ function ReceivedMessage({ id }) {
       </Text>
       {!data.openedAt ? (
         <>
-          <Text>
+          <InlineNotice>
             You can read this message without sharing an opened status. Marking
             it lets the sender know you opened it.
-          </Text>
+          </InlineNotice>
           <AppButton
             mode="contained"
             disabled={action.busy || load.loading}
@@ -404,14 +395,15 @@ function ReceivedMessage({ id }) {
           </AppButton>
         </>
       ) : null}
+      </ScreenSection>
       {load.error || action.error ? (
-        <Text accessibilityRole="alert" style={{ color: theme.colors.error }}>
+        <InlineNotice error>
           {load.error || action.error} Reload to check the saved state before
           retrying. This action is never repeated automatically.
-        </Text>
+        </InlineNotice>
       ) : null}
       <AppButton
-        disabled={action.busy || load.loading}
+        icon="refresh" disabled={action.busy || load.loading}
         loading={load.loading}
         onPress={() => {
           void load.refresh();

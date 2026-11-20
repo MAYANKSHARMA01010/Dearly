@@ -6,6 +6,7 @@ import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { downloadFile, discardLocal } from '../../services/attachments/device';
 import MediaPreview from './MediaPreview';
 import AppButton from '../common/AppButton';
+import { InlineNotice } from '../layout/ScreenSections';
 import { spacing } from '../../theme';
 /** @param {{items:import('../../services/attachments/contracts').Attachment[],contentPath:(id:string)=>string}} props */
 export default function PrivateAttachmentViewer({ items, contentPath }) {
@@ -53,12 +54,12 @@ export default function PrivateAttachmentViewer({ items, contentPath }) {
       </Text>
       {!items.length ? <Text>No attachments.</Text> : null}
       {items.map((item) => (
-        <View key={item.id} style={{ gap: spacing.sm }}>
+        <View key={item.id} style={{ gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: theme.colors.outlineVariant }}>
           <Text>
             {item.name} · {(item.bytes / (1024 * 1024)).toFixed(2)} MB
           </Text>
           <AppButton
-            disabled={action.busy}
+            icon="file-eye-outline" mode="outlined" disabled={action.busy}
             onPress={() => {
               void open(item);
             }}
@@ -76,9 +77,9 @@ export default function PrivateAttachmentViewer({ items, contentPath }) {
         </>
       ) : null}
       {action.error ? (
-        <Text accessibilityRole="alert" style={{ color: theme.colors.error }}>
+        <InlineNotice error>
           {action.error}
-        </Text>
+        </InlineNotice>
       ) : null}
       {preview ? (
         <>

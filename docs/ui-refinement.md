@@ -24,8 +24,8 @@ private screenshots and source are not uploaded.
 | 9 | Reschedule `/schedules/reschedule` | Complete |
 | 10 | Mailboxes `/mailboxes` | Complete |
 | 11 | Owned message `/mailboxes/owned/[id]` | Complete |
-| 12 | Received message `/mailboxes/received/[id]` | Next |
-| 13 | Profile `/profile` | Pending |
+| 12 | Received message `/mailboxes/received/[id]` | Complete |
+| 13 | Profile `/profile` | Next |
 | 14 | Settings `/settings` | Pending |
 | 15 | Notifications `/notifications` | Pending |
 | 16 | Service status `/status` | Pending |
@@ -167,3 +167,15 @@ Verified delivered synthetic message, exact recipient outcome, no opened receipt
 empty attachments and recorded activity in the light iPhone simulator. Lint/types
 passed after correcting a fallback-branch edit caught by type checking. No link
 revocation, external send or account-owned data mutation was performed.
+
+## Received message
+
+Combined Stitch’s sender/content hierarchy with Impeccable’s explicit-consent
+guidance. Time, attachments and delivery activity are separated; opened privacy
+copy is prominent beside the optional action. Attachment rows have clear open
+actions and inline errors. Removed duplicate native back affordance when pushing
+mailbox details. No encrypted-storage claims were adopted from the prototype.
+
+Verified unavailable-item recovery, navigation from Received to the correct inbox
+item, sender/body/timing and unmarked state in the light iPhone simulator. Viewing
+did not mark opened. Lint/types passed; no receipt was created.
