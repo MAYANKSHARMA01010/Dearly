@@ -1,0 +1,98 @@
+{
+  "projectId": "13022673306304030650",
+  "title": "Dearly \u2014 Native UI refinement",
+  "designSystem": "assets/ad9448bd9e374d81863f57317ce42587",
+  "designSource": "../DESIGN.md",
+  "screens": {
+    "home": {
+      "id": "ee61307369a945f383202fc9e2c1d544",
+      "name": "projects/13022673306304030650/screens/ee61307369a945f383202fc9e2c1d544",
+      "title": "Dearly Home Dashboard"
+    },
+    "login": {
+      "id": "b31ec60bfcc241fe8ab5a82050c013b6",
+      "name": "projects/13022673306304030650/screens/b31ec60bfcc241fe8ab5a82050c013b6",
+      "title": "Sign in and Verification Flow"
+    },
+    "drafts": {
+      "id": "a2adad4bc6b34265885948e1ae92558e",
+      "name": "projects/13022673306304030650/screens/a2adad4bc6b34265885948e1ae92558e",
+      "title": "Drafts"
+    },
+    "newDraft": {
+      "id": "77373da7115048dd85e5be04d34fb179",
+      "name": "projects/13022673306304030650/screens/77373da7115048dd85e5be04d34fb179",
+      "title": "New Draft"
+    },
+    "editDraft": {
+      "id": "6fa5c8205058452eb04d9fbc47ce198a",
+      "name": "projects/13022673306304030650/screens/6fa5c8205058452eb04d9fbc47ce198a",
+      "title": "Edit Saved Draft"
+    },
+    "schedules": {
+      "id": "f2bfe80ffc1c488ca16daea082bd1372",
+      "name": "projects/13022673306304030650/screens/f2bfe80ffc1c488ca16daea082bd1372",
+      "title": "Schedules"
+    },
+    "reviewSchedule": {
+      "proposalSessionId": "13475133772291833583",
+      "title": "Review schedule",
+      "artifact": "textual proposal"
+    },
+    "scheduledMessage": {
+      "id": "74cf8afb0e804c4ba9938f6cf9bf1d81",
+      "name": "projects/13022673306304030650/screens/74cf8afb0e804c4ba9938f6cf9bf1d81",
+      "title": "Scheduled Message Detail"
+    },
+    "reschedule": {
+      "proposalSessionId": "18354850621578153272",
+      "title": "Reschedule",
+      "artifact": "textual proposal"
+    },
+    "mailboxes": {
+      "id": "8f827c688f1f40c78bfd96b083896245",
+      "name": "projects/13022673306304030650/screens/8f827c688f1f40c78bfd96b083896245",
+      "title": "Mailboxes List"
+    },
+    "ownedMessage": {
+      "id": "aec054cbbdad416697a20c84a9ffafb5",
+      "name": "projects/13022673306304030650/screens/aec054cbbdad416697a20c84a9ffafb5",
+      "title": "Owned Message Detail"
+    },
+    "receivedMessage": {
+      "id": "fb69beb8b91c44659058287fa5d03ff7",
+      "name": "projects/13022673306304030650/screens/fb69beb8b91c44659058287fa5d03ff7",
+      "title": "Received Message Detail"
+    },
+    "profile": {
+      "id": "bfcf203f83c14cf290ac4a6ddcb4f2f4",
+      "name": "projects/13022673306304030650/screens/bfcf203f83c14cf290ac4a6ddcb4f2f4",
+      "title": "Profile"
+    },
+    "settings": {
+      "id": "ec5a01907a964e1dbf8dbd9db58dd7a9",
+      "name": "projects/13022673306304030650/screens/ec5a01907a964e1dbf8dbd9db58dd7a9",
+      "title": "Settings & Preferences"
+    },
+    "notifications": {
+      "id": "385df174d4b24eafafdc0efecfed5469",
+      "name": "projects/13022673306304030650/screens/385df174d4b24eafafdc0efecfed5469",
+      "title": "Notifications List"
+    },
+    "status": {
+      "id": "fb88be296286494999a862d23f18cb5f",
+      "name": "projects/13022673306304030650/screens/fb88be296286494999a862d23f18cb5f",
+      "title": "Service Status"
+    },
+    "notFound": {
+      "id": "f207e3cab264400c80a7919467e2b036",
+      "name": "projects/13022673306304030650/screens/f207e3cab264400c80a7919467e2b036",
+      "title": "Page not found"
+    },
+    "recipientEditing": {
+      "id": "53576feba401431c9b380e2e35744280",
+      "name": "projects/13022673306304030650/screens/53576feba401431c9b380e2e35744280",
+      "title": "Draft recipient editing"
+    }
+  }
+}

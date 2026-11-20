@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
-import { useRouter } from 'expo-router';
+import { IconButton, Text, useTheme } from 'react-native-paper';
+import { Stack, useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useFocusedResource } from '../../hooks/useFocusedResource';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
@@ -12,6 +12,7 @@ import {
   scheduleStatusLabel,
 } from '../../services/schedules/contracts';
 import Screen from '../../components/layout/Screen';
+import { InlineNotice, ScreenHeading, ScreenSection } from '../../components/layout/ScreenSections';
 import AppButton from '../../components/common/AppButton';
 import StateView from '../../components/common/StateView';
 import PrivateAttachmentViewer from '../../components/media/PrivateAttachmentViewer';
@@ -61,36 +62,29 @@ function OwnedMessage({ id }) {
           actionLabel={!load.loading ? 'Try again' : undefined}
           onAction={refresh}
         />
-        <AppButton onPress={() => router.replace('/mailboxes')}>
-          Your mailboxes
-        </AppButton>
+        <AppButton onPress={() => router.replace('/mailboxes')}>Your mailboxes</AppButton>
       </Screen>
     );
   return (
     <Screen>
-      <AppButton onPress={() => router.replace('/mailboxes')}>
-        Back to mailboxes
-      </AppButton>
-      <Text variant="headlineMedium" accessibilityRole="header">
-        {data.subject || 'Untitled message'}
-      </Text>
-      <Text>
-        {data.status === 'DRAFT' ? 'Draft' : scheduleStatusLabel(data.status)} ·
-        Version {data.version}
-      </Text>
+      <Stack.Screen options={{ headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to mailboxes" onPress={() => router.replace('/mailboxes')} /> }} />
+      <ScreenHeading title={data.subject || 'Untitled message'} description={`${data.status === 'DRAFT' ? 'Draft' : scheduleStatusLabel(data.status)} · Version ${data.version}`} />
       {data.status === 'PARTIALLY_DELIVERED' ? (
-        <Text accessibilityRole="alert">
+        <InlineNotice>
           Some recipients received this message; others did not. Check each
           delivery below.
-        </Text>
+        </InlineNotice>
       ) : null}
-      <Text selectable>
+      <View style={{ gap: spacing.md }}>
+      <Text variant="bodyLarge" selectable>
         {data.text ||
           (data.attachments.length
             ? 'Attachment-only message'
             : 'No message text yet')}
       </Text>
-      <Text>Occasion: {data.occasion || 'None'}</Text>
+      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Occasion: {data.occasion || 'None'}</Text>
+      </View>
+      <ScreenSection title="Timing">
       <Text>
         Created {when(data.createdAt)}
         {'\n'}Updated {when(data.updatedAt)}
@@ -111,6 +105,7 @@ function OwnedMessage({ id }) {
           activate it.
         </Text>
       ) : null}
+      </ScreenSection>
       {data.status === 'DRAFT' ? (
         <AppButton
           mode="contained"
@@ -134,12 +129,10 @@ function OwnedMessage({ id }) {
       ) : (
         <Text>Delivery has started. Editing and cancellation are locked.</Text>
       )}
-      <Text variant="titleLarge" accessibilityRole="header">
-        Recipients and delivery
-      </Text>
+      <ScreenSection title="Recipients and delivery">
       {!data.recipients.length ? <Text>No recipients selected.</Text> : null}
       {data.recipients.map((r) => (
-        <View key={r.id} style={{ gap: spacing.sm }}>
+        <View key={r.id} style={{ gap: spacing.sm, padding: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.outlineVariant }}>
           <Text variant="titleMedium">
             {r.label ||
               (r.type === 'SELF'
@@ -247,6 +240,7 @@ function OwnedMessage({ id }) {
           ) : null}
         </View>
       ))}
+      </ScreenSection>
       {data.status === 'DRAFT' ? (
         <Text>
           Only ready attachments are shown here. Use the draft editor to finish
@@ -258,12 +252,10 @@ function OwnedMessage({ id }) {
         items={data.attachments}
         contentPath={(aid) => api.contentPath(id, aid, false)}
       />
-      <Text variant="titleLarge" accessibilityRole="header">
-        Activity
-      </Text>
+      <ScreenSection title="Activity">
       {!history?.items.length ? <Text>No recorded activity.</Text> : null}
       {history?.items.map((e) => (
-        <View key={e.id} style={{ gap: spacing.xs }}>
+        <View key={e.id} style={{ gap: spacing.xs, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: theme.colors.outlineVariant }}>
           <Text variant="titleMedium">{eventLabel(e.kind)}</Text>
           <Text>
             {when(e.occurredAt)} · Version {e.version}
@@ -289,11 +281,12 @@ function OwnedMessage({ id }) {
           Latest activity
         </AppButton>
       ) : null}
+      </ScreenSection>
       {load.error || action.error ? (
-        <Text accessibilityRole="alert" style={{ color: theme.colors.error }}>
+        <InlineNotice error>
           {load.error || action.error} Previously loaded details are still
           shown.
-        </Text>
+        </InlineNotice>
       ) : null}
       <AppButton
         loading={load.loading}
@@ -302,10 +295,10 @@ function OwnedMessage({ id }) {
       >
         Reload message and outcomes
       </AppButton>
-      <Text variant="bodySmall">
+      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
         Delivered confirms in-app availability. Opened records a recipient’s
         explicit choice; it does not prove they read or understood the message.
-        External delivery receipts are unavailable.
+        Provider acceptance, confirmed delivery and private-link opening are separate outcomes.
       </Text>
     </Screen>
   );
@@ -354,39 +347,30 @@ function ReceivedMessage({ id }) {
     );
   return (
     <Screen>
-      <AppButton
-        onPress={() =>
-          router.replace({
-            pathname: '/mailboxes',
-            params: { box: 'received' },
-          })
-        }
-      >
-        Back to received
-      </AppButton>
-      <Text variant="headlineMedium" accessibilityRole="header">
-        {data.subject || 'Untitled message'}
-      </Text>
+      <Stack.Screen options={{ headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to received" onPress={() => router.replace({ pathname: '/mailboxes', params: { box: 'received' } })} /> }} />
+      <ScreenHeading title={data.subject || 'Untitled message'} />
+      <View style={{ gap: spacing.xs }}>
       <Text variant="titleMedium">
         From{' '}
         {data.senderIsSelf ? 'yourself' : data.senderName || 'a Dearly member'}
       </Text>
-      <Text>Delivered {when(data.deliveredAt)}</Text>
-      <Text selectable>{data.text || 'Attachment-only message'}</Text>
-      <Text>Occasion: {data.occasion || 'None'}</Text>
+      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Delivered {when(data.deliveredAt)}</Text>
+      </View>
+      <Text variant="bodyLarge" selectable>{data.text || 'Attachment-only message'}</Text>
+      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Occasion: {data.occasion || 'None'}</Text>
+      <ScreenSection title="Scheduled time">
       <Text>
         {scheduleLabel(data.scheduledFor, data.timezone)}
         {'\n'}
         {data.timezone} · Universal time {data.scheduledFor}
       </Text>
+      </ScreenSection>
       <PrivateAttachmentViewer
         key={data.attachments.map((a) => a.id).join(':')}
         items={data.attachments}
         contentPath={(aid) => api.contentPath(id, aid, true)}
       />
-      <Text variant="titleLarge" accessibilityRole="header">
-        Your delivery activity
-      </Text>
+      <ScreenSection title="Your delivery activity">
       <Text>Delivered in Dearly: {when(data.deliveredAt)}</Text>
       <Text>
         {data.openedAt
@@ -395,10 +379,10 @@ function ReceivedMessage({ id }) {
       </Text>
       {!data.openedAt ? (
         <>
-          <Text>
+          <InlineNotice>
             You can read this message without sharing an opened status. Marking
             it lets the sender know you opened it.
-          </Text>
+          </InlineNotice>
           <AppButton
             mode="contained"
             disabled={action.busy || load.loading}
@@ -411,14 +395,15 @@ function ReceivedMessage({ id }) {
           </AppButton>
         </>
       ) : null}
+      </ScreenSection>
       {load.error || action.error ? (
-        <Text accessibilityRole="alert" style={{ color: theme.colors.error }}>
+        <InlineNotice error>
           {load.error || action.error} Reload to check the saved state before
           retrying. This action is never repeated automatically.
-        </Text>
+        </InlineNotice>
       ) : null}
       <AppButton
-        disabled={action.busy || load.loading}
+        icon="refresh" disabled={action.busy || load.loading}
         loading={load.loading}
         onPress={() => {
           void load.refresh();

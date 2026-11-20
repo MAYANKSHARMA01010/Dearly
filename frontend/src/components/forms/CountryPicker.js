@@ -18,7 +18,7 @@ export default function CountryPicker({ value, onChange, disabled }) {
   const [visible, setVisible] = useState(false); const [search, setSearch] = useState(''); const theme = useTheme();
   const selected = countries.find((c) => c.code === value);
   return <>
-    <AppButton mode="outlined" disabled={disabled} accessibilityLabel={`Country: ${selected?.name}, plus ${selected?.calling}`} onPress={() => { setSearch(''); setVisible(true); }}>
+    <AppButton mode="outlined" icon="chevron-down" contentStyle={{ flexDirection: 'row-reverse', justifyContent: 'space-between' }} style={{ borderRadius: 12 }} disabled={disabled} accessibilityLabel={`Country: ${selected?.name}, plus ${selected?.calling}`} onPress={() => { setSearch(''); setVisible(true); }}>
       {selected?.name} (+{selected?.calling})
     </AppButton>
     <Portal><Modal visible={visible} onDismiss={() => setVisible(false)} contentContainerStyle={{ margin: spacing.lg, padding: spacing.lg, backgroundColor: theme.colors.surface, borderRadius: 12, maxHeight: '80%' }}>

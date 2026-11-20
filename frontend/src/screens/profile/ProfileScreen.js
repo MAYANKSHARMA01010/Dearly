@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { Keyboard } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Keyboard, View } from 'react-native';
+import { Text, useTheme } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import Screen from '../../components/layout/Screen';
+import { InlineNotice, ScreenHeading, ScreenSection } from '../../components/layout/ScreenSections';
+import { spacing } from '../../theme';
 import AppButton from '../../components/common/AppButton';
 import AppTextField from '../../components/forms/AppTextField';
 import { useAuth } from '../../context/AuthContext';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 
 export default function ProfileScreen() {
+  const theme = useTheme();
   const { user, session } = useAuth(); const router = useRouter(); const action = useAsyncAction();
   const [name, setName] = useState(user?.name ?? ''); const [email, setEmail] = useState(user?.email ?? '');
   const [timezone, setTimezone] = useState(user?.name ? user.timezone : Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
@@ -26,20 +29,26 @@ export default function ProfileScreen() {
     });
   };
   return <Screen>
-    <Text variant="headlineMedium" accessibilityRole="header">{user?.name ? 'Your profile' : 'Make Dearly yours'}</Text>
-    <Text variant="bodyLarge">{user?.name ? 'Keep your delivery details up to date.' : 'Add your name and timezone to finish setting up.'}</Text>
+    <ScreenHeading title={user?.name ? 'Your profile' : 'Make Dearly yours'} description={user?.name ? 'Keep your delivery details up to date.' : 'Add your name and timezone to finish setting up.'} icon="account-outline" />
+    <ScreenSection title="Your account">
     <AppTextField label="Phone number" value={user?.phone ?? ''} editable={false} />
-    <Text selectable accessibilityLabel={`Your Dearly ID ${user?.id}`}>Your Dearly ID: {user?.id}</Text>
+    <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: 12, backgroundColor: theme.colors.surfaceVariant }}>
+    <Text variant="labelLarge">Dearly ID</Text>
+    <Text selectable accessibilityLabel={`Your Dearly ID ${user?.id}`}>{user?.id}</Text>
     <Text variant="bodySmall">Share this ID with someone who wants to add your Dearly account as a recipient.</Text>
+    </View>
+    </ScreenSection>
+    <ScreenSection title="Delivery details">
     <AppTextField label="Your name" value={name} onChangeText={setName} autoComplete="name" textContentType="name" maxLength={80} disabled={action.busy} />
     <AppTextField label="Email for delivery (optional)" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none"
       autoCorrect={false} autoComplete="email" textContentType="emailAddress" maxLength={254} disabled={action.busy} />
     <Text variant="bodyMedium">Email is an unverified delivery destination. You always sign in with your phone.</Text>
     <AppTextField label="Timezone" value={timezone} onChangeText={setTimezone} autoCapitalize="none" autoCorrect={false} maxLength={100} disabled={action.busy} />
     <Text variant="bodyMedium">For example, Asia/Kolkata or Europe/London.</Text>
-    {validation || action.error ? <Text accessibilityRole="alert">{validation || action.error}</Text> : null}
-    {notice ? <Text accessibilityLiveRegion="polite">{notice}</Text> : null}
-    <AppButton mode="contained" onPress={save} loading={action.busy} disabled={action.busy}>Save profile</AppButton>
-    <AppButton mode="outlined" disabled={action.busy} onPress={() => { void action.run(async () => { await session.logout(); }); }}>Sign out</AppButton>
+    </ScreenSection>
+    {validation || action.error ? <InlineNotice error>{validation || action.error}</InlineNotice> : null}
+    {notice ? <InlineNotice>{notice}</InlineNotice> : null}
+    <AppButton icon="content-save-outline" mode="contained" onPress={save} loading={action.busy} disabled={action.busy}>Save profile</AppButton>
+    <View style={{ paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: theme.colors.outlineVariant }}><AppButton icon="logout" mode="text" disabled={action.busy} onPress={() => { void action.run(async () => { await session.logout(); }); }}>Sign out</AppButton></View>
   </Screen>;
 }

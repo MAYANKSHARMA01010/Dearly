@@ -1,15 +1,17 @@
 import { isAccessDenial } from '../../services/mailboxes/resource';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, ScrollView, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
+  Divider,
+  IconButton,
   List,
   Menu,
   SegmentedButtons,
   Text,
   useTheme,
 } from 'react-native-paper';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { ApiError } from '../../api/client';
 import { createMailboxService } from '../../services/mailboxes/service';
@@ -20,6 +22,7 @@ import {
 } from '../../services/schedules/contracts';
 import AppButton from '../../components/common/AppButton';
 import StateView from '../../components/common/StateView';
+import { InlineNotice, ScreenHeading } from '../../components/layout/ScreenSections';
 import { layout, spacing } from '../../theme';
 /** @param {{initialBox:import('../../services/mailboxes/contracts').Box}} props */
 export default function MailboxListScreen({ initialBox }) {
@@ -30,32 +33,15 @@ export default function MailboxListScreen({ initialBox }) {
     ),
     [menu, setMenu] = useState(false);
   const router = useRouter();
+  const [boxMenu, setBoxMenu] = useState(false);
   const header = (
     <View style={{ gap: spacing.md }}>
-      <AppButton onPress={() => router.replace('/')}>Back to Dearly</AppButton>
-      <Text variant="headlineMedium" accessibilityRole="header">
-        {boxLabels[box]}
-      </Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: spacing.sm }}
-      >
-        {boxes.map((value) => (
-          <AppButton
-            key={value}
-            mode={value === box ? 'contained' : 'outlined'}
-            onPress={() => {
-              setBox(value);
-              setStatus('');
-              setRead('all');
-              setMenu(false);
-            }}
-          >
-            {boxLabels[value]}
-          </AppButton>
-        ))}
-      </ScrollView>
+      <Stack.Screen options={{ title: 'Mailboxes', headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to Dearly" onPress={() => router.replace('/')} /> }} />
+      <ScreenHeading title={boxLabels[box]} description="Your messages, organized by where they are in their journey." />
+      <AppButton mode="contained" icon="pencil-outline" onPress={() => router.push('/drafts/new')}>Write a message</AppButton>
+      <Menu visible={boxMenu} onDismiss={() => setBoxMenu(false)} anchor={<AppButton icon="chevron-down" mode="outlined" style={{ borderRadius: 12 }} contentStyle={{ flexDirection: 'row-reverse', justifyContent: 'space-between' }} accessibilityLabel={`Choose mailbox: ${boxLabels[box]}`} onPress={() => setBoxMenu(true)}>{boxLabels[box]}</AppButton>}>
+        {boxes.map((value) => <Menu.Item key={value} title={boxLabels[value]} leadingIcon={value === box ? 'check' : undefined} onPress={() => { setBox(value); setStatus(''); setRead('all'); setMenu(false); setBoxMenu(false); }} />)}
+      </Menu>
       {box === 'received' ? (
         <>
           <SegmentedButtons
@@ -79,8 +65,8 @@ export default function MailboxListScreen({ initialBox }) {
           visible={menu}
           onDismiss={() => setMenu(false)}
           anchor={
-            <AppButton mode="outlined" onPress={() => setMenu(true)}>
-              Status: {status ? scheduleStatusLabel(status) : 'All'}
+            <AppButton icon="chevron-down" mode="outlined" style={{ borderRadius: 12 }} contentStyle={{ flexDirection: 'row-reverse', justifyContent: 'space-between' }} onPress={() => setMenu(true)}>
+              Status: {status === 'DRAFT' ? 'Draft' : status ? scheduleStatusLabel(status) : 'All'}
             </AppButton>
           }
         >
@@ -103,9 +89,6 @@ export default function MailboxListScreen({ initialBox }) {
           ))}
         </Menu>
       )}
-      <AppButton onPress={() => router.push('/drafts/new')}>
-        Write a message
-      </AppButton>
     </View>
   );
   return (
@@ -227,10 +210,13 @@ function MailboxFeed({ box, status, read, header }) {
           flexGrow: 1,
         }}
         ListHeaderComponent={header}
+        ItemSeparatorComponent={() => <Divider />}
         renderItem={({ item }) => (
           <List.Item
             title={item.subject || 'Untitled message'}
-            titleNumberOfLines={2}
+            titleNumberOfLines={2} titleStyle={{ fontWeight: '600' }} style={{ paddingVertical: spacing.md, paddingHorizontal: 0 }}
+            left={(props) => <List.Icon {...props} icon="email-outline" color={theme.colors.primary} />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" color={theme.colors.onSurfaceVariant} />}
             description={`${item.status === 'DRAFT' ? 'Draft' : item.status === 'RECEIVED' ? 'Delivered to you' : item.status === 'OPENED' ? 'Marked as opened' : scheduleStatusLabel(item.status)}${item.status === 'SCHEDULED' && !item.deliveryEnabled ? ' · Paused' : ''}\n${item.scheduledFor && item.timezone ? scheduleLabel(item.scheduledFor, item.timezone) : `Created ${new Date(item.timestamp).toLocaleString()}`}${item.timezone ? `\n${item.timezone}` : ''}`}
             descriptionNumberOfLines={5}
             accessibilityRole="button"
@@ -269,16 +255,13 @@ function MailboxFeed({ box, status, read, header }) {
         ListFooterComponent={
           <View style={{ gap: spacing.md }}>
             {error && page?.items.length ? (
-              <Text
-                accessibilityRole="alert"
-                style={{ color: theme.colors.error }}
-              >
+              <InlineNotice error>
                 {error} Previously loaded messages are still shown.
-              </Text>
+              </InlineNotice>
             ) : null}
             {page?.nextCursor ? (
               <AppButton
-                loading={moreLoading}
+                mode="outlined" loading={moreLoading}
                 disabled={loading || moreLoading}
                 onPress={() => {
                   void more();
@@ -292,7 +275,7 @@ function MailboxFeed({ box, status, read, header }) {
                 Last refreshed {new Date(page.asOf).toLocaleString()}
               </Text>
             ) : null}
-            <AppButton disabled={loading || moreLoading} onPress={refresh}>
+            <AppButton icon="refresh" disabled={loading || moreLoading} onPress={refresh}>
               Refresh messages
             </AppButton>
           </View>

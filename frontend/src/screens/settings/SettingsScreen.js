@@ -1,11 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Linking } from 'react-native';
+import { Linking, View } from 'react-native';
 import { Text, Switch, List, RadioButton, Divider } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { useFocusedResource } from '../../hooks/useFocusedResource';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import Screen from '../../components/layout/Screen';
+import { InlineNotice, InsetGroup, NavigationRow, ScreenHeading, ScreenSection } from '../../components/layout/ScreenSections';
 import StateView from '../../components/common/StateView';
 import AppButton from '../../components/common/AppButton';
 import { createNotificationService } from '../../services/notifications/service';
@@ -19,14 +20,13 @@ function SettingsForm({ initial }) {
     [notice, setNotice] = useState('');
   return (
     <>
-      <Text variant="titleLarge" accessibilityRole="header">
-        Message updates
-      </Text>
-      <List.Item
+      <ScreenSection title="Message updates">
+      <InsetGroup>
+      <List.Item accessible={false} titleNumberOfLines={2} descriptionNumberOfLines={3} style={{ minHeight: 80 }}
         title="In-app notifications"
         description="Keep new activity in your notification list"
         right={() => (
-          <Switch
+          <View style={{ minHeight: 48, minWidth: 48, marginLeft: 16, justifyContent: 'center' }}><Switch
             accessibilityLabel="In-app notifications"
             value={value.inAppAlerts}
             disabled={action.busy}
@@ -37,31 +37,31 @@ function SettingsForm({ initial }) {
                 pushAlerts: inAppAlerts ? v.pushAlerts : false,
               }))
             }
-          />
+          /></View>
         )}
       />
-      <List.Item
+      <List.Item accessible={false} titleNumberOfLines={2} descriptionNumberOfLines={3} style={{ minHeight: 80 }}
         title="Push alerts"
         description="Generic alerts without private message content"
         right={() => (
-          <Switch
+          <View style={{ minHeight: 48, minWidth: 48, marginLeft: 16, justifyContent: 'center' }}><Switch
             accessibilityLabel="Push alerts"
             disabled={action.busy || !value.inAppAlerts}
             value={value.pushAlerts}
             onValueChange={(pushAlerts) =>
               setValue((v) => ({ ...v, pushAlerts }))
             }
-          />
+          /></View>
         )}
       />
+      </InsetGroup>
       <Text>
         Turning alerts off does not cancel scheduled messages or stop inbox
         delivery. Existing notifications stay available.
       </Text>
-      <Divider />
-      <Text variant="titleLarge" accessibilityRole="header">
-        New phone recipients
-      </Text>
+      </ScreenSection>
+      <ScreenSection title="New phone recipients">
+      <InsetGroup>
       <RadioButton.Group
         value={value.defaultPhoneChannel}
         onValueChange={(channel) =>
@@ -78,6 +78,7 @@ function SettingsForm({ initial }) {
         />
         <RadioButton.Item label="SMS" value="SMS" disabled={action.busy} />
       </RadioButton.Group>
+      </InsetGroup>
       <Text>
         This preselects the channel for new schedules when available. Every
         recipient still needs review and consent. Saved schedules keep their
@@ -87,8 +88,9 @@ function SettingsForm({ initial }) {
         No automatic fallback: if a channel fails, Dearly does not send through
         a second channel.
       </Text>
+      </ScreenSection>
       <AppButton
-        mode="contained"
+        icon="content-save-outline" mode="contained"
         loading={action.busy}
         disabled={action.busy}
         onPress={() => {
@@ -100,8 +102,9 @@ function SettingsForm({ initial }) {
       >
         Save preferences
       </AppButton>
+      <ScreenSection title="This device" description="Save your choices, then enable push here. Your phone will ask for permission if needed.">
       <AppButton
-        disabled={action.busy || !value.pushAlerts}
+        icon="bell-outline" mode="outlined" disabled={action.busy || !value.pushAlerts}
         onPress={() => {
           void action.run(async () => {
             await createNotificationService(session).save(value);
@@ -122,17 +125,14 @@ function SettingsForm({ initial }) {
       >
         Open phone settings
       </AppButton>
-      {notice ? <Text accessibilityLiveRegion="polite">{notice}</Text> : null}
+      </ScreenSection>
+      {notice ? <InlineNotice>{notice}</InlineNotice> : null}
       {action.error ? (
-        <Text accessibilityRole="alert">{action.error}</Text>
+        <InlineNotice error>{action.error}</InlineNotice>
       ) : null}
       <Divider />
-      <Text variant="titleLarge" accessibilityRole="header">
-        Your account
-      </Text>
-      <AppButton onPress={() => router.push('/profile')}>
-        Edit profile and timezone
-      </AppButton>
+      <ScreenSection title="Your account">
+      <InsetGroup><NavigationRow title="Profile and timezone" icon="account-outline" onPress={() => router.push('/profile')} /></InsetGroup>
       <AppButton
         onPress={() => {
           void action.run(() => session.logout());
@@ -140,6 +140,7 @@ function SettingsForm({ initial }) {
       >
         Sign out on this device
       </AppButton>
+      </ScreenSection>
     </>
   );
 }
@@ -151,9 +152,7 @@ export default function SettingsScreen() {
   );
   return (
     <Screen>
-      <Text variant="headlineMedium" accessibilityRole="header">
-        Settings
-      </Text>
+      <ScreenHeading title="Settings" description="Choose how Dearly keeps you updated." />
       {data ? (
         <SettingsForm initial={data} />
       ) : (

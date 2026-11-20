@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
-import { Dialog, Portal, ProgressBar, Text, useTheme } from 'react-native-paper';
+import { Dialog, List, Portal, ProgressBar, Text, useTheme } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import AppButton from '../common/AppButton';
+import { InlineNotice } from '../layout/ScreenSections';
 import VoiceRecorder from './VoiceRecorder';
 import MediaPreview from './MediaPreview';
 import { useAuth } from '../../context/AuthContext';
@@ -86,10 +87,15 @@ export default function AttachmentPanel({ draftId, disabled, onGuardChange, read
   const finalize = (item) => run('Validating attachment', async (signal) => { await api.finalize(item.id, signal); const next = await api.list(signal); if (!signal.aborted) setItems(next); });
   return <View style={{ gap:spacing.md }}>
     <Text variant="titleLarge" accessibilityRole="header">Attachments ({items.length}/10)</Text>
-    <Text variant="bodySmall">Private until you send. Up to 100 MB per draft. Photos/audio 10 MB; videos 50 MB and 2 minutes; voice/audio 5 minutes; PDF 20 MB; text 1 MB.</Text>
-    <Text variant="bodySmall">JPEG, PNG, WebP · MP4, MOV, WebM · M4A, MP3, WAV · PDF, text</Text>
+    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>Private until delivery. Up to 10 attachments and 100 MB per draft.</Text>
+    <List.Accordion title="File types and limits" titleStyle={{ color: theme.colors.onSurfaceVariant }} style={{ backgroundColor: theme.colors.background }}>
+      <View style={{ gap: spacing.sm, padding: spacing.md }}>
+        <Text variant="bodySmall">Photos/audio: 10 MB. Videos: 50 MB and 2 minutes. Voice/audio: 5 minutes. PDF: 20 MB. Text: 1 MB.</Text>
+        <Text variant="bodySmall">JPEG, PNG, WebP · MP4, MOV, WebM · M4A, MP3, WAV · PDF, text</Text>
+      </View>
+    </List.Accordion>
     {!items.length && loaded ? <Text>No saved attachments yet.</Text> : null}
-    {items.map((item) => <View key={item.id} style={{ gap:spacing.sm }}>
+    {items.map((item) => <View key={item.id} style={{ gap:spacing.sm, padding:spacing.md, borderRadius:12, borderWidth:1, borderColor:theme.colors.outlineVariant }}>
       <Text variant="titleMedium">{item.name}</Text><Text>{(item.bytes/MiB).toFixed(2)} MB · {item.state === 'READY' ? 'Saved privately' : item.state === 'UPLOADED' ? 'Uploaded — validation needed' : item.state === 'UPLOADING' ? 'Upload active or interrupted — refresh status' : 'Awaiting upload'}</Text>
       {item.state === 'READY' ? <AppButton disabled={disabled || Boolean(busy) || recording} onPress={() => { void view(item); }}>Open {item.name}</AppButton> : null}
       {!readOnly && item.state === 'UPLOADED' ? <AppButton disabled={disabled || Boolean(busy) || recording} onPress={() => { void finalize(item); }}>Validate {item.name}</AppButton> : null}
@@ -98,8 +104,8 @@ export default function AttachmentPanel({ draftId, disabled, onGuardChange, read
     {preview ? <View style={{ gap:spacing.sm }}><Text variant="titleMedium">{preview.item.name}</Text><MediaPreview uri={preview.uri} mime={preview.item.mime} name={preview.item.name} />
       <AppButton onPress={() => { const uri = viewed.current; viewed.current = ''; setPreview(null); void discardLocal(uri); }}>Close preview</AppButton></View> : null}
     {!readOnly ? <>
-    <AppButton mode="outlined" disabled={disabled || Boolean(busy) || recording || Boolean(selected) || items.length >= 10} onPress={() => { void pickMedia(); }}>Choose photo or video</AppButton>
-    <AppButton mode="outlined" disabled={disabled || Boolean(busy) || recording || Boolean(selected) || items.length >= 10} onPress={() => { void pickFile(); }}>Choose file or audio</AppButton>
+    <AppButton icon="image-multiple-outline" mode="outlined" disabled={disabled || Boolean(busy) || recording || Boolean(selected) || items.length >= 10} onPress={() => { void pickMedia(); }}>Choose photo or video</AppButton>
+    <AppButton icon="file-upload-outline" mode="outlined" disabled={disabled || Boolean(busy) || recording || Boolean(selected) || items.length >= 10} onPress={() => { void pickFile(); }}>Choose file or audio</AppButton>
     <VoiceRecorder disabled={disabled || Boolean(busy) || Boolean(selected) || items.length >= 10} onReady={receiveVoice} onPending={setRecording} />
     {selected ? <View style={{ gap:spacing.sm }}><Text variant="titleMedium">Ready to upload: {selected.name}</Text><Text>{(selected.bytes/MiB).toFixed(2)} MB · Not saved yet</Text><MediaPreview key={selected.uri} uri={selected.uri} mime={selected.mime} name={selected.name} />
       <AppButton mode="contained" disabled={disabled || Boolean(busy) || recording} onPress={() => { void upload(); }}>Upload or retry selected file</AppButton>
@@ -107,9 +113,9 @@ export default function AttachmentPanel({ draftId, disabled, onGuardChange, read
     </> : null}
     {busy ? <><Text accessibilityLiveRegion="polite">{busy}{busy.includes('Uploading') || busy.includes('Opening') ? ` · ${Math.round(progress*100)}% transferred` : '…'}</Text><ProgressBar progress={progress} accessibilityLabel={busy} />
       <AppButton onPress={() => active.current?.abort()}>Cancel current action</AppButton></> : null}
-    {error ? <Text accessibilityRole="alert" style={{ color:theme.colors.error }}>{error}</Text> : null}
-    <AppButton disabled={Boolean(busy) || recording} onPress={() => { void refresh(); }}>Refresh attachments</AppButton>
-    {!readOnly ? <Text variant="bodySmall">Uploads save separately from message text. Abandoned uploads expire after 24 hours. Microphone permission is requested only when you tap Record voice.</Text> : null}
+    {error ? <InlineNotice error>{error}</InlineNotice> : null}
+    <AppButton icon="refresh" disabled={Boolean(busy) || recording} onPress={() => { void refresh(); }}>Refresh attachments</AppButton>
+    {!readOnly ? <Text variant="bodySmall" style={{ color:theme.colors.onSurfaceVariant }}>Uploads save separately from message text. Abandoned uploads expire after 24 hours. Microphone permission is requested only when you tap Record voice.</Text> : null}
     <Portal><Dialog visible={confirm !== null} onDismiss={() => setConfirm(null)}><Dialog.Title>Remove attachment?</Dialog.Title><Dialog.Content><Text>{confirm?.name} will be removed from this draft. An active transfer must finish or expire first.</Text></Dialog.Content><Dialog.Actions><AppButton onPress={() => setConfirm(null)}>Keep attachment</AppButton><AppButton onPress={remove}>Remove attachment</AppButton></Dialog.Actions></Dialog></Portal>
   </View>;
 }
