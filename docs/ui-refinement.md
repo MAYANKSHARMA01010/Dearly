@@ -28,8 +28,8 @@ private screenshots and source are not uploaded.
 | 13 | Profile `/profile` | Complete |
 | 14 | Settings `/settings` | Complete |
 | 15 | Notifications `/notifications` | Complete |
-| 16 | Service status `/status` | Next |
-| 17 | Page not found | Pending |
+| 16 | Service status `/status` | Complete |
+| 17 | Page not found | Next |
 
 Native evidence uses the existing iPhone 17 Pro Max simulator. No simulator reset,
 Android launch, live message send or new provider configuration is part of this UI
@@ -212,3 +212,11 @@ errors are suppressed, and notification-read vs message-opened is explicit.
 Verified unavailable/retry state, corrected an invalid synthetic fixture target,
 then verified unread row, exact received-item navigation and unchanged message
 opened status. Lint/types passed. No push delivery or real account record changed.
+
+## Service status
+
+Combined Stitch’s focused status grouping with Impeccable’s truthful state
+guidance. Connection headline, two storage/server checks and retry action are
+clear; scope copy avoids implying provider readiness from database health.
+Verified available server/storage and repeat check on iPhone 17 Pro Max. Lint/types
+passed; external-provider availability was not inferred or tested by this screen.

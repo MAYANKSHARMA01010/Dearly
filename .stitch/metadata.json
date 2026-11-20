@@ -78,6 +78,11 @@
       "id": "385df174d4b24eafafdc0efecfed5469",
       "name": "projects/13022673306304030650/screens/385df174d4b24eafafdc0efecfed5469",
       "title": "Notifications List"
+    },
+    "status": {
+      "id": "fb88be296286494999a862d23f18cb5f",
+      "name": "projects/13022673306304030650/screens/fb88be296286494999a862d23f18cb5f",
+      "title": "Service Status"
     }
   }
 }
