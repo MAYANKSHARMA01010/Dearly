@@ -136,3 +136,28 @@ live demo as part of ordinary CI.
 - `7606cbd` — disposable CI, production template and supervised container definitions.
 - `e55fcf0` — SDK 58 patch alignment and matching lockfile.
 - Release documents and phase status are recorded in the following documentation commit.
+
+## 1.1.0 release candidate — 20 November 2026
+
+Public notification links now use the hosted HTTPS backend from both local and
+hosted workers. Provider adapters reject local-only links. Email/WhatsApp and
+the SMS companion viewer include GitHub APK download and phone registration
+instructions; Profile email verification enables eligible email deliveries in
+Received. WhatsApp remains the real phone-login transport.
+
+Backend lint/types/build and 108 tests passed; frontend lint/types and 97 tests
+passed. The 97 isolated backend integration checks and three real mobile/API
+integration scenarios passed. An encrypted PostgreSQL 18 restore drill passed
+with one synthetic email challenge consumed after restore. The drill now pins
+local storage explicitly so private developer storage settings cannot change it.
+
+Neon applied the three additive migrations without resets and updated only the
+existing Gmail relay function. Relay connection verification returned READY.
+Render confirmed the new backend live; public readiness and worker checks passed,
+and unauthenticated email verification requests were rejected. Local and hosted
+database/signing-key alignment was checked without exposing values.
+
+The local signed arm64 Android APK build succeeded for app version 1.1.0, Android
+versionCode 4 and iOS build number 4. Publish as v1.1.0-rc.1, not stable. Physical
+Android acceptance, real email verification acceptance and interactive Profile
+verification remain pending. No live test email, SMS or WhatsApp was sent.

@@ -60,6 +60,7 @@ async function main() {
     const user = await from.user.create({
       data: { phone: '+12025550125', phoneVerifiedAt: new Date() },
     });
+    await from.emailVerification.create({ data: { userId: user.id, email: 'casey@example.com', codeHash: 'a'.repeat(64), dispatchStatus: 'ACCEPTED', expiresAt: new Date(Date.now()+300000) } });
     await from.session.create({
       data: {
         userId: user.id,
@@ -91,6 +92,7 @@ async function main() {
         env: {
           ...process.env,
           NODE_ENV: 'test',
+          STORAGE_PROVIDER: 'local',
           DATABASE_URL: source.toString(),
           AUTH_MODE: 'disabled',
           STORAGE_ROOT: storage,
@@ -111,21 +113,29 @@ async function main() {
     );
     stage = 'verify-restored-data';
     assert.equal(await to.session.count({ where: { revokedAt: null } }), 0);
+    stage = 'verify-email-proof-revocation';
+    assert.equal(await to.emailVerification.count(), 1);
+    assert.equal(await to.emailVerification.count({where:{consumedAt:null}}), 0);
+    stage = 'verify-quarantine-marker';
     assert(
       (await readFile(join(restored, '.restore-review-required'))).length > 0,
     );
+    stage = 'verify-restored-payload';
     const rows = await to.$queryRaw<
       { payload: string }[]
     >`SELECT payload FROM backup_drill`;
     assert.equal(rows[0].payload, 'synthetic restored data');
+    stage = 'verify-restored-object';
     assert.equal(
       (await readFile(join(restored, id))).toString(),
       'synthetic private attachment',
     );
+    stage = 'verify-restored-migrations';
     const migrations = await to.$queryRaw<
       { count: bigint }[]
     >`SELECT COUNT(*) AS count FROM _prisma_migrations`;
     assert(migrations[0].count > 0n);
+    stage = 'verify-occupied-target-refusal';
     await assert.rejects(
       service.restore(
         archive,
@@ -144,6 +154,7 @@ async function main() {
         appliedMigrationsRestored: Number(migrations[0].count),
         nonEmptyTargetRefused: true,
         restoredSessionsRevoked: true,
+        restoredEmailChallengesConsumed: true,
         quarantineMarkerCreated: true,
         liveDataUsed: false,
       }),

@@ -80,7 +80,7 @@ The user chose to run this check themselves. No automated/live SMTP send was mad
    the schedule form. Use a time at least one minute ahead, then review/confirm.
 2. When due, check owned message details: Submitted means Gmail accepted it; it
    does not promise Inbox placement. Check Inbox and Spam in your Gmail account.
-3. Open the email's link on this Mac while using the current localhost setting.
+3. Open the email's hosted HTTPS link on the recipient device.
    Choose Open message; verify only your test text/files are visible. Close the
    tab when finished. A physical phone needs a reachable HTTPS hosted URL instead.
 4. Revoke the link from the mobile owned message details and reopen the original
