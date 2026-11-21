@@ -18,5 +18,5 @@ export function useAsyncAction() {
       return false;
     } finally { if (active.current === controller) active.current = null; if (mounted.current) setBusy(false); }
   }, []);
-  return { busy, error, run, clearError: () => setError('') };
+  return { busy, error, run, cancel: () => active.current?.abort(), clearError: () => setError('') };
 }
