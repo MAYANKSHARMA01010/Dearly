@@ -16,7 +16,7 @@ export function createAttachmentRouter(config: AppConfig, prisma?: PrismaClient,
   if (!prisma) { router.use((_req, _res, next) => next(new ApiError(503, 'MEDIA_UNAVAILABLE', 'Attachment storage is unavailable.'))); return router; }
   const c = attachmentController(new AttachmentService(prisma, createObjectStore(config), config.ffprobePath));
   router.get('/', c.list); router.post('/', validateBody(reserveAttachment), c.reserve);
-  router.get('/:id', c.read); router.put('/:id/content', c.upload); router.get('/:id/content', c.content);
+  router.get('/:id', c.read); router.put('/:id/content', c.upload); router.get('/:id/content/access', c.access); router.get('/:id/content', c.content);
   router.post('/:id/finalize', c.finalize); router.delete('/:id', c.remove);
   return router;
 }

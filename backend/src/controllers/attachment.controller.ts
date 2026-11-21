@@ -24,6 +24,7 @@ export function attachmentController(service: AttachmentService) {
       if (req.get('content-type')?.split(';')[0] !== 'application/octet-stream' || req.get('content-encoding')) throw new ApiError(415, 'ATTACHMENT_TYPE', 'Upload raw, unencoded file bytes.');
       return service.upload(req.auth!.userId, draftId, id, req);
     }),
+    access: action((req, draftId, id) => service.access(req.auth!.userId, draftId, id)),
     content: ((req, res, next) => {
       void Promise.resolve().then(async () => {
         const { draftId, id } = params(req);

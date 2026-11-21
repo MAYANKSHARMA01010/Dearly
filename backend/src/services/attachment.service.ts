@@ -1,3 +1,4 @@
+import { mediaAccess } from '../utils/mediaAccess';
 import { lockMessage } from '../utils/lockMessage';
 import { Prisma, type PrismaClient, type Attachment } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
@@ -75,6 +76,7 @@ export class AttachmentService {
     }
     return this.read(ownerId, draftId, id);
   }
+  async access(ownerId: string, draftId: string, id: string) { return mediaAccess((await this.owned(ownerId, draftId, id))!); }
   async content(ownerId: string, draftId: string, id: string) {
     const row = (await this.owned(ownerId, draftId, id))!;
     if (row.state !== 'READY') throw conflict(); return { path: await objectPath(this.store, id, row.bytes, row.sha256), mime: row.mime };

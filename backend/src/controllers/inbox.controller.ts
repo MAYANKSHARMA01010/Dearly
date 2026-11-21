@@ -26,6 +26,13 @@ export function inboxController(service: InboxService) {
       .then((value) => sendSuccess(res, value, req.requestId))
       .catch(next);
   };
+  const access: RequestHandler = (req, res, next) => {
+    void Promise.resolve().then(async () => {
+      const input = inboxParams.safeParse(req.params);
+      if (!input.success || !input.data.attachmentId) throw new ApiError(400, 'VALIDATION_ERROR', 'Invalid attachment address.');
+      return service.access(req.auth!.userId, input.data.id, input.data.attachmentId);
+    }).then(value => sendSuccess(res, value, req.requestId)).catch(next);
+  };
   const content: RequestHandler = (req, res, next) => {
     void Promise.resolve()
       .then(async () => {
@@ -86,5 +93,5 @@ export function inboxController(service: InboxService) {
       .then((value) => sendSuccess(res, value, req.requestId))
       .catch(next);
   };
-  return { list, read, content, open };
+  return { list, read, content, access, open };
 }

@@ -111,6 +111,11 @@ export class InboxService {
       },
     );
   }
+  async access(userId: string, id: string, attachmentId: string) {
+    const item = await this.owned(userId, id);
+    if (!item.message.attachments.some((a) => a.id === attachmentId)) throw missing();
+    return this.media.access(item.message.ownerId, item.messageId, attachmentId);
+  }
   async content(userId: string, id: string, attachmentId: string) {
     const item = await this.owned(userId, id);
     if (!item.message.attachments.some((a) => a.id === attachmentId))

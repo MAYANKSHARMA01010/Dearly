@@ -47,10 +47,15 @@ test('private attachment API, real storage/media validation and orphan cleanup',
       await Promise.all([reserve(body, 'text/plain', 'test.txt', base, id), reserve(body, 'text/plain', 'test.txt', base, id)]);
       assert.equal(await db.attachment.count(), 1);
       await request(app).get(`${base}/${id}/content`).expect(401);
+      await request(app).get(`${base}/${id}/content/access`).expect(401);
+      await request(app).get(`${base}/${id}/content/access`).set('Authorization', `Bearer ${other.accessToken}`).expect(404);
+      await request(app).get(`${base}/${id}/content/access`).set('Authorization', token).expect(409);
       await request(app).get(`${base}/${id}`).set('Authorization', `Bearer ${other.accessToken}`).expect(404);
       await request(app).get(`${base}/${id}/content`).set('Authorization', token).expect(409);
       await put(`${base}/${id}/content`, body).expect(200); await finalize(`${base}/${id}`).expect(200); await finalize(`${base}/${id}`).expect(200);
       const read = await request(app).get(`${base}/${id}/content`).set('Authorization', token).expect(200);
+      const lease=await request(app).get(`${base}/${id}/content/access`).set('Authorization', token).expect(200);
+      assert.equal(lease.body.data.id,id);assert.match(lease.body.data.sha256,/^[a-f0-9]{64}$/);assert.equal(lease.body.data.bytes,body.length);assert.equal(lease.headers['cache-control'],'private, no-store');
       assert.equal(read.text, body.toString()); assert.equal(read.headers['cache-control'], 'private, no-store');
       const range = await request(app).get(`${base}/${id}/content`).set('Authorization', token).set('Range', 'bytes=0-6').expect(206); assert.equal(range.text, 'private');
       await request(app).delete(`${base}/${id}`).set('Authorization', `Bearer ${other.accessToken}`).expect(404);
