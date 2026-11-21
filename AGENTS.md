@@ -9,10 +9,12 @@ phone number and OTP only. Email is a delivery destination, not a login method.
 
 Users must be able to view messages they created, scheduled, sent, or received,
 including content, attachments, recipients, timestamps, and delivery status.
-Planned channels are in-app, WhatsApp, SMS, and email. Support drafts and editing,
+Implemented channels are in-app, WhatsApp, SMS, and email; provider acceptance,
+phone arrival, and content opening remain separate evidence. Support drafts and editing,
 rescheduling, and canceling messages before delivery.
 
-Read [the 16-phase plan](docs/implementation-phases.md) and
+Read the original [Phases 1–16](docs/implementation-phases.md), the current
+[Phases 17–24 and acceptance checklist](docs/follow-up-phases.md), and
 [the structure guide](docs/project-structure.md) before implementation. Consult
 [messaging options](docs/messaging-options.md) before provider work; it records
 ShopSmart reuse evidence and editable suggestions, not final provider decisions. Work on
@@ -44,8 +46,8 @@ within a phase does not authorize the entire phase.
 
 ## Implementation requirements
 
-- Replace the existing generic email/password Prisma template when implementing
-  phone authentication. Review schema changes and create traceable migrations;
+- Preserve the implemented phone-identity and verified-email-linking schema.
+  Review schema changes and create traceable additive migrations;
   never reset a database or rewrite applied migrations without explicit direction.
 - Validate requests and enforce ownership/recipient access on the server. Do not
   expose scheduled content to recipients before its delivery time.
@@ -91,8 +93,8 @@ within a phase does not authorize the entire phase.
   is required before marking Phase 14 complete; WhatsApp login OTP stays separate.
   Phase 14 physical acceptance passed on 19 November: user-confirmed arrival, signed
   single-part sent/delivered receipts and revoked-test-link rejection. The current
-  iQOO sender uses SIM 1. Temporary callback tunneling exposes only port 8082;
-  hosted content/backend URLs remain release work.
+  iQOO sender uses SIM 1. Temporary local callback tunneling, when needed, exposes
+  only port 8082; hosted recipient links use the configured HTTPS origin.
 - Track delivery per recipient and channel. Distinguish provider acceptance,
   delivery confirmation, and opening; only claim statuses supported by evidence.
 - Phase 8 uses private filesystem attachments with owner-only APIs, bounded
@@ -126,7 +128,8 @@ within a phase does not authorize the entire phase.
   an explicit development adapter.
 - Keep secrets out of Git and client-visible environment variables. Document
   required configuration with safe `.env.example` values.
-- Use the supplied Neon PostgreSQL connection through `backend/.env` only; never
+- Load Neon PostgreSQL credentials from the private environment for the selected
+  local or hosted runtime; never
   copy its credentials into documentation, commits, logs, or frontend variables.
   The local backend port is `8080`. Frontend `EXPO_PUBLIC_API_URL` is the local
   URL (`http://localhost:8080`); `EXPO_PUBLIC_SERVER_API_URL` is now
@@ -296,3 +299,40 @@ unrelated bundle, and do not split every file into a separate commit.
 - Version gating compares the most recent reachable published release tag and
   forbids source-version regression. Iteration on an unpublished version is
   permitted until its release is published; a published version cannot be reused.
+
+## Follow-up work: Phases 17–24
+
+- Work only on the requested phase in [the follow-up plan](docs/follow-up-phases.md).
+  Its checklist is the current completion index; dated verification records are
+  evidence, not a claim that every later release passed every historical check.
+- Distinguish implemented, verified, deployed, released and device-accepted work.
+  Record exact commit/version, date, check and limitation. A health response does
+  not prove phone delivery, and a platform export does not prove native behavior.
+- Every UI change requires both Impeccable context/relevant playbook and a focused
+  Stitch proposal before editing. Use synthetic briefs; preserve native patterns
+  and Dearly's design system. If either is unavailable, report it and ask before
+  doing UI edits with only one. Verify rendered states, not only source checks.
+- Keep backend configuration credentials and operational sender/test identities
+  private. User phone/email records remain authenticated database data, not global
+  environment settings. EXPO_PUBLIC variables are public build configuration.
+  Keep safe examples aligned with environment validation; never copy private values
+  into examples, logs, documentation, CI output or release assets. Check Render
+  privately and report variable names/status only. Credential replacement needs a
+  coordinated rollout; do not regenerate signing/access keys casually.
+- SQLite and persistent mobile media caching are planned, not implemented by this
+  document. Neon remains authoritative for access, schedules and delivery. Never
+  cache OTP/auth decisions or schedule confirmation as authoritative. Define TTL,
+  account isolation, logout purge, encryption/key handling and offline revocation
+  limits before persisting private content. Redis must not become a durable queue.
+- Scheduled maintenance and service monitoring must be bounded and non-overlapping.
+  Never use artificial keepalive jobs to bypass free-host sleeping or promise exact
+  delivery while services sleep. Do not create paid Render cron services. Never
+  schedule WAHA logout/reset/relink or automatic replay of uncertain submissions.
+- CI/CD currently checks code/version and verifies published assets; it does not
+  yet orchestrate signed builds, deployment verification and publication. Phase 24
+  extends it. Protect signing credentials and restrict signing runners to trusted
+  release jobs; untrusted pull requests must never receive secrets or runner access.
+- Documentation-only work needs link/path/whitespace checks and focused commits,
+  not a version bump, rebuild, deployment or release. Runtime deployment closeout
+  above still applies when runtime behavior changes. Do not mark a later phase
+  done merely because its rules are documented here.

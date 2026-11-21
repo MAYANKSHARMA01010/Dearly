@@ -9,15 +9,18 @@ Users manage created, scheduled, sent, received, draft, and failed messages, wit
 in-app, WhatsApp, SMS, and email delivery.
 
 This expanded roadmap replaces the earlier seven-phase outline with **16 phases**.
-Current completion status is tracked in the table and dated records below.
+Original phase completion is tracked in the table and dated records below.
+The new [Phases 17–24 plan and current acceptance checklist](follow-up-phases.md)
+continues this roadmap without renumbering historical work.
 Each phase delivers a bounded capability, with what to build, how to approach it,
 completion checks, and useful commit boundaries. Detailed rules live in
 [../AGENTS.md](../AGENTS.md); folder responsibilities are in
 [project-structure.md](project-structure.md).
 
 See [environment-setup.md](environment-setup.md) for the configured Neon database,
-local backend port `8080`, and separate local/future hosted API URL settings. Only
-environment values are prepared; backend startup and API selection remain below.
+local backend port `8080`, and separate local/hosted API URL settings. The current
+hosted topology is recorded in [Render deployment](render-deployment.md); historical
+phase descriptions below are not current deployment status.
 
 Work only on the phase/task the user requests. Finish its checks, update the
 completion record, and make focused commits before reporting back. Start the next

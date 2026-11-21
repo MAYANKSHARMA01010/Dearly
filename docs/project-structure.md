@@ -1,5 +1,10 @@
 # Dearly project structure
 
+The phase-by-phase descriptions below record how folders were introduced. They
+are historical implementation context, not pending tasks or current deployment
+status. See [the follow-up plan](follow-up-phases.md) for current work and
+[Render deployment](render-deployment.md) for hosted storage/processes.
+
 Phase 1 prepares folders for phone-only login and future messages containing
 text, photos, videos, voice recordings, and other attachments. Recipients may be
 the sender, another Dearly user, a phone number, or an email address. Planned
@@ -100,14 +105,14 @@ Retain the existing layered structure and naming, including plural `configs/`:
 
 Keep business rules in services and vendor-specific calls in providers. Phase 10
 uses a PostgreSQL work table with bounded polling in a separate worker process.
-Database state survives process restarts; Redis is not required. Store attachments through the eventual storage provider; no local upload
+Database state survives process restarts; Redis is not required. Hosted attachments now use the Neon private object adapter; no local upload
 directory was needed until Phase 8. Phase 8 selects a private filesystem adapter
 with metadata and tombstones in PostgreSQL. `jobs/cleanupAttachments.ts` is an
 explicit cleanup command; it is not a delivery scheduler. Hosting requires persistent
 storage. Provider folders do not choose a vendor or guarantee free
 delivery.
 
-## Next implementation steps
+## Original implementation sequence (historical)
 
 1. Backend foundation is implemented in Phase 2: `src/app.ts` assembles Express,
    `src/server.ts` loads the environment, and `src/serverLifecycle.ts` manages
