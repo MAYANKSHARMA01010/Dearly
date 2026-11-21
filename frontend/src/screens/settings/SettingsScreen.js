@@ -1,3 +1,4 @@
+import MediaStorageSection from '../../components/media/MediaStorageSection';
 import SnapshotStatus from '../../components/common/SnapshotStatus';
 import { useCallback, useMemo, useState } from 'react';
 import { Linking, View } from 'react-native';
@@ -135,6 +136,8 @@ function SettingsForm({ value,setValue }) {
       {action.error ? (
         <InlineNotice error>{action.error}</InlineNotice>
       ) : null}
+      <Divider />
+      <MediaStorageSection />
       <Divider />
       <ScreenSection title="Your account">
       <InsetGroup><NavigationRow title="Profile and timezone" icon="account-outline" onPress={() => router.push('/profile')} /></InsetGroup>
