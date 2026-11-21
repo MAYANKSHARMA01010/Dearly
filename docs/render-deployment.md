@@ -87,3 +87,14 @@ can be delayed until services wake. No artificial keepalive, unlimited-uptime
 promise or paid upgrade is configured. Neon and Gmail quotas still apply. Stop at
 quota exhaustion instead of enabling billing. Hosted backup scheduling/retention
 and real Android push/background acceptance remain operational follow-up items.
+
+## Phase 18 private configuration reconciliation — 21 November 2026
+
+See [environment audit](environment-audit.md). Backend and WAHA environment-update
+deployments succeeded on their existing code/image. The relay-mode API no longer
+stores the unused Gmail password; explicit OTP quota preserves its previous
+default. WAHA interfaces remain disabled with explicit private admin credentials
+to avoid auto-generation at startup. Gmail replacement authentication passed
+locally and through the hosted relay, without sending an email. Open credential
+revocation/rotation steps remain separately tracked; no claim of complete
+credential replacement or resolved OTP latency is made.

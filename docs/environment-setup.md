@@ -1,143 +1,139 @@
 # Environment setup
 
-## Current configuration
+## Configuration ownership
 
-| Setting | Location | Purpose |
+| File/settings | Purpose | Committed? |
 | --- | --- | --- |
-| `DATABASE_URL` | `backend/.env` only | Supplied Neon PostgreSQL connection; preserve its SSL/channel-binding query parameters |
-| `PORT=8080` | `backend/.env` | Local Express listening port |
-| `BACKEND_LOCAL_URL=http://localhost:8080` | `backend/.env` | Explicit local Dearly backend address |
-| `BACKEND_SERVER_URL=` | `backend/.env` | Future hosted Dearly backend address; empty until supplied |
-| `REDIS_LOCAL_URL=redis://localhost:6379` | `backend/.env` only | Optional local cache connection; existing `REDIS_URL` remains a local alias |
-| `REDIS_SERVER_URL=` | `backend/.env` only | Future hosted Redis TCP/TLS connection; no production fallback to local |
-| `AUTH_MODE=whatsapp` | `backend/.env` | Real login OTP through the paired free WAHA sender; committed default remains disabled |
-| `WHATSAPP_OTP_DAILY_LIMIT=20` | `backend/.env` or default | Separate persistent per-sender OTP limit |
-| `SMS_PROVIDER=disabled` | `backend/.env` | Enable only after physical SMSGate sender setup; see SMS guide |
-| `SMSGATE_LOCAL_API_URL` / `SMSGATE_SERVER_API_URL` | `backend/.env` | Selected SMSGate Cloud gateway for local backend / explicit future server; no production fallback |
-| `OTP_PEPPER` | `backend/.env` only | Private generated OTP hashing key |
-| `EXPO_PUBLIC_API_URL=http://localhost:8080` | `frontend/.env` | Local backend base URL |
-| `EXPO_PUBLIC_SERVER_API_URL=` | `frontend/.env` | Future hosted backend base URL; intentionally empty |
-| `EXPO_PUBLIC_APP_ENV=development` | `frontend/.env` | Current development environment |
+| `backend/.env` | Local backend; parsed by `configs/loadEnvironment.ts` regardless of working directory | No |
+| `backend/.env.example` | Safe local defaults, disabled providers and documented optional inputs | Yes |
+| `backend/.env.production.example` | Incomplete hosted Render template: Gmail relay and Neon object storage | Yes |
+| `backend/waha.env.example` | Separate WAHA service settings; never load this as the Express environment | Yes |
+| Render backend environment | Production API plus supervised delivery/push processes | Private service settings |
+| Render WAHA environment | Protected WhatsApp gateway, stable worker/session identity and dedicated database role | Private service settings |
+| Neon `dearlymail` function environment | Gmail app password and relay signing/access configuration | Private function settings |
+| `frontend/.env` / `.env.example` | Public API selection for development | Only example committed |
+| `frontend/eas.json` preview profile | Public hosted URL baked into the locally signed APK | Yes; no server secrets |
 
-The database is hosted on Neon even while the backend runs locally. The future
-hosted API URL is an HTTP(S) application address, separate from the PostgreSQL
-connection string. Never put database credentials in the frontend.
+The current topology is in [Render deployment](render-deployment.md). The backend
+runs locally on port 8080; Neon remains its remote database. The hosted backend is
+`https://dearly-z8zm.onrender.com`, and WAHA is `https://dearly-waha.onrender.com`.
+Public service URLs are not credentials. Provider keys, connection passwords,
+operational sender/test identities and private device IDs are server configuration.
+Users' phone/email records are authenticated account data in PostgreSQL, not global
+configuration. Never put either class of private data in examples or mobile assets.
 
-Private `.env` files are ignored by Git. Committed `.env.example` files contain
-only safe placeholders/public defaults. On a fresh checkout, copy each example
-to `.env` and supply the real backend database connection privately. Other backend
-example settings are validated as features are implemented. Phase 4's local
-simulation remains available only through explicit `AUTH_MODE=development`;
-Phase 13 adds real WhatsApp OTP. Redis remains optional. See
-[auth setup and contracts](authentication.md) for mode guards, migration and tests.
+## Safe local setup
 
-Backend defaults are `HOST=127.0.0.1`, `LOG_LEVEL=info`, a 1 MiB JSON body limit,
-and a 10-second graceful-shutdown deadline. New settings in `backend/.env.example`
-are optional defaults, so the existing private environment file remains usable.
-See [backend setup](../backend/README.md) for all runtime settings and checks.
+Copy `backend/.env.example` to the ignored local `.env`, then supply the database
+connection privately. The template validates structurally but its database URL is
+only a placeholder; no connection or provider availability is implied.
+Authentication and delivery providers default to disabled. Local simulated auth
+requires an explicit development mode, loopback bind and private OTP pepper; real
+login uses WhatsApp with the paired sender. Never expose simulated auth publicly.
 
-## API client behavior
+Optional fields are omitted/commented unless their validator explicitly accepts
+empty strings. Do not uncomment every placeholder. Numeric fields cannot be empty.
+`parseEnvironment` reports field names only; it must never echo supplied values.
+The new example regression checks run through `npm run check --prefix backend`.
 
-- Development uses `EXPO_PUBLIC_API_URL`.
-- Hosted/production use requires a nonempty HTTPS `EXPO_PUBLIC_SERVER_API_URL` and must
-  report missing configuration instead of silently falling back to localhost.
-- Keep the hosted value empty until a real deployment URL exists. Restart the
-  frontend development process after changing environment settings.
+Private environments should have owner-only filesystem permissions. Back them up
+privately before editing; do not overwrite the local file with a hosted export.
+Do not use `cat`, shell tracing, raw config dumps or screenshots of revealed values
+for reporting. Restart the intended process after changing its environment.
 
-Phase 3 implements this selection in `frontend/src/config/api.js`. Release builds
-require the hosted URL even if `EXPO_PUBLIC_APP_ENV` was accidentally left as
-`development`; local fallback is never used in a release. While the hosted URL is
-empty, a release's service-status screen reports missing configuration. Development
-continues against the local server. The original environment-only
-setup did not start it or change the database; Phase 2 runtime verification is
-recorded in the [phase plan](implementation-phases.md). No schema push or migration
-is needed for the Phase 2 `SELECT 1` readiness probe.
+## Selection and precedence
 
-## Running on a device later
+| Setting | Development | Production |
+| --- | --- | --- |
+| Mobile API | `EXPO_PUBLIC_SERVER_API_URL` first; local URL when server is absent or `EXPO_PUBLIC_API_TARGET=local` is explicit | Remote HTTPS server required; local override rejected |
+| Backend address metadata | `BACKEND_LOCAL_URL`, defaulting to localhost and PORT; separate `BACKEND_SERVER_URL` | Explicit hosted server URL |
+| WhatsApp client | `WAHA_LOCAL_API_URL` | `WAHA_SERVER_API_URL` only; no local fallback |
+| SMSGate gateway | `SMSGATE_LOCAL_API_URL` | `SMSGATE_SERVER_API_URL` only; no local fallback |
+| Optional Redis | `REDIS_LOCAL_URL`, then legacy `REDIS_URL` | `REDIS_SERVER_URL` only |
+| Outgoing recipient origin | `CONTENT_PUBLIC_URL`, then `BACKEND_SERVER_URL`, then legacy `EMAIL_PUBLIC_URL` | Same precedence; hosted HTTPS required |
 
-`localhost` refers to the device running the app. The default is suitable when
-the app can reach the backend on the same host. For a physical phone, set the
-local API value to the development computer's LAN address with port `8080` and
-ensure the server accepts LAN connections. For an Android emulator, use its
-host-machine address (commonly `http://10.0.2.2:8080` for the standard emulator).
-Keep these machine-specific overrides in the private environment file.
+Mobile API selection does not change backend provider selection. A local backend
+can use local WhatsApp, SMSGate Cloud and hosted recipient content. API failure
+must never automatically replay an OTP/write against another backend. Configure
+local and hosted keys independently; do not copy/relink paired sessions.
 
-With an Android emulator/device attached through adb, an alternative that preserves
-the localhost URL is `adb reverse tcp:8080 tcp:8080`. Reverse the Metro port too
-when using a localhost development server. This is a local development tunnel,
-not a deployed API. Restart Expo after changing public environment values.
+Localhost on a physical phone means the phone itself. For deliberately local API
+testing, use an intentional reachable LAN address or USB reverse forwarding. Keep
+that override private and development-only. Browser CORS origins are separate
+from listening addresses; native clients do not require browser CORS entries.
 
-Client/CORS origins such as Expo's development port are separate from the backend
-listening port. Do not change them all to `8080` merely because Express uses it.
+Redis accepts `redis://` or `rediss://`, not an HTTPS application URL or bare Render
+resource ID. Render's internal URL is for the hosted network; it is not generally
+reachable from this Mac. Redis remains optional and inactive in the current
+runtime; configuration does not prove connectivity or implement caching.
 
+## Hosted environment
 
-Development OTP mode requires a loopback backend bind. Do not change HOST to a
-LAN/public address while it is enabled or expose it through a proxy/tunnel. Use
-iOS Simulator localhost or local adb reverse for development; physical-device/public
-login requires a real verified OTP adapter and subsequent configuration review.
-JWT environment placeholders are obsolete; sessions use opaque database-backed tokens.
+The production template intentionally fails validation until private credentials
+are supplied. It uses the current public service origins, Gmail relay, private
+Neon storage and explicit quotas. Push defaults disabled until the actual project
+is configured; the full release preflight additionally requires configured push.
+`TRUST_PROXY_HOPS=1` matches the recorded Render setup; review it for another host.
 
-## Phase 12 email configuration
+Render uses `node dist/jobs/startHosted.js`, with health path `/health/live`. Keep
+Neon object storage as durable media; `/tmp/dearly-attachments` is a disposable
+private cache. `PERSISTENT_STORAGE_CONFIRMED=false` is correct for that ephemeral
+directory when the validated remote adapter is configured. Do not assert a durable
+local mount merely to pass preflight. Self-managed Compose can deliberately use a
+persistent filesystem adapter; that is a different topology.
 
-Gmail SMTP credentials are private backend values. `EMAIL_PUBLIC_URL` currently
-uses `http://localhost:8080`; the future hosted frontend/API URL remains empty.
-`EXTERNAL_ACCESS_SECRET` is a separate persistent random key. Changing it invalidates
-all existing email links. `EMAIL_DAILY_LIMIT=100` reserves a conservative rolling
-24-hour budget; external sending from the same Gmail account shares Google's
-actual limits and is not measured by Dearly. See [email setup](email-delivery.md).
+The hosted backend's relay mode needs SMTP_USER/FROM for sender identity and the
+relay URL/secret, but does not need SMTP_PASSWORD. That password belongs only in
+the Gmail relay and the explicitly configured local SMTP runtime. The relay uses
+Neon's injected database connection and the same content origin/access secret as
+the backend. Existing issued links depend on those persistent secrets; changing
+them casually invalidates access. Keep credentials out of CLI arguments and logs.
 
-For future migrations, use Neon's unpooled connection through a private migration
-process environment, preserving SSL settings. Application runtime keeps the pooled
-`DATABASE_URL`. This phase encountered a stale pooled advisory lock. After verifying
-no migration command was running, only the pending additive revocation migration
-was applied over a direct connection with a one-process advisory-lock bypass; no
-sessions were terminated and no bypass was saved in the app environment. Do not
-use that bypass for concurrent migrations. See [Neon/Prisma connection guidance](https://neon.com/blog/prisma-dx-improvements)
-and [Prisma advisory locking](https://docs.prisma.io/docs/orm/v6/reference/environment-variables-reference).
+The separate WAHA service keeps its dashboard and Swagger disabled, QR printing
+off and a SHA512 verifier for its API key. The backend uses the corresponding
+plaintext client key. Set strong private dashboard/Swagger passwords even when
+those interfaces are disabled, to avoid the startup auto-generation/logging path.
+Preserve the paired namespace, worker identity, session database and pinned image.
+Do not reset/relink a session as environment cleanup. Consult the exact installed
+engine's database requirements before changing connection mode.
 
-## Phase 13 WhatsApp local/server selection
+SMSGate Cloud uses the real Android/SIM and explicit device identity. Keep the
+phone Signing Key and backend webhook secret equal. A cloud bearer token is an
+alternative to username/password, not an additional credential to combine with
+them. SIM 1 is the configured sender. No example authorizes a real test message.
 
-`WHATSAPP_MODE=waha` enables the private configured Core integration. Development
-uses `WAHA_LOCAL_API_URL=http://localhost:3100`; production requires an explicitly
-set `WAHA_SERVER_API_URL` and never falls back to the local URL. The hosted value
-is still empty. API and callback HMAC keys are separate server secrets. `WAHA_ENGINE=GOWS`
-is selected after successful pairing; `WAHA_SESSION=default` matches the single free
-Core sender. `CONTENT_PUBLIC_URL` optionally replaces the compatible `EMAIL_PUBLIC_URL`
-setting for shared recipient links. Its existing localhost value stays in effect;
-the frontend hosted URL is still empty. See [WhatsApp setup](whatsapp-delivery.md).
+## Maintenance-only inputs
 
-The optional local pairing helper binds port 3101 only while requested and expires
-after 15 minutes. It is not a deployed setup/admin endpoint. Do not expose it, gateway
-session files or the development OTP backend as a public service. Real remote content
-access requires the planned hosted HTTPS URL, not replacing loopback development auth.
+`BACKUP_ENCRYPTION_KEY` is independent of access/OTP/webhook secrets and needs an
+independent secure backup. `PG_DUMP_BIN` and `PG_RESTORE_BIN` point to tools
+compatible with the source PostgreSQL major version (hosted database: 18).
+`RESTORE_DATABASE_URL` and `RESTORE_STORAGE_ROOT` are separate empty isolated
+targets, never the live source. `SMSGATE_CALLBACK_URL` is consumed by SMS setup and
+release checks; `PERSISTENT_STORAGE_CONFIRMED` is consumed by release preflight.
+`WAHA_IMAGE` is a Compose input, not an Express configuration field.
+See [operations/recovery](release-operations.md) before using these settings.
 
-For SMSGate credentials, device signing key, SIM selection and USB forwarding, see
-[SMS setup](sms-delivery.md). None of those values belong in frontend variables.
+## Credential replacement and verification
 
+Generate replacements privately, update every real consumer in a coordinated
+order, verify authentication without sending, then revoke the old credential.
+Backups or signed links may depend on existing keys; preserve those contracts.
+If the provider revokes the previous credential immediately, plan the interruption
+rather than pretending both keys overlap. Gmail and SMSGate account/phone actions
+may require the user. Never paste replacements into chat.
 
-## Redis and application addresses
+Check three different things: configuration shape, service availability and real
+provider/device behavior. Passing the first does not prove the others. For this
+phase, read-only health/auth checks are sufficient to verify credential rollout;
+new live OTP/email/SMS tests require specific authorization. Record unfinished
+rotation work in [the follow-up checklist](follow-up-phases.md).
 
-Redis remains optional and is not connected by the current runtime. These settings
-prepare configuration; they do not enable a new cache, change durable PostgreSQL
-work, or claim a Redis health check passed. Development selects `REDIS_LOCAL_URL`
-(or legacy `REDIS_URL`); production selects only `REDIS_SERVER_URL` if supplied.
-Accepted Redis schemes are `redis://` and `rediss://`; credentials stay backend-only.
-Use `redis://redis:6379` only for a backend container sharing a Docker network with
-a service named `redis`. The backend currently runs on this Mac, so its existing
-`redis://localhost:6379` setting is preserved.
+## Guardrails in automation
 
-The user corrected the hosted reference to a Render internal Key Value hostname.
-Private `REDIS_SERVER_URL` now uses that hostname with the standard `redis://`
-scheme and port 6379. This is an internal-only configuration candidate; the exact
-Render Connect URL, any required authentication, workspace and region must be
-confirmed before deployment. It is not verified reachable from this Mac. Use the
-External URL and authorized network access if testing hosted Redis from the Mac.
-The previous HTTPS reference is no longer treated as the Redis address. Redis
-itself remains optional and inactive in the current application.
-
-The mobile client already keeps distinct local/server URLs in
-`EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_SERVER_API_URL`. The local value remains
-`http://localhost:8080` for the iOS simulator; the hosted value stays empty. A real
-phone's localhost means that phone, not the Mac: physical-device API testing needs
-an intentionally reachable Mac address or the future hosted backend. Redis URLs
-must never be copied to frontend/public variables.
+The example tests require every validated field and known operations input to be
+documented, reject duplicate active keys, verify disabled local defaults, prove
+hosted relay configuration works without an SMTP password on Render, and check
+examples/mobile public variables for common credential/personal-data mistakes.
+These checks complement private-value scans; they are not proof that no possible
+secret exists anywhere in Git history. Release packaging also excludes private
+runtime files, environments, signing material and dependencies from source ZIPs.
