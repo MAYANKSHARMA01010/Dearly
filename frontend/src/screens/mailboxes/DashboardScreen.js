@@ -1,3 +1,4 @@
+import SnapshotStatus from '../../components/common/SnapshotStatus';
 import { Fragment, useCallback, useMemo } from 'react';
 import { View } from 'react-native';
 import { Divider, IconButton, Text, useTheme } from 'react-native-paper';
@@ -10,14 +11,15 @@ import Screen from '../../components/layout/Screen';
 import AppButton from '../../components/common/AppButton';
 import StateView from '../../components/common/StateView';
 import { spacing } from '../../theme';
-import { ScreenHeading, ScreenSection, InsetGroup, NavigationRow, InlineNotice } from '../../components/layout/ScreenSections';
+import { ScreenHeading, ScreenSection, InsetGroup, NavigationRow } from '../../components/layout/ScreenSections';
 export default function DashboardScreen() {
   const { session, user } = useAuth(),
     router = useRouter(),
     theme = useTheme();
   const api = useMemo(() => createMailboxService(session), [session]);
-  const { data, loading, error, refresh } = useFocusedResource(
-    useCallback((signal) => api.dashboard(signal), [api]),
+  const { data, loading, error, refresh, info } = useFocusedResource(
+    useCallback((signal,fresh) => api.dashboard(signal,fresh), [api]),
+    '/messages/dashboard',
   );
   const descriptions =
     /** @type {Record<import('../../services/mailboxes/contracts').Box,string>} */ ({
@@ -43,6 +45,7 @@ export default function DashboardScreen() {
       {!data ? <StateView loading={loading} title={loading ? 'Loading your mailboxes' : 'Mailboxes unavailable'}
         description={error || 'Checking your saved messages.'} actionLabel={!loading ? 'Try again' : undefined} onAction={() => { void refresh(); }} /> : null}
       {data ? <ScreenSection title="Your mailboxes">
+        <SnapshotStatus info={info} error={error} loading={loading} />
         <InsetGroup>{boxes.map((box, index) => <Fragment key={box}>
           {index ? <Divider /> : null}
           <NavigationRow title={boxLabels[box]} description={descriptions[box]} icon={icons[box]} count={data.counts[box]}
@@ -54,7 +57,6 @@ export default function DashboardScreen() {
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>A partially delivered message can appear in both Sent and Needs attention.</Text>
           <AppButton icon="refresh" disabled={loading} loading={loading} onPress={() => { void refresh(); }}>Refresh mailboxes</AppButton>
         </View>
-        {error ? <InlineNotice error>{error} These counts are from the last successful refresh.</InlineNotice> : null}
       </ScreenSection> : null}
       <ScreenSection title="Delivery tools">
         <InsetGroup>
