@@ -7,6 +7,9 @@ export function createAuthService(client = apiClient, development = typeof __DEV
   /** @param {string} path @param {object} body @param {AbortSignal} [signal] */
   const post = (path, body, signal) => client.request(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal });
   return {
+    /** A foreground entry-screen read starts cold services without sending a code.
+     * @param {AbortSignal} [signal] */
+    prepareOtp: async (signal) => { await client.request('/auth/otp/status', { signal }); },
     /** @param {string} phone @param {string} country @param {AbortSignal} [signal] @param {(phase:'connecting'|'requesting')=>void} [onPhase] */
     requestOtp: async (phone, country, signal, onPhase) => {
       onPhase?.('connecting'); if(!development) await waitForOtpReady(client,signal);

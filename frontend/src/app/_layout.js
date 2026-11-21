@@ -30,7 +30,7 @@ function SessionNavigator() {
     headerStyle: { backgroundColor: themes.paper.colors.surface },
     contentStyle: { backgroundColor: themes.paper.colors.background },
   }}>
-    <Stack.Screen name="index" options={{ title: 'Dearly', headerBackVisible: false }} />
+    <Stack.Screen name="index" options={{ title: 'Dearly', headerBackVisible: false, headerShown: Boolean(user) }} />
     <Stack.Screen name="status" options={{ title: 'Service status' }} />
     <Stack.Protected guard={!user}>
       <Stack.Screen name="login" options={{ title: 'Sign in' }} />

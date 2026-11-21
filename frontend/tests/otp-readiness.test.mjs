@@ -81,3 +81,10 @@ test("accepted OTP transitions through connecting and requesting phases", async 
   assert.equal(c.channel, "whatsapp");
   assert.deepEqual(phases, ["connecting", "requesting"]);
 });
+
+test('opening the login flow warms only the status endpoint and never sends a code', async () => {
+  const calls = [];
+  const service = createAuthService({ request: async (path, options) => { calls.push({ path, method: options?.method }); return { status: 'WARMING' }; } }, false);
+  await service.prepareOtp();
+  assert.deepEqual(calls, [{ path: '/auth/otp/status', method: undefined }]);
+});
