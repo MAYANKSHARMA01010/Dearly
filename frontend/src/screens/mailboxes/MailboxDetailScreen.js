@@ -1,3 +1,4 @@
+import SnapshotStatus from '../../components/common/SnapshotStatus';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { IconButton, Text, useTheme } from 'react-native-paper';
@@ -31,7 +32,8 @@ function OwnedMessage({ id }) {
     theme = useTheme();
   const api = useMemo(() => createMailboxService(session), [session]);
   const load = useFocusedResource(
-    useCallback((signal) => api.owned(id, signal), [api, id]),
+    useCallback((signal,fresh) => api.owned(id, signal,fresh), [api, id]),
+    `/messages/mailboxes/owned/${id}`,
   );
   const action = useAsyncAction();
   const [older, setOlder] = useState(
@@ -69,6 +71,7 @@ function OwnedMessage({ id }) {
     <Screen>
       <Stack.Screen options={{ headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to mailboxes" onPress={() => router.replace('/mailboxes')} /> }} />
       <ScreenHeading title={data.subject || 'Untitled message'} description={`${data.status === 'DRAFT' ? 'Draft' : scheduleStatusLabel(data.status)} · Version ${data.version}`} />
+      <SnapshotStatus info={load.info} error={load.error} loading={load.loading} />
       {data.status === 'PARTIALLY_DELIVERED' ? (
         <InlineNotice>
           Some recipients received this message; others did not. Check each
@@ -282,10 +285,9 @@ function OwnedMessage({ id }) {
         </AppButton>
       ) : null}
       </ScreenSection>
-      {load.error || action.error ? (
+      {action.error ? (
         <InlineNotice error>
-          {load.error || action.error} Previously loaded details are still
-          shown.
+          {action.error} Reload to check the saved state before retrying.
         </InlineNotice>
       ) : null}
       <AppButton
@@ -310,7 +312,8 @@ function ReceivedMessage({ id }) {
     theme = useTheme();
   const api = useMemo(() => createMailboxService(session), [session]);
   const load = useFocusedResource(
-    useCallback((signal) => api.received(id, signal), [api, id]),
+    useCallback((signal,fresh) => api.received(id, signal,fresh), [api, id]),
+    `/messages/inbox/${id}`,
   );
   const action = useAsyncAction();
   const data = load.data;
@@ -349,6 +352,7 @@ function ReceivedMessage({ id }) {
     <Screen>
       <Stack.Screen options={{ headerBackVisible: false, headerLeft: () => <IconButton icon="arrow-left" accessibilityLabel="Back to received" onPress={() => router.replace({ pathname: '/mailboxes', params: { box: 'received' } })} /> }} />
       <ScreenHeading title={data.subject || 'Untitled message'} />
+      <SnapshotStatus info={load.info} error={load.error} loading={load.loading} />
       <View style={{ gap: spacing.xs }}>
       <Text variant="titleMedium">
         From{' '}
@@ -396,9 +400,9 @@ function ReceivedMessage({ id }) {
         </>
       ) : null}
       </ScreenSection>
-      {load.error || action.error ? (
+      {action.error ? (
         <InlineNotice error>
-          {load.error || action.error} Reload to check the saved state before
+          {action.error} Reload to check the saved state before
           retrying. This action is never repeated automatically.
         </InlineNotice>
       ) : null}
