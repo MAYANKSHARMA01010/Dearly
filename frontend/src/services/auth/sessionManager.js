@@ -11,9 +11,9 @@ const expired = () => new ApiError('Your session ended. Please sign in again.', 
 /**
  * All session/profile operations share a queue. Only one refresh may rotate a
  * token at a time. Epoch checks reject results arriving after local sign-out.
- * @param {{ client: ReturnType<typeof import('../../api/client.js').createApiClient>, storage: SessionStorage, getScope: () => string, now?: () => number }} dependencies
+ * @param {{ client: ReturnType<typeof import('../../api/client.js').createApiClient>, storage: SessionStorage, getScope: () => string, now?: () => number, cache?: {suspend:()=>void,activate:(account:string,origin:string)=>Promise<unknown>,capture:(path:string,value:unknown)=>Promise<unknown>,purge:()=>Promise<unknown>} }} dependencies
  */
-export function createSessionManager({ client, storage, getScope, now = Date.now }) {
+export function createSessionManager({ client, storage, getScope, now = Date.now, cache }) {
   let state = /** @type {AuthState} */ ({ status: 'restoring', user: null, message: '' });
   let saved = /** @type {SavedSession | null} */ (null);
   let epoch = 0;
@@ -28,6 +28,7 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
   /** @param {string} message */
   async function clear(message) {
     saved = null;
+    await cache?.purge().catch(() => {});
     try { await storage.clear(); publish({ status: 'anonymous', user: null, message }); }
     catch { publish({ status: 'blocked', user: null, recovery: 'storage', message: 'Secure storage could not be cleared. Please retry sign-out.' }); throw new ApiError('Secure storage is unavailable. Please retry.', 'configuration'); }
   }
@@ -83,11 +84,12 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
     subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener); }; },
     restore() {
       const expected = ++epoch;
+      cache?.suspend();
       publish({ status: 'restoring', user: null, message: '' });
       return serial(async () => {
         try {
           const raw = await storage.read(); current(expected);
-          if (!raw) { saved = null; publish({ status: 'anonymous', user: null, message: '' }); return; }
+          if (!raw) { saved = null; await cache?.purge().catch(() => {}); publish({ status: 'anonymous', user: null, message: '' }); return; }
           let value;
           try {
             const parsed = JSON.parse(raw);
@@ -96,7 +98,10 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
           } catch { await clear('Please sign in again.'); return; }
           saved = value;
           const user = parseUser(await authorized('/auth/me', {}, expected));
-          current(expected); publish({ status: 'authenticated', user, message: '' });
+          await cache?.activate(user.id,getScope()).catch(() => {});
+          current(expected);
+          void cache?.capture('/auth/me',user).catch(() => {});
+          publish({ status: 'authenticated', user, message: '' });
         } catch (error) {
           if (epoch !== expected) return;
           if (state.status === 'anonymous' || state.status === 'blocked') return;
@@ -107,6 +112,7 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
     /** @param {unknown} response @param {AbortSignal} [signal] */
     establish(response, signal) {
       const expected = ++epoch;
+      cache?.suspend();
       return serial(async () => {
         const value = /** @type {{ user: unknown }} */ (response);
         const tokens = parseTokens(response); const user = parseUser(value.user);
@@ -114,6 +120,9 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
           if (signal?.aborted) throw expired();
           await persist({ scope: getScope(), tokens, refreshPending: false }, expected);
           if (signal?.aborted) throw expired();
+          await cache?.activate(user.id,getScope()).catch(() => {});
+          current(expected);
+          void cache?.capture('/auth/me',user).catch(() => {});
           publish({ status: 'authenticated', user, message: '' });
         } catch (error) { if (epoch === expected) await clear('Sign-in could not be stored securely. Please try again.'); throw error; }
       });
@@ -122,7 +131,7 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
       const expected = epoch;
       return serial(async () => {
         const user = parseUser(await authorized('/auth/me', {}, expected));
-        current(expected); publish({ status: 'authenticated', user, message: '' }); return user;
+        current(expected); void cache?.capture('/auth/me',user).catch(() => {}); publish({ status: 'authenticated', user, message: '' }); return user;
       });
     },
     /** @param {string} path @param {RequestInit} [options] @param {typeof client.request} [transport] */
@@ -130,7 +139,11 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
       const expected = epoch;
       return serial(async () => {
         if (state.status !== 'authenticated') throw expired();
-        try { return await authorized(path, options, expected, transport); }
+        try {
+          const value = await authorized(path, options, expected, transport);
+          if (!options.method || options.method === 'GET') void cache?.capture(path,value).catch(() => {});
+          return value;
+        }
         catch (error) {
           // Foreground restoration can invalidate a response after a write was
           // accepted. Treat its outcome as unknown instead of allowing replay.
@@ -146,11 +159,12 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
       const expected = epoch;
       return serial(async () => {
         const user = parseUser(await authorized('/auth/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) }, expected));
-        current(expected); publish({ status: 'authenticated', user, message: '' }); return user;
+        current(expected); void cache?.capture('/auth/me',user).catch(() => {}); publish({ status: 'authenticated', user, message: '' }); return user;
       });
     },
     logout() {
       ++epoch;
+      cache?.suspend();
       const old = saved; saved = null;
       publish({ status: 'restoring', user: null, message: '' });
       return serial(async () => {

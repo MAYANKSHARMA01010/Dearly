@@ -210,3 +210,16 @@ test('real WhatsApp OTP works in release contracts without exposing a developmen
   assert.throws(() => parseChallenge({ ...data, dispatch: 'simulated' }, true, clock));
   assert.throws(() => parseChallenge({ ...data, channel: 'unknown' }, true, clock));
 });
+
+test('cache is activated only after remote identity proof; logout invalidates immediately and purges',async()=>{
+  const calls=[];const cache={suspend(){calls.push('suspend');},async activate(account,origin){calls.push(['activate',account,origin]);},async capture(path,value){calls.push(['capture',path]);assert.equal('accessToken' in value,false);},async purge(){calls.push('purge');}};
+  let offline=true;const s=manager(memory(saved()),async()=>{calls.push('network');if(offline)throw network();return user;},{cache});
+  await s.restore();assert.equal(s.getSnapshot().status,'blocked');assert.equal(calls.some(x=>Array.isArray(x)&&x[0]==='activate'),false);
+  offline=false;await s.restore();assert.deepEqual(calls.find(x=>Array.isArray(x)&&x[0]==='activate'),['activate',user.id,scope]);
+  const logout=s.logout();assert.equal(calls.at(-1),'suspend');await logout;assert.ok(calls.includes('purge'));assert.equal(s.getSnapshot().status,'anonymous');
+});
+test('cache failure cannot stop server authentication or replay a request; writes are never captured',async()=>{
+  let requests=0;const captures=[];const cache={suspend(){},async activate(){throw Error('disk');},async capture(path){captures.push(path);throw Error('disk');},async purge(){throw Error('disk');}};
+  const s=manager(memory(),async()=>{requests++;return {ok:true};},{cache});await s.establish({...tokens(),user});assert.equal(s.getSnapshot().status,'authenticated');
+  await s.request('/messages/drafts',{method:'POST'});assert.equal(requests,1);assert.equal(captures.includes('/messages/drafts'),false);await s.logout();assert.equal(s.getSnapshot().status,'anonymous');
+});
