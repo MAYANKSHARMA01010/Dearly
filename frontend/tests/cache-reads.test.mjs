@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
+import {createSessionManager} from '../src/services/auth/sessionManager.js';
 import {createCachedReads} from '../src/services/cache/reads.js';
 import {createReadResource} from '../src/services/mailboxes/resource.js';
 import {createCacheController} from '../src/services/cache/controller.js';
@@ -16,7 +17,7 @@ async function setup(){
  const cache=createCacheController({async open(){await migrateCache(db);return{db,async close(){}};},async destroy(){sql.exec('DELETE FROM cache_entries');}},()=>time);
  await cache.activate('aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa','https://api.example');
  const reads=createCachedReads({cache,now:()=>time,canRead:()=>allow,validUntil:()=>start+60000,async load(p,o){calls++;return network(p,o);}});
- return{reads,cache,setNetwork(fn){network=fn;},setTime(t){time=t;},setAllowed(v){allow=v;},get calls(){return calls;},close(){sql.close();}};
+ return{reads,cache,now:()=>time,setNetwork(fn){network=fn;},setTime(t){time=t;},setAllowed(v){allow=v;},get calls(){return calls;},close(){sql.close();}};
 }
 test('repeat navigation reduces three protected reads to one; manual refresh and expiry go remote',async()=>{
  const h=await setup();await h.reads.read(path);assert.equal(h.reads.getInfo(path).source,'server');await h.reads.read(path);await h.reads.read(path);assert.equal(h.calls,1);assert.equal(h.reads.getInfo(path).source,'device');
@@ -50,4 +51,20 @@ test('resource hides data exactly at its deadline and stops its timers when unfo
 test('mailbox cache keys separate filters and reject pagination or unsupported query parameters',async()=>{
  const {cacheTarget}=await import('../src/services/cache/policy.js');const a=cacheTarget('/messages/mailboxes?box=received&limit=20&read=unopened');const b=cacheTarget('/messages/mailboxes?box=received&limit=20&read=opened');assert.notEqual(a.key,b.key);
  for(const q of ['box=received&limit=20&cursor=private','box=bad&limit=20','box=sent&box=received&limit=20','box=sent&limit=20&extra=1'])assert.equal(cacheTarget('/messages/mailboxes?'+q),null);
+});
+
+
+test('session integration saves two server reads and invalidates an uncertain write without replay',async()=>{
+ const h=await setup();let reads=0,writes=0,current={...value};
+ const id='aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';const user={id,phone:'+12025550123',name:'Synthetic',email:null,timezone:'UTC',phoneVerifiedAt:new Date(start).toISOString(),createdAt:new Date(start).toISOString()};
+ const storage={async read(){return null;},async write(){},async clear(){}};
+ const session=createSessionManager({cache:h.cache,now:h.now,getScope:()=> 'https://api.example',storage,client:{async request(route,options={}){
+   if(route===path && options.method==='PUT'){writes++;current={...value,pushAlerts:true};throw new ApiError('Uncertain','timeout');}
+   if(route===path){reads++;return current;}if(route==='/auth/me')return user;return {};
+ }}});
+ await session.establish({user,accessToken:id+'.'+'a'.repeat(64),refreshToken:id+'.'+'b'.repeat(64),accessExpiresAt:new Date(start+900000).toISOString(),sessionExpiresAt:new Date(start+86400000).toISOString()});
+ await Promise.all([session.request(path),session.request(path),session.request(path)]);assert.equal(reads,1);assert.equal(session.getReadInfo(path).source,'server');
+ await session.request(path);assert.equal(reads,1);assert.equal(session.getReadInfo(path).source,'device');
+ await assert.rejects(session.request(path,{method:'PUT'}));assert.equal(writes,1);assert.equal((await session.request(path)).pushAlerts,true);assert.equal(reads,2);
+ await session.logout();await assert.rejects(session.request(path));h.close();
 });

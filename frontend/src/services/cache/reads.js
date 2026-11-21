@@ -12,7 +12,7 @@ export function createCachedReads({cache,load,canRead,validUntil,now=Date.now}) 
   const flights= /** @type {Map<string,{controller:AbortController,promise:Promise<unknown>,users:number}>} */ (new Map());
   const canceled=()=>new ApiError('Request canceled.','aborted');
   async function invalidate(announce=true) {
-    generation++; info.clear();
+    generation++; info.clear(); failures.clear();
     for(const flight of flights.values()) flight.controller.abort();
     flights.clear();
     await cache?.invalidate?.().catch(()=>{});
@@ -43,7 +43,7 @@ export function createCachedReads({cache,load,canRead,validUntil,now=Date.now}) 
             const entry=await cache?.read?.(target.kind,target.key).catch(()=>null);
             check();
             if(entry && entry.fetchedAt<=now() && entry.expiresAt>now() && now()<validUntil()) {
-              info.set(path,{source:'device',fetchedAt:entry.fetchedAt,expiresAt:Math.min(entry.expiresAt,validUntil())});return entry.value;
+              info.set(path,{source:'device',fetchedAt:entry.fetchedAt,expiresAt:Math.min(entry.expiresAt,validUntil())});if(info.size>256)info.delete(info.keys().next().value);return entry.value;
             }
           }
           const last=failures.get(path);
@@ -55,7 +55,7 @@ export function createCachedReads({cache,load,canRead,validUntil,now=Date.now}) 
             const value=await load(path,{...options,signal:controller.signal});check();
             const fetchedAt=now();
             await cache?.capture(path,value).catch(()=>{});check();
-            info.set(path,{source:'server',fetchedAt,expiresAt:Math.min(fetchedAt+ttl[target.kind],validUntil())});failures.delete(path);return value;
+            info.set(path,{source:'server',fetchedAt,expiresAt:Math.min(fetchedAt+ttl[target.kind],validUntil())});if(info.size>256)info.delete(info.keys().next().value);failures.delete(path);return value;
           }catch(error){
             if(error instanceof ApiError && [401,403,404].includes(error.status ?? 0)) {await invalidate(false);}
             if(error instanceof ApiError && (['network','timeout'].includes(error.kind) || error.status===429 || (error.status ?? 0)>=500)){
