@@ -50,7 +50,7 @@ Do not infer authorization for a new live message from a historical test.
 | 19 Render logs and OTP performance | Auth / WAHA / operations; 18 | Complete: safe stage timings and regional repair; warm request 15.253 → 6.848 seconds | Final source Live, 1.1.4 RC1 published/verified; both authorized OTPs arrived; see [evidence](otp-performance.md). New APK device acceptance remains pending |
 | 20 SQLite foundation | Mobile storage / auth boundary; 19 | Complete: encrypted snapshots, migrations, TTL/isolation/purge and auth lifecycle; screen cache consumption remains Phase 21 | 1.2.0 RC1 / build 9; native Android synthetic persistence/encryption checks passed; physical phone and native iOS acceptance remain pending |
 | 21 Synchronization and fewer reads | Mobile services / backend reads; 20 | Complete: bounded cached reads, coalescing, invalidation, retry/cancellation and screen states | 1.3.0 RC1 / build 10; measured 3 → 1 sequential requests, native synthetic checks passed; phone/iOS acceptance remain pending |
-| 22 Persistent media and viewer UI | Mobile media / UI; 21 | Pending | Pending rebuilt APK, native media/cleanup/accessibility checks |
+| 22 Persistent media and viewer UI | Mobile media / UI; 21 | Complete: encrypted media reuse, online access/version checks, bounded retention, cleanup, viewer expiry and Settings controls | 1.4.0 RC1 / build 11; native synthetic encryption/restart/playback and labelled-control checks passed; phone/iOS and full screen-reader acceptance remain pending |
 | 23 API docs and scheduled operations | API contracts / operations; 19 and 22 | Pending | Pending route deployment, scheduler setup and observed job outcomes |
 | 24 Coordinated CI/CD and acceptance | Release tooling / operations; 18–23 | Pending | Pending exact-commit APK, deployment and published assets; device checks remain separately recorded |
 
@@ -360,3 +360,54 @@ checksums. The signer matches 1.2.0. Local and fresh-download verification plus 
 passed. Physical phone installation and native iOS runtime
 checks remain pending. This remains a release candidate. Phase 21 is complete;
 Phase 22 has not started. The unrelated root `.gitignore` edit was preserved.
+
+
+## Phase 22 verification record — 22 November 2026
+
+[Persistent media contracts](persistent-media.md) define native AES-GCM files,
+separate SQLCipher metadata, account/API/version isolation, online authorization
+on every open, five-minute viewer access, seven-day retention, 250 MiB/500-entry
+LRU bounds, backup exclusions, temporary decrypted copies and export limits.
+Web media remains transient. Clearing downloads preserves pending selections and
+recordings; logout clears Dearly-owned private caches/keys. No live provider test
+or microphone recording was performed.
+
+Focused commits: `8ae1484` metadata-only authorized attachment access; `128eb71`
+encrypted retention/lifecycle/tests; `991f1fa` viewer expiry and opening cancellation;
+`1134898` Settings usage/confirmed clearing; `8c646a5` 1.4.0 / native build 11.
+Frontend lint/types and 133 tests passed; backend lint/types/build and 121 tests
+passed. Isolated PostgreSQL attachment integration passed five tests, including
+anonymous, other-owner, unfinalized and READY metadata access. Expo Doctor passed
+20/20. [Full CI 44962660928](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44962660928)
+passed integrations, backup recovery, platform exports and container checks.
+
+Both design consultations informed the focused native viewer/storage refinements.
+Rendered Android checks covered audio/video controls, saved-download status,
+light/dark text viewing and storage usage, and expired-access recovery without
+content. Accessibility hierarchy inspection confirmed labelled close/clear controls,
+headings and minimum 48-point actions. Audio seeking's existing adjustable role
+and actions were preserved; a complete TalkBack/VoiceOver session is not claimed.
+The browser fixture checked the confirmation dialog, Keep files and confirmed
+clear behavior. Its counters were synthetic; native file cleanup was checked
+separately. Temporary test routes were removed before closeout and were absent
+from the actual APK build source.
+
+The final local signed build matched all 105 tracked application source/config
+files checked against release commit `8c646a5ee3fc326eed5d905d56f5c8ac5a58808f`.
+A separate synthetic JS test APK used every native library hash from the unchanged
+1.4.0 APK. Android verified encrypted index/non-plaintext file bytes, exact checksum,
+repeat-open reuse with a fresh access check, tamper recovery, audio/video playback,
+persistence after process restart, denied-copy eviction, pending-selection retention
+on clear and key deletion. The synthetic data was removed, the normal final APK
+restored and the emulator stopped. The published APK has no test entry.
+
+Render deployment `dep-dc12nre1egvs73fticd0` was independently observed Live on the
+exact release commit; hosted `/health` and `/health/db` returned 200/alive and
+200/ready. [1.4.0 RC1](https://github.com/MAYANKSHARMA01010/Dearly/releases/tag/v1.4.0-rc.1)
+contains the signed ARM64 APK, exact-commit source ZIP, manifest and checksums.
+The signer matches 1.3.0. Local and freshly downloaded release assets verified;
+[release verification 44963391520](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44963391520)
+passed. Physical-phone installation, native iOS runtime, full screen-reader interaction and
+real push acceptance remain pending. This is a release candidate. Phase 22 is
+complete; Phase 23 API documentation and scheduled operations has not started.
+The unrelated root `.gitignore` edit remains untouched.

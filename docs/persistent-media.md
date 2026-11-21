@@ -17,8 +17,8 @@ Every native open checks that endpoint online before reading retained bytes.
 Account, API origin, content route and authorized SHA-256 identify a cache entry.
 Changes remove the previous version; denied or failed checks remove matching
 retained entries and fail closed. There is no offline unlock or cached auth
-fallback. A local monotonic duration bounded by the server's five-minute window
-is measured conservatively from the request start. A transfer finishing after
+fallback. A local deadline bounded by the server's five-minute window
+is calculated conservatively from the request start. A transfer finishing after
 that window cannot expose a playback copy.
 
 An open viewer stops rendering content when its access window expires, including
@@ -44,8 +44,9 @@ cached metadata nor a successful transfer implies delivery or content opening.
   SecureStore uses `WHEN_UNLOCKED_THIS_DEVICE_ONLY`. OS cache eviction is a normal
   miss; the server retains the original.
 - Native players require a temporary decrypted file in a separate private cache
-  directory. Dismissal, access expiry, auth suspension and restart remove these
-  playback copies. Reusable ciphertext survives dismissal/restart. Files explicitly
+  directory. Dismissal, access expiry while the app runs, auth suspension and restart remove
+  these playback copies. Suspended processes cannot guarantee deletion at a wall-clock
+  instant; foreground/startup cleanup remains required. Reusable ciphertext survives dismissal/restart. Files explicitly
   exported to another app may remain there; clearing Dearly cannot remove them.
   Deleting files/keys is not a promise of physical flash erasure.
 
