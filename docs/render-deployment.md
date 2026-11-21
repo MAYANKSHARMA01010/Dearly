@@ -95,6 +95,8 @@ deployments succeeded on their existing code/image. The relay-mode API no longer
 stores the unused Gmail password; explicit OTP quota preserves its previous
 default. WAHA interfaces remain disabled with explicit private admin credentials
 to avoid auto-generation at startup. Gmail replacement authentication passed
-locally and through the hosted relay, without sending an email. Open credential
-revocation/rotation steps remain separately tracked; no claim of complete
-credential replacement or resolved OTP latency is made.
+locally and through the hosted relay, without sending an email. The user confirmed
+old Gmail password revocation, and the application Neon role password was rotated
+and applied to local/Render/relay consumers. The corrected Render rollout is Live
+and API/database readiness passed. SMSGate retains its existing password by explicit
+user request; this exception is recorded in the audit. OTP latency remains open.

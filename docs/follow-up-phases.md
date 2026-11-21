@@ -46,7 +46,7 @@ Do not infer authorization for a new live message from a historical test.
 | Phase | Owner / dependencies | Implementation and verification | Deployment / release / device evidence |
 | --- | --- | --- | --- |
 | 17 Rules and audit | Documentation; baseline inspection | Complete: rules, roadmap, current-state reconciliation; links/paths and whitespace checked | Not required: documentation only; commit IDs are in Git history |
-| 18 Environment and sensitive data | Backend config / operations; 17 | Examples, private config reconciliation and 114 backend checks passed; credential acceptance open | Backend/WAHA config deployments and Gmail replacement verified; old Gmail revocation, SMSGate and shared-role review pending; see [audit](environment-audit.md) |
+| 18 Environment and sensitive data | Backend config / operations; 17 | Complete with explicit SMSGate credential exception; examples/config checks and 114 backend tests passed | Backend/WAHA config live; Gmail replaced and old password revoked; Neon role rotated/consumers checked; see [audit](environment-audit.md) |
 | 19 Render logs and OTP performance | Auth / WAHA / operations; 18 | Pending; 15.157-second baseline remains unresolved | Pending measured hosted rollout; separately authorized real OTP and arrival evidence |
 | 20 SQLite foundation | Mobile storage / auth boundary; 19 | Pending | Pending rebuilt APK and native cache/migration checks |
 | 21 Synchronization and fewer reads | Mobile services / backend reads; 20 | Pending | Pending request-count comparison and account/revocation checks |
@@ -264,5 +264,5 @@ The pre-existing `.gitignore` edit is outside scope and remains untouched.
 ## Phase 18 progress — 21 November 2026
 
 [Environment audit](environment-audit.md) records changed consumers, configuration
-rollouts, private-value scan scope and open credential actions. No runtime source
+rollouts, private-value scan scope and final credential acceptance/user exception. No runtime source
 or APK changed. Phase 19 has not started; OTP latency remains unresolved.

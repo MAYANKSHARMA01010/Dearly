@@ -62,17 +62,32 @@ root release-closeout rules.
   Phase 19; this phase did not alter connection mode, pair/reset a sender or claim
   the OTP delay fixed.
 
-## Credential replacement acceptance still open
+## Credential replacement acceptance — completed with user exception
 
-| Item | Current state | Required completion evidence |
+| Item | Final state | Evidence / exception |
 | --- | --- | --- |
-| Gmail replacement rollout | Complete: direct SMTP auth and hosted relay READY | User must revoke OLD app password in Google, retaining replacement; record confirmation |
-| SMSGate exposed Cloud password | Replacement prepared privately; phone change not yet confirmed | User applies replacement in Cloud Server credentials; update local/Render consumers and verify auth without sending SMS |
-| Neon application owner password | Local and Render use the same role; WAHA uses a different role; relay connection is injected | Confirm other applications do not share the role before rotation; coordinate all consumers and verify connections |
+| Gmail replacement rollout | Complete | Direct SMTP and hosted relay READY; user confirmed OLD app password revoked on 21 November |
+| SMSGate Cloud password | Retained by explicit user instruction | User requested the existing password remain; no phone/Render/local SMS credential change performed; unused proposed replacement file removed |
+| Neon application owner password | Rotated | User confirmed only Dearly uses this role; local/backend/relay consumers coordinated; fresh new-password connection succeeds and old-password connection is rejected |
 
-Phase 18 is not fully accepted until the open credential actions are resolved or
-explicitly deferred by the user. Do not treat selecting “I'll save” as proof of
-revocation or phone configuration. Never paste replacement credentials into chat.
+The SMSGate credential previously shared in chat is intentionally unchanged. This
+is a recorded user exception, not a claim that every exposed credential was
+replaced. Provider/device IDs and persistent access, webhook, backup and signing
+keys were not regenerated as a side effect.
+
+The first Render environment-update rollout after database rotation failed:
+private export comparison showed its DATABASE_URL still held the old password.
+Corrected the actual revealed textarea, saved again and compared the exported
+configuration against the intended private values: exact match, no differences.
+The corrected deployment succeeded in 35.9 seconds, preserving source 819c41b and
+version 1.1.3. API/database readiness returned HTTP 200 afterward. The relay was
+redeployed with its existing environment/bundle to refresh the injected database
+connection; authenticated verification returned READY without sending email.
+
+Phase 18 is accepted for its requested scope with the explicit SMSGate exception.
+Phase 19 remains the next phase; OTP latency is not resolved by this credential
+rollout. Existing test evidence above remains applicable because no runtime source
+changed during this final configuration step.
 
 Provider reference for phone password changes:
 [SMSGate password guidance](https://docs.sms-gate.app/faq/general/). Cloud changes
