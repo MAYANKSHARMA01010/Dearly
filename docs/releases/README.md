@@ -2,14 +2,17 @@
 
 `VERSION` is the project release version. Frontend/backend packages and lockfiles,
 Expo's user-facing version and GitHub tag must agree. Native build numbers increase
-independently; the initial hosted candidate uses version 1.0.0, Android code 2 and
-iOS build 2. The earlier local-only APK used code 1 and was never published.
+independently. The current published baseline is 1.1.3 RC1, Android code 7 and
+iOS build 7; see [current evidence and open gates](../follow-up-phases.md). Earlier
+version/build records are historical, not values to reuse.
 
 Use MAJOR for incompatible changes, MINOR for compatible features and PATCH for
-compatible fixes. To begin the next release from the repository root:
+compatible fixes. In the commands below, replace X.Y.Z and N with the actual
+next version and candidate number; do not paste placeholders literally. To begin
+the next release from the repository root:
 
 ```sh
-node scripts/release.mjs prepare 1.0.1
+node scripts/release.mjs prepare X.Y.Z
 node scripts/release.mjs check
 ```
 
@@ -22,8 +25,8 @@ server key, app passwords or backend environment to GitHub.
 Package the exact committed source and verified APK:
 
 ```sh
-node scripts/release.mjs package v1.0.0-rc.1 frontend/artifacts/Dearly-preview.apk
-node scripts/release.mjs verify frontend/artifacts/releases/v1.0.0-rc.1
+node scripts/release.mjs package vX.Y.Z-rc.N frontend/artifacts/Dearly-preview.apk
+node scripts/release.mjs verify frontend/artifacts/releases/vX.Y.Z-rc.N
 ```
 
 Packaging checks native identity/version/ARM64 support and the APK signature with
@@ -44,3 +47,19 @@ provides its normal source ZIP/TAR downloads for each tag.
 
 An AAB is a store-upload bundle, not an installable APK. The current requested
 phone download is the signed ARM64 APK; no app-store submission is performed.
+
+## Existing automation versus planned orchestration
+
+`.github/workflows/ci.yml` checks code, version consistency/deployment version
+gating, isolated integrations, backup drills and platform exports.
+`.github/workflows/release.yml` validates published asset hashes. Neither currently
+orchestrates signed builds, Render rollout checks and publication end to end.
+Phase 24 in [the follow-up plan](../follow-up-phases.md) owns that work. Version
+selection must consult published history; native build numbers must increase for
+every distributed binary. Never expose signing credentials to untrusted workflows.
+
+Documentation-only updates require no app-version bump, build or release. A runtime
+release needs the exact source commit, passed checks, matching verified APK,
+observed deployment evidence and immutable GitHub assets. Record partial failures
+and device acceptance separately. Use `scripts/release.mjs` rather than manually
+editing version fields independently.

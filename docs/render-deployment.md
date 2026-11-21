@@ -1,4 +1,8 @@
-# Dearly hosted deployment — 20 November 2026
+# Dearly hosted deployment
+
+Topology established 20 November 2026; documentation reconciled 21 November.
+See [current release evidence and open gates](follow-up-phases.md). This document
+is a deployment runbook, not a fresh inspection of live settings or logs.
 
 Neon holds the PostgreSQL database and private media. Render hosts the API,
 workers, Key Value and WAHA. Gmail remains the email sender. No Supabase account,
@@ -12,7 +16,7 @@ paid plan, trial, public media bucket or app-store submission is used.
 | Database | Existing Neon production branch, PostgreSQL 18 |
 | Media | Neon private `dearly-private` bucket; local disk is a disposable cache |
 | Email | Gmail SMTP through the authenticated `dearlymail` Neon Function |
-| Development API | http://localhost:8080; selected independently of release builds |
+| Local API | http://localhost:8080; explicit development override only; hosted is preferred by default |
 
 ## Render backend
 
@@ -25,8 +29,10 @@ The hosted entrypoint runs strict preflight and a connection-only Gmail check,
 then supervises separate API, delivery and push processes in the web instance.
 PostgreSQL work leases, fencing and submission markers remain authoritative.
 Redis is optional and is never used as the durable delivery queue. No independent
-paid worker service is required. Source pushes deploy the main branch; inspect CI
-and the actual Render deploy result before calling a release healthy.
+paid worker service is required. The recorded Auto-Deploy policy is After CI Checks Pass for main. Inspect CI
+and the actual Render deploy result before calling a release healthy; publication
+is still a separate step until Phase 24. Do not push during docs-only work merely
+to trigger a deployment.
 
 ## Private durable media and WhatsApp sessions
 

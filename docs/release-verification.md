@@ -1,3 +1,16 @@
+# Current verification index — 21 November 2026
+
+The [follow-up baseline and acceptance checklist](follow-up-phases.md) records the
+current 1.1.3 RC1 source, APK, hosted deployment evidence and outstanding checks.
+The records below are dated historical evidence; their versions/test counts and
+statements about pending deployment must not be interpreted as current status.
+
+For 1.1.3 RC1, full CI and release-asset verification passed. The user confirmed
+Render commit 819c41b Live and confirmed arrival of one authorized hosted WhatsApp
+OTP after a noticeable wait; its request took 15.157 seconds. OTP latency remains
+unresolved. Physical Android permission/push acceptance is not claimed. No fresh
+Render log audit or operational scheduler setup was performed in Phase 17.
+
 # Hosted release candidate — 20 November 2026
 
 The requested hosted implementation now uses Neon database/private object storage,

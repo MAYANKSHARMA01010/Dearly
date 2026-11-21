@@ -1,8 +1,12 @@
 # Release operations and recovery
 
-Phase 16 prepares reproducible operations; no hosted deployment has been performed.
-The user deferred APK/physical-device acceptance on 19 November 2026. See
-[verification and remaining gates](release-verification.md) before public release.
+The hosted deployment uses Render API/workers/WAHA/Key Value, Neon PostgreSQL
+and private objects, and Gmail through the protected Neon relay. See
+[Render deployment](render-deployment.md) for that topology and
+[the current baseline and open gates](follow-up-phases.md) before release. The
+Compose instructions below describe an alternative self-managed deployment; they
+are not the current Render startup configuration. Physical Android/push acceptance
+remains separate from engineering and published RC evidence.
 
 ## Configuration and startup
 
@@ -12,12 +16,18 @@ and fencing live in PostgreSQL. Never use a Render web URL or an incomplete Redi
 resource name as a connection string. Keep local API port 8080 and the separate
 hosted URL; production never falls back to localhost.
 
-Copy `backend/.env.production.example` into ignored `backend/.env.production` and
-fill values privately. It is deliberately incomplete. Set the permanent HTTPS
+For self-managed Compose, copy `backend/.env.production.example` into ignored
+`backend/.env.production` and fill values privately. It is deliberately incomplete.
+For the existing Render deployment, use private service settings and the hosted
+entrypoint; do not replace its Neon storage or Gmail relay settings with Compose
+filesystem/SMTP assumptions. Phase 18 owns env/example reconciliation. Set the
+permanent HTTPS
 backend origin, the same CONTENT_PUBLIC_URL, `/webhooks/waha` and
 `/webhooks/smsgate` callback URLs, TLS database connection, real auth and provider
-keys, and an absolute persistent storage directory. Set
-PERSISTENT_STORAGE_CONFIRMED=true only after verifying the mount survives restarts.
+keys, and, for the filesystem storage adapter, an absolute persistent storage
+directory.
+Set PERSISTENT_STORAGE_CONFIRMED=true only after verifying the intended durable
+storage; a Render Free local directory is not durable object storage.
 Copy the actual SMS webhook key to the phone. Keep existing WAHA session volumes
 and local Android signing files. Configure the phone for SIM 1.
 
@@ -93,9 +103,11 @@ Database credentials use a temporary mode-600 pgpass file, never command argumen
 The CLI uses generic failures rather than echoing credentials or database stderr.
 
 Install pg_dump/pg_restore compatible with the source database major version
-(pg_dump must support that server). On this Mac the PostgreSQL 17 binaries are at
-`/opt/homebrew/opt/postgresql@17/bin/`; set PG_DUMP_BIN and PG_RESTORE_BIN privately
-when those executables are outside PATH. A maintenance host needs the full backend
+(pg_dump must support that server). The hosted database is PostgreSQL 18; use
+compatible PostgreSQL 18 backup tools.
+Set PG_DUMP_BIN and PG_RESTORE_BIN privately after checking installed versions,
+rather than assuming a historical local PostgreSQL 17 path is suitable. A
+maintenance host needs the full backend
 dependencies for the TypeScript CLI. The minimal runtime image does not include
 backup tools. Do not upload unencrypted dumps.
 
@@ -216,10 +228,19 @@ keeps failed checks from automatically becoming a new hosted deployment.
 
 For a user-facing deployed fix, finish with a matching signed APK and GitHub
 release unless the user explicitly defers it. Do not overwrite old release assets
-or say the installed app contains a source-only fix. This repair is patch 1.1.1
-with Android versionCode 5 and iOS build number 5.
+or say the installed app contains a source-only fix. Current release evidence
+and native build numbers are in [the follow-up baseline](follow-up-phases.md);
+older dated verification records remain historical.
 
 The mobile app prefers the hosted backend even in development. Local is the
 secondary development configuration when no hosted URL exists, or an explicit
 EXPO_PUBLIC_API_TARGET=local override. Release builds reject that override.
 Network failures never silently replay an OTP or write against another backend.
+
+## Automation status
+
+The existing CI validates source/version and platform exports; the release workflow
+verifies assets after publication. It does not yet build/sign APKs, verify Render
+deployment and publish releases as one coordinated pipeline. Phase 24 owns that
+extension. Phase 23 owns scheduled maintenance/monitoring, including separate
+backend and WAHA status. No new schedules are established by this runbook.
