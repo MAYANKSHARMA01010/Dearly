@@ -1,5 +1,7 @@
+import SnapshotStatus from '../../components/common/SnapshotStatus';
+import {useFocusedResource} from '../../hooks/useFocusedResource';
 import { isAccessDenial } from '../../services/mailboxes/resource';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -11,7 +13,7 @@ import {
   Text,
   useTheme,
 } from 'react-native-paper';
-import { Stack, useFocusEffect, useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { ApiError } from '../../api/client';
 import { createMailboxService } from '../../services/mailboxes/service';
@@ -22,7 +24,7 @@ import {
 } from '../../services/schedules/contracts';
 import AppButton from '../../components/common/AppButton';
 import StateView from '../../components/common/StateView';
-import { InlineNotice, ScreenHeading } from '../../components/layout/ScreenSections';
+import { ScreenHeading } from '../../components/layout/ScreenSections';
 import { layout, spacing } from '../../theme';
 /** @param {{initialBox:import('../../services/mailboxes/contracts').Box}} props */
 export default function MailboxListScreen({ initialBox }) {
@@ -107,89 +109,33 @@ function MailboxFeed({ box, status, read, header }) {
     router = useRouter(),
     theme = useTheme();
   const api = useMemo(() => createMailboxService(session), [session]);
-  const [page, setPage] = useState(
-    /** @type {import('../../services/mailboxes/contracts').Page|null} */ (
-      null
-    ),
-  );
-  const [loading, setLoading] = useState(true),
-    [moreLoading, setMoreLoading] = useState(false),
-    [error, setError] = useState('');
-  const active = useRef(/** @type {AbortController|null} */ (null)),
-    paging = useRef(false);
-  const refresh = useCallback(() => {
-    active.current?.abort();
-    const c = new AbortController();
-    active.current = c;
-    paging.current = false;
-    setLoading(true);
-    setMoreLoading(false);
-    setError('');
-    void api.list(box, { status, read }, c.signal).then(
-      (value) => {
-        if (!c.signal.aborted) {
-          setPage(value);
-          setLoading(false);
-        }
-      },
-      (failure) => {
-        if (!c.signal.aborted) {
-          if (isAccessDenial(failure)) setPage(null);
-          setError(
-            failure instanceof ApiError
-              ? failure.message
-              : 'This mailbox could not be loaded.',
-          );
-          setLoading(false);
-        }
-      },
-    );
-  }, [api, box, status, read]);
-  useFocusEffect(
-    useCallback(() => {
-      refresh();
-      return () => active.current?.abort();
-    }, [refresh]),
-  );
-  const more = async () => {
-    if (loading || paging.current || !page?.nextCursor) return;
-    const c = active.current;
-    if (!c || c.signal.aborted) return;
-    paging.current = true;
-    setMoreLoading(true);
+  const query=new URLSearchParams({box,limit:'20',...(status?{status}:{}),...(box==='received'?{read}:{})});
+  const load=useFocusedResource(useCallback((signal,fresh)=>api.list(box,{status,read},signal,fresh),[api,box,status,read]),`/messages/mailboxes?${query}`);
+  const [extra,setExtra]=useState(/** @type {{source:import('../../services/mailboxes/contracts').Page,page:import('../../services/mailboxes/contracts').Page}|null} */(null));
+  const [moreLoading,setMoreLoading]=useState(false),[moreError,setMoreError]=useState('');
+  const active=useRef(/** @type {AbortController|null} */(null)),paging=useRef(false);
+  useEffect(()=>{
+    active.current?.abort();const c=new AbortController();active.current=c;paging.current=false;
+    return()=>c.abort();
+  },[load.data]);
+  const [source,setSource]=useState(load.data);
+  if(source!==load.data){setSource(load.data);setExtra(null);setMoreLoading(false);setMoreError('');}
+  const page=load.data && extra?.source===load.data?extra.page:load.data;
+  const loading=load.loading,error=load.error || moreError;
+  const refreshResource=load.refresh;
+  const refresh=useCallback(()=>{active.current?.abort();active.current=new AbortController();paging.current=false;setMoreLoading(false);setExtra(null);setMoreError('');void refreshResource();},[refreshResource]);
+  const more=async()=>{
+    if(loading || paging.current || !page?.nextCursor || !load.data)return;
+    const c=active.current,source=load.data;
+    if(!c || c.signal.aborted)return;
+    paging.current=true;setMoreLoading(true);
     try {
-      const next = await api.list(
-        box,
-        { status, read, cursor: page.nextCursor },
-        c.signal,
-      );
-      if (!c.signal.aborted)
-        setPage((old) =>
-          old
-            ? {
-                ...next,
-                items: [
-                  ...new Map(
-                    [...old.items, ...next.items].map((i) => [i.id, i]),
-                  ).values(),
-                ],
-              }
-            : next,
-        );
-    } catch (failure) {
-      if (!c.signal.aborted && isAccessDenial(failure)) setPage(null);
-      if (!c.signal.aborted)
-        setError(
-          failure instanceof ApiError
-            ? failure.message
-            : 'More messages could not be loaded.',
-        );
-    } finally {
-      if (active.current === c) {
-        paging.current = false;
-        if (!c.signal.aborted) setMoreLoading(false);
-      }
-    }
+      const next=await api.list(box,{status,read,cursor:page.nextCursor},c.signal);
+      if(!c.signal.aborted)setExtra({source,page:{...next,items:[...new Map([...page.items,...next.items].map(i=>[i.id,i])).values()]}});
+    }catch(failure){
+      if(!c.signal.aborted && isAccessDenial(failure))load.invalidate();
+      if(!c.signal.aborted)setMoreError(failure instanceof ApiError?failure.message:'More messages could not be loaded.');
+    }finally{if(active.current===c){paging.current=false;if(!c.signal.aborted)setMoreLoading(false);}}
   };
   return (
     <SafeAreaView
@@ -209,7 +155,7 @@ function MailboxFeed({ box, status, read, header }) {
           gap: spacing.md,
           flexGrow: 1,
         }}
-        ListHeaderComponent={header}
+        ListHeaderComponent={<View style={{gap:spacing.md}}>{header}<SnapshotStatus info={load.info} error={error} loading={loading} /></View>}
         ItemSeparatorComponent={() => <Divider />}
         renderItem={({ item }) => (
           <List.Item
@@ -254,11 +200,6 @@ function MailboxFeed({ box, status, read, header }) {
         }
         ListFooterComponent={
           <View style={{ gap: spacing.md }}>
-            {error && page?.items.length ? (
-              <InlineNotice error>
-                {error} Previously loaded messages are still shown.
-              </InlineNotice>
-            ) : null}
             {page?.nextCursor ? (
               <AppButton
                 mode="outlined" loading={moreLoading}

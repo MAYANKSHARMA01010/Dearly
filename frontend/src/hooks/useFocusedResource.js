@@ -12,5 +12,5 @@ export function useFocusedResource(load,path) {
     return()=>{unsubscribe();model.stop();};
   },[model,path,session]));
   const state=useSyncExternalStore(model.subscribe,model.getSnapshot,model.getSnapshot);
-  return {...state,refresh:model.refresh};
+  return {...state,refresh:model.refresh,invalidate:model.invalidate};
 }
