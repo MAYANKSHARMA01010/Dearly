@@ -278,3 +278,21 @@ The server also checks readiness before reserving a challenge, superseding an
 existing code, applying cooldown or spending sender quota. This protects older
 clients too, although only the rebuilt app has the clearer connecting state. A
 known unavailable sender and an uncertain code submission remain different errors.
+
+
+### Login latency — 21 November 2026
+
+Read-only hosted timing found a cold verification check taking 13.5 seconds and
+returning WARMING. After startup, hosted checks returned READY in about 0.55 seconds
+and a direct private gateway probe took 0.48 seconds. These are readiness timings,
+not OTP delivery measurements. Render Free can sleep idle services, so first-login
+startup delay remains possible (https://render.com/docs/free#spinning-down-on-idle).
+
+Welcome/sign-in focus starts an abortable read-only status request to begin startup
+while the user enters their number. Gateway OTP checks share an in-flight probe
+and reuse READY for at most five seconds across status, reservation preflight and
+send. Failure states are never cached; rejected/uncertain submissions invalidate
+READY. Expiry requires a new probe. Scheduled notification readiness stays fresh.
+No challenge, sender quota or resend cooldown is consumed by preparation, and no
+OTP write is retried or failed over. Fake-transport tests cover one probe across
+those auth steps, expiry, failures and single submission.

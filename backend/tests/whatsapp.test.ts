@@ -368,3 +368,38 @@ test('hosted gateway tolerates slow readiness and confirms a slow OTP submission
   assert.equal(result.state, 'ACCEPTED');
   assert.equal(submissions, 1);
 });
+
+test('OTP status, reservation preflight and dispatch share a recent successful gateway check', async () => {
+  let now = 10000, probes = 0, posts = 0;
+  const gateway = new WahaProvider(settings, async (_url, options) => {
+    if (!options?.method) { probes++; return ready(); }
+    posts++;
+    return Response.json({ id: messageId, fromMe: true, to: '12025550171@c.us' });
+  }, () => now);
+  assert.deepEqual(await Promise.all([gateway.otpReadiness(), gateway.otpReadiness()]), ['READY', 'READY']);
+  assert.equal(await gateway.otpReadiness(), 'READY');
+  assert.equal((await gateway.sendOtp('+12025550171', '123456')).state, 'ACCEPTED');
+  assert.equal(probes, 1);
+  assert.equal(posts, 1);
+  now += 5001;
+  await gateway.otpReadiness();
+  assert.equal(probes, 2);
+});
+
+test('OTP readiness never caches an offline state and a failed send invalidates recent readiness', async () => {
+  let probes = 0, online = false, posts = 0;
+  const gateway = new WahaProvider(settings, async (_url, options) => {
+    if (!options?.method) { probes++; return online ? ready() : new Response('', { status: 503 }); }
+    posts++; return new Response('', { status: 500 });
+  });
+  assert.equal(await gateway.otpReadiness(), 'OFFLINE');
+  online = true;
+  assert.equal(await gateway.otpReadiness(), 'READY');
+  assert.equal(probes, 2);
+  assert.equal((await gateway.sendOtp('+12025550171', '123456')).state, 'UNKNOWN');
+  assert.equal(posts, 1);
+  online = false;
+  assert.equal(await gateway.otpReadiness(), 'OFFLINE');
+  assert.equal(probes, 3);
+  assert.equal(posts, 1);
+});

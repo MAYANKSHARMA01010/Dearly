@@ -9,7 +9,7 @@ export function whatsappOtpProvider(
   return {
     channel: 'whatsapp',
     async readiness() {
-      const state = await gateway.readiness(10000);
+      const state = await gateway.otpReadiness(10000);
       return state === 'READY' ? 'READY' : ['OFFLINE', 'UNPAIRED'].includes(state) ? 'WARMING' : 'UNAVAILABLE';
     },
     budget: { key: `whatsapp-otp:${gateway.scope}`, dailyLimit },
