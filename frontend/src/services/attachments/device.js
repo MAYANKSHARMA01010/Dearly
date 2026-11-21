@@ -3,12 +3,18 @@ import { ApiError, createApiClient } from '../../api/client';
 import { getApiBaseUrl } from '../../config/api';
 import { validateSelection } from './contracts';
 const urls = new Set();
+const downloads = new Set();
 export async function initializeMediaCache() {}
-export async function clearMediaCache() { for (const uri of urls) URL.revokeObjectURL(uri); urls.clear(); }
+export function pauseMediaCache() {}
+/** @param {string} uri @returns {{expiresAt:number,cacheHit:boolean}|null} */
+export function mediaPlaybackInfo(uri){return null;}
+export async function clearDownloadedMedia(){for(const uri of downloads){URL.revokeObjectURL(uri);urls.delete(uri);}downloads.clear();}
+export async function downloadedMediaStats(/** @type {unknown} */ session){return {bytes:0,count:0,limit:250*1024*1024};}
+export async function clearMediaCache() { for (const uri of urls) URL.revokeObjectURL(uri); urls.clear(); downloads.clear(); }
 /** @param {string} uri */
 export async function discardRecording(uri) { if (uri.startsWith('blob:')) URL.revokeObjectURL(uri); }
 /** @param {string} uri */
-export async function discardLocal(uri) { if (urls.has(uri)) { URL.revokeObjectURL(uri); urls.delete(uri); } }
+export async function discardLocal(uri) { if (urls.has(uri)) { URL.revokeObjectURL(uri); urls.delete(uri); downloads.delete(uri); } }
 /** @param {{uri:string,name:string,mime?:string|null,file?:File}} input @returns {Promise<import('./contracts').Selection>} */
 export async function copySelection({ name, mime, file }) {
   if (!file) throw new ApiError('Choose a local file again.', 'configuration');
@@ -37,7 +43,7 @@ export async function downloadFile(session, path, item, signal, progress) {
   const client = createApiClient({ getBaseUrl:getApiBaseUrl, timeoutMs:610000, fetcher:async (url, options) => {
     const response = await fetch(url, options); if (!response.ok) return response;
     const blob = await response.blob(); if (blob.size !== item.bytes) throw new ApiError('Downloaded file could not be confirmed.', 'invalid_response');
-    const uri = URL.createObjectURL(blob); urls.add(uri); cached = uri; progress(1);
+    const uri = URL.createObjectURL(blob); urls.add(uri); downloads.add(uri); cached = uri; progress(1);
     return new Response(JSON.stringify({ success:true, data:uri }), { status:200 });
   } });
   try { return /** @type {string} */ (await session.request(path, { signal }, client.request)); }

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useSyncExternalStore } from 'react';
-import { initializeMediaCache, clearMediaCache } from '../services/attachments/device';
+import { initializeMediaCache, clearMediaCache, pauseMediaCache, downloadedMediaStats } from '../services/attachments/device';
 import * as Network from 'expo-network';
 import { AppState } from 'react-native';
 import { apiClient } from '../api/client';
@@ -14,7 +14,7 @@ const AuthContext = createContext(manager);
 export function AuthProvider({ children }) {
   useEffect(() => {
     void initializeMediaCache().catch(() => {}).then(() => manager.restore());
-    const unsubscribe = manager.subscribe(() => { if (manager.getSnapshot().status === 'anonymous') void clearMediaCache().catch(() => {}); });
+    const unsubscribe = manager.subscribe(() => { if(manager.getSnapshot().status!=='authenticated')pauseMediaCache(); else void downloadedMediaStats(manager).catch(()=>{}); if (manager.getSnapshot().status === 'anonymous') void clearMediaCache().catch(() => {}); });
     let backgrounded = false;
     let connected=true;
     const network=Network.addNetworkStateListener(({isConnected,isInternetReachable})=>{

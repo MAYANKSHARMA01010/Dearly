@@ -1,3 +1,4 @@
+import {persistentMedia} from './persistent.native';
 import * as FS from 'expo-file-system/legacy';
 import * as Crypto from 'expo-crypto';
 import * as Sharing from 'expo-sharing';
@@ -19,11 +20,18 @@ async function purgeRecordings() {
 export function initializeMediaCache() {
   ready ??= (async () => {
     if (!FS.cacheDirectory) throw new ApiError('Private media cache is unavailable.', 'configuration');
-    await FS.deleteAsync(root, { idempotent:true }); await FS.makeDirectoryAsync(root, { intermediates:true }); await purgeRecordings();
+    await FS.deleteAsync(root, { idempotent:true }); await FS.makeDirectoryAsync(root, { intermediates:true }); await purgeRecordings(); await persistentMedia.initialize();
   })();
   return ready;
 }
+export function pauseMediaCache(){persistentMedia.pause();}
+export async function clearDownloadedMedia(){await persistentMedia.clear();}
+export function mediaPlaybackInfo(/** @type {string} */ uri){return persistentMedia.info(uri);}
+/** @param {ReturnType<typeof import('../auth/sessionManager').createSessionManager>} session */
+export async function downloadedMediaStats(session){const user=session.getSnapshot().user;if(!user)throw new ApiError('Sign in to manage device storage.','configuration');return persistentMedia.stats({account:user.id,origin:getApiBaseUrl()});}
 export async function clearMediaCache() {
+  persistentMedia.pause();
+  await persistentMedia.clear();
   await initializeMediaCache();
   await Promise.allSettled([...tasks].map((task) => task.cancelAsync())); tasks.clear();
   await FS.deleteAsync(root, { idempotent:true }); await FS.makeDirectoryAsync(root, { intermediates:true }); await purgeRecordings();
@@ -31,7 +39,7 @@ export async function clearMediaCache() {
 /** @param {string} uri */
 export async function discardRecording(uri) { if (FS.cacheDirectory && uri.startsWith(FS.cacheDirectory) && (uri.includes('/ExpoAudio/') || uri.includes('/Audio/'))) await FS.deleteAsync(uri, { idempotent:true }); }
 /** @param {string} uri */
-export async function discardLocal(uri) { if (uri.startsWith(root)) await FS.deleteAsync(uri, { idempotent:true }); }
+export async function discardLocal(uri) { if(persistentMedia.info(uri)){await persistentMedia.release(uri);return;} if (uri.startsWith(root)) await FS.deleteAsync(uri, { idempotent:true }); }
 /** @param {{ uri: string, name: string, mime?: string|null, file?: File }} input @returns {Promise<import('./contracts').Selection>} */
 export async function copySelection({ uri, name, mime }) {
   await initializeMediaCache();
@@ -63,7 +71,7 @@ export async function uploadFile(session, path, selection, signal, progress) {
   return session.request(path, { method:'PUT', signal }, client.request);
 }
 /** @param {ReturnType<typeof import('../auth/sessionManager').createSessionManager>} session @param {string} path @param {import('./contracts').Attachment} item @param {AbortSignal} signal @param {(fraction:number)=>void} progress @returns {Promise<string>} */
-export async function downloadFile(session, path, item, signal, progress) {
+async function downloadTemporaryFile(session, path, item, signal, progress) {
   await initializeMediaCache();
   const ext = /** @type {Record<string,string>} */ ({ 'image/jpeg':'jpg','image/png':'png','image/webp':'webp','video/mp4':'mp4','video/quicktime':'mov','video/webm':'webm','audio/mp4':'m4a','audio/mpeg':'mp3','audio/wav':'wav','audio/webm':'webm','application/pdf':'pdf','text/plain':'txt' })[item.mime];
   const uri = `${root}${Crypto.randomUUID()}.${ext}`;
@@ -93,4 +101,14 @@ export async function readText(uri) { return (await FS.readAsStringAsync(uri)).s
 export async function openDocument(uri, mime) {
   if (!await Sharing.isAvailableAsync()) throw new ApiError('No document viewer or sharing app is available on this device.', 'configuration');
   await Sharing.shareAsync(uri, { mimeType:mime, ...(mime === 'application/pdf' && { UTI:'com.adobe.pdf' }) });
+}
+
+/** Revalidate access on every open. Reuse only verified encrypted bytes; players
+ * receive a temporary decrypted copy that discardLocal removes on dismissal.
+ * @param {ReturnType<typeof import('../auth/sessionManager').createSessionManager>} session @param {string} path @param {import('./contracts').Attachment} item @param {AbortSignal} signal @param {(fraction:number)=>void} progress */
+export async function downloadFile(session,path,item,signal,progress){
+ await initializeMediaCache();const user=session.getSnapshot().user;
+ if(!user || session.getSnapshot().status!=='authenticated')throw new ApiError('Sign in to open private attachments.','configuration');
+ return persistentMedia.open({account:user.id,origin:getApiBaseUrl()},path,item,
+  s=>session.request(path+'/access',{signal:s}),s=>downloadTemporaryFile(session,path,item,s,progress),signal);
 }
