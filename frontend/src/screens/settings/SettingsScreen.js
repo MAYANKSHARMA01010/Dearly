@@ -1,3 +1,4 @@
+import SnapshotStatus from '../../components/common/SnapshotStatus';
 import { useCallback, useMemo, useState } from 'react';
 import { Linking, View } from 'react-native';
 import { Text, Switch, List, RadioButton, Divider } from 'react-native-paper';
@@ -13,14 +14,14 @@ import { createNotificationService } from '../../services/notifications/service'
 import PermissionDialog from '../../components/common/PermissionDialog';
 import { usePermissionPrompt } from '../../hooks/usePermissionPrompt';
 import { registerPush } from '../../services/notifications/device';
-/** @param {{initial:import('../../services/notifications/service').Preferences}} props */
-function SettingsForm({ initial }) {
+/** @typedef {import('../../services/notifications/service').Preferences} Preferences */
+/** @param {{value:Preferences,setValue:(update:(old:Preferences)=>Preferences)=>void}} props */
+function SettingsForm({ value,setValue }) {
   const { session } = useAuth(),
     router = useRouter(),
     action = useAsyncAction();
   const permissionPrompt = usePermissionPrompt();
-  const [value, setValue] = useState(initial),
-    [notice, setNotice] = useState('');
+  const [notice,setNotice]=useState('');
   return (
     <>
       <ScreenSection title="Message updates">
@@ -151,15 +152,21 @@ function SettingsForm({ initial }) {
 export default function SettingsScreen() {
   const { session } = useAuth();
   const api = useMemo(() => createNotificationService(session), [session]);
-  const { data, loading, error, refresh } = useFocusedResource(
-    useCallback((signal) => api.preferences(signal), [api]),
+  const { data, loading, error, refresh, info } = useFocusedResource(
+    useCallback((signal,fresh) => api.preferences(signal,fresh), [api]),
+    '/notifications/preferences',
   );
+  const [form,setForm]=useState(/** @type {{initial:Preferences|null,value:Preferences|null}} */({initial:null,value:null}));
+  if(data && form.initial!==data) {
+    const pristine=!form.value || JSON.stringify(form.value)===JSON.stringify(form.initial);
+    setForm({initial:data,value:pristine?data:form.value});
+  }
   return (
     <Screen>
       <ScreenHeading title="Settings" description="Choose how Dearly keeps you updated." />
-      {data ? (
-        <SettingsForm initial={data} />
-      ) : (
+      <SnapshotStatus info={info} error={error} loading={loading} />
+      {data?<SettingsForm value={form.value ?? data} setValue={update=>setForm(old=>({...old,value:update(old.value ?? data)}))} />:null}
+      {data?<AppButton icon="refresh" disabled={loading} onPress={()=>{void refresh();}}>Refresh preferences</AppButton>:(
         <StateView
           loading={loading}
           title={loading ? 'Loading preferences' : 'Preferences unavailable'}
