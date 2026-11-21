@@ -168,8 +168,9 @@ export default function MediaPreview({ uri, mime, name }) {
   if (mime.startsWith('audio/')) return <AudioPreview key={`${uri}:${attempt}`} uri={uri} name={name} onRetry={() => setAttempt(attempt + 1)} />;
   if (mime.startsWith('video/')) return <VideoPreview uri={uri} />;
   return <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
-    {mime === 'text/plain' ? <><Text selectable>{text}</Text><Text variant="bodySmall">Text preview shows up to 65,536 characters.</Text></> : <Text>Open this PDF in a document viewer using your device’s file menu.</Text>}
-    <AppButton icon="open-in-new" mode="outlined" onPress={() => { void openDocument(uri, mime).catch(() => setError('A document viewer could not be opened. Try another app.')); }}>Open or share file</AppButton>
+    {mime === 'text/plain' ? <><Text selectable>{text}</Text><Text variant="bodySmall">Text preview shows up to 65,536 characters.</Text></> : <Text>Open this PDF in another app to view it.</Text>}
+    <AppButton icon="open-in-new" mode="outlined" onPress={() => { void openDocument(uri, mime).catch(() => setError('A document viewer could not be opened. Try another app.')); }}>Open in another app</AppButton>
+    <Text variant="bodySmall">Another app may keep its own copy. Clearing Dearly’s downloads does not remove exported files.</Text>
     {error ? <Text accessibilityRole="alert">{error}</Text> : null}
   </ScrollView>;
 }

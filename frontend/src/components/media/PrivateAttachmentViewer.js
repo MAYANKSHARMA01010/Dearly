@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { downloadFile, discardLocal } from '../../services/attachments/device';
 import AttachmentViewer from './AttachmentViewer';
+import AppButton from '../common/AppButton';
 import AttachmentRow from './AttachmentRow';
 import { InlineNotice } from '../layout/ScreenSections';
 import { spacing } from '../../theme';
@@ -59,9 +60,10 @@ export default function PrivateAttachmentViewer({ items, contentPath }) {
       {action.busy ? (
         <>
           <Text accessibilityLiveRegion="polite">
-            Opening private attachment · {Math.round(progress * 100)}%
+            {progress>=1?'Verifying and preparing attachment…':progress>0?`Downloading · ${Math.round(progress*100)}%`:'Checking access and preparing attachment…'}
           </Text>
-          <ProgressBar progress={progress} />
+          <ProgressBar progress={progress} indeterminate={progress===0 || progress>=1} />
+          <AppButton onPress={action.cancel}>Cancel opening</AppButton>
         </>
       ) : null}
       {action.error ? (
