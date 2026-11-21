@@ -323,7 +323,7 @@ unrelated bundle, and do not split every file into a separate commit.
   [mobile cache contracts](docs/mobile-cache.md). Phase 21 connects bounded
   reads/refresh/invalidation; follow
   [synchronization contracts](docs/mobile-synchronization.md). Persistent mobile
-  media remains Phase 22. Neon remains
+  media follows [persistent media contracts](docs/persistent-media.md) in Phase 22. Neon remains
   authoritative for access, schedules and delivery. Never
   cache OTP/auth decisions or schedule confirmation as authoritative. Define TTL,
   account isolation, logout purge, encryption/key handling and offline revocation

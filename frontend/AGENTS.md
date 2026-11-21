@@ -50,9 +50,9 @@ Docs for EAS: https://docs.expo.dev/eas/index.md
 Use the shared `AttachmentViewer` for saved and pending image/video/audio previews;
 keep playback controls out of the surrounding draft/message action list. Preserve
 native video controls and accessible audio seeking. Viewer dismissal must unmount
-players and, under the current temporary-cache implementation, clean downloaded
-private cache files; it must retain a pending upload's
-selection. Use only synthetic media for visual checks, and remove temporary test
+players and clean temporary decrypted playback
+files while retaining reusable encrypted downloads; it must retain a pending
+upload's selection. Use only synthetic media for visual checks, and remove temporary test
 routes before release. Do not add fake waveforms or unsupported encryption claims.
 
 ## Login preparation and phone permissions
@@ -75,8 +75,8 @@ Keep existing Paper tokens, NativeWind setup and accessible controls. Commit eac
 completed screen coherently before moving to the next requested screen.
 
 Phases 20–22 in `../docs/follow-up-phases.md` own SQLite, synchronization and
-persistent media. Current attachment cleanup is temporary-cache behavior; change
-its contract deliberately in Phase 22. Before retaining private content, define
+persistent media. Phase 22 deliberately separates retained encrypted downloads from temporary
+playback files; follow `../docs/persistent-media.md`. Before retaining private content, define
 account/backend namespacing, expiry checked before reads, encryption/key handling,
 logout/account-change purge, bounded disk use and stale/revoked access handling.
 Do not persist session tokens in SQLite or automatically replay writes offline.
@@ -95,5 +95,5 @@ invalidation, refresh
 and bounded saved-copy presentation; follow `../docs/mobile-synchronization.md`.
 Do not extend copy validity on failure or cache auth/schedule decisions. Keep
 manual refresh authoritative, preserve unsaved settings, discard appended mailbox
-pages when their first page changes, and stop timers on blur. Phase 22 owns
-persistent media. Preserve those boundaries.
+pages when their first page changes, and stop timers on blur. Phase 22 adds encrypted media files/index, per-open online access, seven-day/250 MiB
+LRU bounds and Settings cleanup. Preserve those boundaries.
