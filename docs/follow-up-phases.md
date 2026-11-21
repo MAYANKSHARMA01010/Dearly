@@ -48,7 +48,7 @@ Do not infer authorization for a new live message from a historical test.
 | 17 Rules and audit | Documentation; baseline inspection | Complete: rules, roadmap, current-state reconciliation; links/paths and whitespace checked | Not required: documentation only; commit IDs are in Git history |
 | 18 Environment and sensitive data | Backend config / operations; 17 | Complete with explicit SMSGate credential exception; examples/config checks and 114 backend tests passed | Backend/WAHA config live; Gmail replaced and old password revoked; Neon role rotated/consumers checked; see [audit](environment-audit.md) |
 | 19 Render logs and OTP performance | Auth / WAHA / operations; 18 | Complete: safe stage timings and regional repair; warm request 15.253 → 6.848 seconds | Final source Live, 1.1.4 RC1 published/verified; both authorized OTPs arrived; see [evidence](otp-performance.md). New APK device acceptance remains pending |
-| 20 SQLite foundation | Mobile storage / auth boundary; 19 | Pending | Pending rebuilt APK and native cache/migration checks |
+| 20 SQLite foundation | Mobile storage / auth boundary; 19 | Complete: encrypted snapshots, migrations, TTL/isolation/purge and auth lifecycle; screen cache consumption remains Phase 21 | 1.2.0 RC1 / build 9; native Android synthetic persistence/encryption checks passed; physical phone and native iOS acceptance remain pending |
 | 21 Synchronization and fewer reads | Mobile services / backend reads; 20 | Pending | Pending request-count comparison and account/revocation checks |
 | 22 Persistent media and viewer UI | Mobile media / UI; 21 | Pending | Pending rebuilt APK, native media/cleanup/accessibility checks |
 | 23 API docs and scheduled operations | API contracts / operations; 19 and 22 | Pending | Pending route deployment, scheduler setup and observed job outcomes |
@@ -280,3 +280,36 @@ fresh release-asset verification passed. Both authorized OTPs arrived. Remaining
 database roundtrips and cold starts are documented; no instant delivery promise.
 Phase 20 SQLite is next and has not started. Historical baseline/Phase 18 notes
 above remain dated records. The unrelated root `.gitignore` edit was preserved.
+
+
+## Phase 20 verification record — 22 November 2026
+
+[Mobile cache contracts](mobile-cache.md) define authority, encryption/key lifecycle,
+retention, expiry, namespaces, corruption behavior and remaining offline limits.
+Commits: `47c7ac8` repository/lifecycle/migrations, `98bd445` session integration and
+1.2.0 / native build 9. Final runtime source is
+`98bd445f7e3075e2733ac7f5c85800639565fd66`, independently observed Live on Render.
+
+Frontend lint/types and 118 tests passed, including actual host SQLite file
+close/reopen, transactional migration rollback, future-schema rejection, expiry,
+backward clock change, namespace isolation, tombstones, bounds, parameter binding,
+malformed data, SQLCipher guard and auth/cache failures. Expo Doctor passed 20/20;
+Android/iOS exports passed. [Full CI 44939942613](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44939942613)
+passed with backend checks, isolated integrations, backup drill and platform bundles.
+
+A separate synthetic JS harness was embedded in a private test APK with all native
+library hashes matching the unchanged release APK. The existing ARM64 Android 36
+emulator confirmed cipher_version, encrypted/non-SQLite-plaintext file header,
+SecureStore key reuse and persistence across process stop/relaunch, account/origin
+isolation, TTL expiry, clock rollback, purge and wrong-key rejection. Synthetic
+keys/database were removed, the normal APK restored, and the emulator stopped.
+No live OTP/message was sent; the published APK contains no test entry. Native
+iOS runtime and physical-phone installation are pending, not inferred from exports.
+
+[1.2.0 RC1](https://github.com/MAYANKSHARMA01010/Dearly/releases/tag/v1.2.0-rc.1)
+contains the matching signed ARM64 APK, exact-commit source ZIP, manifest and
+checksums. Signature matches 1.1.4; local and freshly downloaded packages verified.
+[Release verification 44940702622](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44940702622)
+passed. This is a release candidate. Phase 20 is complete;
+Phase 21 screen integration, synchronization and fewer reads has not started.
+The unrelated root `.gitignore` edit remains untouched.

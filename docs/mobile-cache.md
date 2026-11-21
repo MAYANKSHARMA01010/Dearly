@@ -88,3 +88,10 @@ for synthetic storage checks. Physical device installation remains separate.
 
 References: [Expo SDK 58 SQLite and SQLCipher](https://docs.expo.dev/versions/v58.0.0/sdk/sqlite/),
 [SecureStore](https://docs.expo.dev/versions/v58.0.0/sdk/securestore/).
+
+
+22 November 2026: host migration/persistence/security checks and native Android
+synthetic encryption/restart checks passed for 1.2.0 RC1 / build 9. The native test
+APK used a separate synthetic bundle with identical native-library hashes; the
+published signed APK was not modified and has no test entry. See the follow-up
+record for scope, exact commit and remaining device/iOS gates.

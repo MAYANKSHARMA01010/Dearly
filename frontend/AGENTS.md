@@ -66,7 +66,7 @@ Settings recovery. Login never requires device permissions. Use the native media
 picker without broad Android media/storage grants; preserve the compatible iOS
 video-export path that avoids a surprise original-asset permission request.
 
-## UI and planned persistent storage
+## UI and private storage
 
 Follow the root Impeccable + Stitch requirement for every UI scope. Load project
 context and the relevant Impeccable playbook, obtain a sanitized focused Stitch
@@ -82,3 +82,13 @@ logout/account-change purge, bounded disk use and stale/revoked access handling.
 Do not persist session tokens in SQLite or automatically replay writes offline.
 Use SDK-matched Expo docs before adding native modules; verify with rebuilt native
 apps, not Expo Go or browser checks alone.
+
+Phase 20 now provides SQLCipher-backed SQLite snapshots under `services/cache/`.
+Follow `../docs/mobile-cache.md`: require cipher_version before writing private
+content, keep the random key in device-only SecureStore, serialize migrations and
+queries, scope by account/API origin, check TTL before reads and revoke cache
+leases synchronously on auth transitions. Server authentication remains required.
+Web persistence is disabled. Never migrate private values into plaintext as a
+fallback or delete a database to conceal a migration failure. Logout clears only
+Dearly's disposable cache/key. Phase 21 owns screen reads, invalidation, refresh
+and offline presentation; Phase 22 owns persistent media. Preserve those boundaries.

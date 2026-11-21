@@ -319,8 +319,10 @@ unrelated bundle, and do not split every file into a separate commit.
   into examples, logs, documentation, CI output or release assets. Check Render
   privately and report variable names/status only. Credential replacement needs a
   coordinated rollout; do not regenerate signing/access keys casually.
-- SQLite and persistent mobile media caching are planned, not implemented by this
-  document. Neon remains authoritative for access, schedules and delivery. Never
+- Phase 20 implements encrypted native SQLite snapshot storage; follow
+  [mobile cache contracts](docs/mobile-cache.md). Screen reads/refresh/invalidation
+  remain Phase 21 and persistent mobile media remains Phase 22. Neon remains
+  authoritative for access, schedules and delivery. Never
   cache OTP/auth decisions or schedule confirmation as authoritative. Define TTL,
   account isolation, logout purge, encryption/key handling and offline revocation
   limits before persisting private content. Redis must not become a durable queue.
