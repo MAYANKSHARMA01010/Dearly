@@ -320,8 +320,10 @@ unrelated bundle, and do not split every file into a separate commit.
   privately and report variable names/status only. Credential replacement needs a
   coordinated rollout; do not regenerate signing/access keys casually.
 - Phase 20 implements encrypted native SQLite snapshot storage; follow
-  [mobile cache contracts](docs/mobile-cache.md). Screen reads/refresh/invalidation
-  remain Phase 21 and persistent mobile media remains Phase 22. Neon remains
+  [mobile cache contracts](docs/mobile-cache.md). Phase 21 connects bounded
+  reads/refresh/invalidation; follow
+  [synchronization contracts](docs/mobile-synchronization.md). Persistent mobile
+  media remains Phase 22. Neon remains
   authoritative for access, schedules and delivery. Never
   cache OTP/auth decisions or schedule confirmation as authoritative. Define TTL,
   account isolation, logout purge, encryption/key handling and offline revocation

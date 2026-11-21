@@ -49,7 +49,7 @@ Do not infer authorization for a new live message from a historical test.
 | 18 Environment and sensitive data | Backend config / operations; 17 | Complete with explicit SMSGate credential exception; examples/config checks and 114 backend tests passed | Backend/WAHA config live; Gmail replaced and old password revoked; Neon role rotated/consumers checked; see [audit](environment-audit.md) |
 | 19 Render logs and OTP performance | Auth / WAHA / operations; 18 | Complete: safe stage timings and regional repair; warm request 15.253 → 6.848 seconds | Final source Live, 1.1.4 RC1 published/verified; both authorized OTPs arrived; see [evidence](otp-performance.md). New APK device acceptance remains pending |
 | 20 SQLite foundation | Mobile storage / auth boundary; 19 | Complete: encrypted snapshots, migrations, TTL/isolation/purge and auth lifecycle; screen cache consumption remains Phase 21 | 1.2.0 RC1 / build 9; native Android synthetic persistence/encryption checks passed; physical phone and native iOS acceptance remain pending |
-| 21 Synchronization and fewer reads | Mobile services / backend reads; 20 | Pending | Pending request-count comparison and account/revocation checks |
+| 21 Synchronization and fewer reads | Mobile services / backend reads; 20 | Complete: bounded cached reads, coalescing, invalidation, retry/cancellation and screen states | 1.3.0 RC1 / build 10; measured 3 → 1 sequential requests, native synthetic checks passed; phone/iOS acceptance remain pending |
 | 22 Persistent media and viewer UI | Mobile media / UI; 21 | Pending | Pending rebuilt APK, native media/cleanup/accessibility checks |
 | 23 API docs and scheduled operations | API contracts / operations; 19 and 22 | Pending | Pending route deployment, scheduler setup and observed job outcomes |
 | 24 Coordinated CI/CD and acceptance | Release tooling / operations; 18–23 | Pending | Pending exact-commit APK, deployment and published assets; device checks remain separately recorded |
@@ -313,3 +313,50 @@ checksums. Signature matches 1.1.4; local and freshly downloaded packages verifi
 passed. This is a release candidate. Phase 20 is complete;
 Phase 21 screen integration, synchronization and fewer reads has not started.
 The unrelated root `.gitignore` edit remains untouched.
+
+
+## Phase 21 verification record — 22 November 2026
+
+[Synchronization contracts](mobile-synchronization.md) define cache eligibility,
+record/session deadlines, the memory-only 60-second verification window, explicit
+refresh, invalidation, bounded recovery, cancellation and remote revocation limits.
+No Redis layer or unsupported conditional-GET protocol was added without evidence.
+Persistent media and viewer work remain Phase 22.
+
+Focused commits: `30c32a2` read coordination/invalidation; `629d562` dashboard;
+`f0300aa` message details; `c4d868d` unsaved settings; `08722ed` mailbox pages;
+`4c7d818` measured tests/metadata cleanup; `13d272e` release preparation.
+Frontend lint/types and 127 tests passed. Expo Doctor passed 20/20; Android/iOS
+exports passed. [Full CI 44942575009](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44942575009)
+passed, including backend checks, isolated integrations, backup drill and platform
+bundles. The UI detector reported no findings for the changed native components.
+
+Both requested design consultations informed the small freshness/status changes.
+Synthetic phone-width rendered checks covered dashboard saved-copy/error/expiry,
+owned/delivered detail status placement, preserved unsaved settings after refresh,
+and first-page refresh discarding appended mailbox pages. No private account data
+was used. Temporary fixtures were removed before packaging.
+
+A controlled real-SQLite/fake-HTTP comparison made three requests without caching
+and one with caching for three sequential reads; three concurrent readers shared
+one request; manual refresh added one. These are fixture counts, not a production
+latency percentile or a claim of reduced SQL query counts on a live database.
+
+The resumed local native build retained the exact release application source and
+configuration; only Expo prebuild's expected launch-script normalization differed.
+A separate synthetic JS probe used every native library hash from the unchanged
+signed APK. Android verified encrypted cache access, request coalescing/reuse,
+manual refresh, one uncertain write without replay, reconciliation, persistence
+after process restart, rejection before fresh auth proof, expired-window remote
+reads, reconnect invalidation, denied-copy eviction and logout/key cleanup. The
+normal APK was restored and the emulator stopped. No live OTP/message was sent.
+The published APK has no synthetic test entry.
+
+Runtime source `13d272eaae021dc79ad9b70792f737bd715a972e` was independently
+observed Live on Render. [1.3.0 RC1](https://github.com/MAYANKSHARMA01010/Dearly/releases/tag/v1.3.0-rc.1)
+contains the matching signed ARM64 APK (native build 10), source ZIP, manifest and
+checksums. The signer matches 1.2.0. Local and fresh-download verification plus the
+[release verification 44960724811](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44960724811)
+passed. Physical phone installation and native iOS runtime
+checks remain pending. This remains a release candidate. Phase 21 is complete;
+Phase 22 has not started. The unrelated root `.gitignore` edit was preserved.

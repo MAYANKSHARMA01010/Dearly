@@ -90,5 +90,10 @@ queries, scope by account/API origin, check TTL before reads and revoke cache
 leases synchronously on auth transitions. Server authentication remains required.
 Web persistence is disabled. Never migrate private values into plaintext as a
 fallback or delete a database to conceal a migration failure. Logout clears only
-Dearly's disposable cache/key. Phase 21 owns screen reads, invalidation, refresh
-and offline presentation; Phase 22 owns persistent media. Preserve those boundaries.
+Dearly's disposable cache/key. Phase 21 now connects eligible screen reads,
+invalidation, refresh
+and bounded saved-copy presentation; follow `../docs/mobile-synchronization.md`.
+Do not extend copy validity on failure or cache auth/schedule decisions. Keep
+manual refresh authoritative, preserve unsaved settings, discard appended mailbox
+pages when their first page changes, and stop timers on blur. Phase 22 owns
+persistent media. Preserve those boundaries.

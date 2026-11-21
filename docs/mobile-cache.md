@@ -11,9 +11,10 @@ A profile ID must match the active account; detail IDs must match the record key
 Received content must have both delivery and scheduled timestamps at or before now.
 Owner-created future messages can be stored only as owner-authorized representations.
 
-Screens continue reading the server in this phase. The repository's fresh-only
-read boundary is ready for Phase 21; there is no offline sign-in, cached auth
-approval, offline write queue or automatic send/confirmation replay. Media bytes
+Phase 20 introduced the storage boundary; Phase 21 now connects eligible
+screen reads through [bounded synchronization](mobile-synchronization.md). There
+is no offline sign-in, cached auth approval, offline write queue or automatic
+send/confirmation replay. Media bytes
 keep their existing temporary-cache behavior until Phase 22.
 
 ## Encryption and lifecycle
@@ -62,14 +63,16 @@ Every row includes fetched_at, expires_at, record_version and deleted_at. Detail
 versions use the server version when present; other snapshots use the local fetch
 timestamp, which is not a server revision or authorization decision. Deletion
 markers contain no payload and prevent older/equal fetches from resurrecting a
-record during their TTL. Phase 21 owns server-driven invalidation and deletion
-observation; Phase 20 never claims those are already synchronized.
+record during their TTL. Phase 21 invalidates snapshots before/after mutations and denied reads; its
+read generations reject late responses. Remote changes are observed on bounded
+refresh, not through a realtime subscription.
 
 Reads prune expired rows first, reject future/invalid timestamps and never return
 expired/deleted data. Expiry is inclusive. An observed backward wall-clock change
 purges snapshots before serving another read. This does not make the device clock
-trusted. Remote revocation cannot be detected offline; no offline consumption is
-enabled in this phase. Phase 21 must define its authorization window before use.
+trusted. Remote revocation cannot be detected offline. Phase 21 permits only the bounded
+saved-copy window in its synchronization contract; cached reads never renew
+verification, and process/foreground restoration remains online.
 
 Retention is bounded to 200 rows, 128 KiB worst-case UTF-8 per payload and 4 MiB
 of retained payload bytes. SQLite has a 4096-page limit (normally 16 MiB with
