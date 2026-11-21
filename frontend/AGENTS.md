@@ -48,3 +48,15 @@ native video controls and accessible audio seeking. Viewer dismissal must unmoun
 players and clean downloaded private cache files; it must retain a pending upload's
 selection. Use only synthetic media for visual checks, and remove temporary test
 routes before release. Do not add fake waveforms or unsupported encryption claims.
+
+
+## Login preparation and phone permissions
+
+Entry-screen preparation may perform read-only OTP status checks; never send a code
+before the user presses Send code. Keep waiting abortable before submission and
+never replay an uncertain OTP POST. Preserve explicit WhatsApp-first login.
+Ask for microphone/notification access only at their feature action, explain the
+reason with Not now, skip already granted access and honor canAskAgain=false with
+Settings recovery. Login never requires device permissions. Use the native media
+picker without broad Android media/storage grants; preserve the compatible iOS
+video-export path that avoids a surprise original-asset permission request.

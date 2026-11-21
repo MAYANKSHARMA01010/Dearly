@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, View } from 'react-native';
 import { Text } from 'react-native-paper';
-import { RecordingPresets, useAudioRecorder, useAudioRecorderState, requestRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
+import { RecordingPresets, useAudioRecorder, useAudioRecorderState, requestRecordingPermissionsAsync, getRecordingPermissionsAsync, setAudioModeAsync } from 'expo-audio';
 import AppButton from '../common/AppButton';
 import { discardRecording } from '../../services/attachments/device';
+import PermissionDialog from '../common/PermissionDialog';
+import { usePermissionPrompt } from '../../hooks/usePermissionPrompt';
+import { requestContextualPermission } from '../../services/permissions';
 import { spacing } from '../../theme';
 
 /** @param {{ disabled:boolean, onReady:(uri:string)=>Promise<void>, onPending:(pending:boolean)=>void }} props */
 export default function VoiceRecorder({ disabled, onReady, onPending }) {
+  const permissionPrompt = usePermissionPrompt();
   const recorder = useAudioRecorder({ ...RecordingPresets.HIGH_QUALITY, directory:'cache' }); const status = useAudioRecorderState(recorder, 250);
   const [isActive, setIsActive] = useState(false);
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [denied, setDenied] = useState(false);
@@ -25,9 +29,10 @@ export default function VoiceRecorder({ disabled, onReady, onPending }) {
     if (starting.current || active.current || disabled) return;
     starting.current = true; setBusy(true); setError(''); onPending(true);
     try {
-      const permission = await requestRecordingPermissionsAsync();
+      const permission = await requestContextualPermission(await getRecordingPermissionsAsync(), requestRecordingPermissionsAsync, () => permissionPrompt.explain('microphone'));
       if (!mounted.current) return;
-      if (!permission.granted) { setDenied(true); setError('Microphone access is off. You can enable it in Settings, or choose an audio file instead.'); return; }
+      if (permission === 'canceled') return;
+      if (permission !== 'granted') { setDenied(true); setError('Microphone access is off. You can enable it in Settings, or choose an audio file instead.'); return; }
       setDenied(false); await setAudioModeAsync({ allowsRecording:true, playsInSilentMode:true, shouldPlayInBackground:false });
       await recorder.prepareToRecordAsync({...RecordingPresets.HIGH_QUALITY,directory:'cache',fileName:`dearly-voice-${Date.now()}`});
       if (!mounted.current) return;
@@ -53,6 +58,7 @@ export default function VoiceRecorder({ disabled, onReady, onPending }) {
     <Text>{status.isRecording ? `Recording · ${Math.floor(status.durationMillis / 1000)} seconds` : 'Record up to 5 minutes. Review it before uploading.'}</Text>
     {isActive || status.isRecording ? <><AppButton disabled={busy} onPress={() => { void finish(); }}>Stop and review voice</AppButton><AppButton disabled={busy} onPress={() => { void finish(false); }}>Cancel recording</AppButton></> : <AppButton mode="outlined" disabled={disabled || busy} loading={busy} onPress={() => { void start(); }}>Record voice</AppButton>}
     {error ? <Text accessibilityRole="alert">{error}</Text> : null}
+    <PermissionDialog kind={permissionPrompt.kind} onChoice={permissionPrompt.finish} />
     {denied ? <AppButton onPress={() => { void Linking.openSettings().catch(() => setError('Open your device Settings to enable microphone access.')); }}>Open microphone settings</AppButton> : null}
   </View>;
 }

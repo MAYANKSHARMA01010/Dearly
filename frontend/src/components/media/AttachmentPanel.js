@@ -54,7 +54,7 @@ export default function AttachmentPanel({ draftId, disabled, onGuardChange, read
     } else await choose({ uri, name:'Voice note.m4a', mime:'audio/mp4' });
   }, [choose]);
   const pickMedia = () => run('Choosing photo or video', async (signal) => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes:['images','videos'], allowsMultipleSelection:false, quality:1, preferredAssetRepresentationMode:ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible, videoMaxDuration:120 });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes:['images','videos'], allowsMultipleSelection:false, quality:1, videoExportPreset:ImagePicker.VideoExportPreset.HighestQuality, preferredAssetRepresentationMode:ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible, videoMaxDuration:120 });
     if (!result.canceled && result.assets[0]) {
       const a = result.assets[0]; await choose({ uri:a.uri, name:a.fileName || (a.type === 'video' ? 'Video.mp4' : 'Photo.jpg'), mime:a.mimeType, file:a.file }, signal);
     }

@@ -390,3 +390,37 @@ photo zoom, video playback to completion, audio seek to 0:21 of 0:35 and a missi
 photo's retry/close state. The first native screen-capture attempt failed, then
 recovered for the native checks. Physical Android acceptance and multi-touch pinch
 acceptance are not inferred from these checks.
+
+
+## Welcome, phone sign-in and permissions — 21 November 2026
+
+The signed-out home now has one Dearly identity, concise product copy, an explicitly
+labeled example message and one Get started action. The signed-in dashboard keeps
+its native header. Phone signup/sign-in uses a compact WhatsApp-first explanation,
+clear country/phone fields, a single code input with autofill, a quiet resend
+countdown, masked destination suffix and 12-hour expiry time. Read-only preparation
+starts on entry-screen focus; users can stop waiting before a code is submitted.
+Long waits explain that no code has yet been requested. OTP POSTs never replay.
+
+Phone permission requests are contextual: microphone only from Record voice;
+notifications only from the explicit Settings action. An explanation offers Not
+now before the OS prompt. Already-granted permissions bypass it; permanent denial
+uses Settings recovery. Declining the explanation opens no system prompt. Passive
+push registration never asks for permission and respects iOS provisional access.
+Photo/video picking stays in the system picker. Explicit compatible iOS video
+export avoids the default original-video path's surprise library-access request.
+Android broad media/storage permissions are blocked; voice recording retains its
+explicit microphone grant. No permission gate was added to login.
+
+Stitch session 8445733119230609654 (welcome 7abc0474d5d74f6ab7f17b8515fb24a0,
+phone/permission e4f88d7fd0544bc683c868c16beb0876) and Impeccable clarify/polish
+guidance informed the same changes. Rejected invented vault/end-to-end encryption
+labels, invented operational status, and multiple code cells. Source uses existing
+Paper and Expo SDK 58 modules.
+
+Checks: iPhone 17 Pro Max rendered the new welcome. Phone-size browser checks
+covered sign-in, fake-transport code entry and error feedback, waiting cancellation,
+and both permission explanations/Not now. The simulator screen connection later
+became unavailable; these browser checks are not reported as native OS permission
+acceptance. No real OTP, microphone capture or OS permission grant was used during
+UI checks. Temporary test routes were removed before commit.

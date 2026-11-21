@@ -14,7 +14,9 @@
       "id": "b31ec60bfcc241fe8ab5a82050c013b6",
       "name": "projects/13022673306304030650/screens/b31ec60bfcc241fe8ab5a82050c013b6",
       "title": "Sign in and Verification Flow",
-      "otpReadinessProposalSessionId": "3746503722770790305"
+      "otpReadinessProposalSessionId": "3746503722770790305",
+      "refinementId": "e4f88d7fd0544bc683c868c16beb0876",
+      "permissionProposalSessionId": "8445733119230609654"
     },
     "drafts": {
       "id": "a2adad4bc6b34265885948e1ae92558e",
@@ -108,6 +110,11 @@
       "proposalSessionId": "13567769298172318605",
       "title": "Attachment Media Viewer",
       "artifact": "textual proposal; generated reference retained privately"
+    },
+    "welcome": {
+      "id": "7abc0474d5d74f6ab7f17b8515fb24a0",
+      "proposalSessionId": "8445733119230609654",
+      "title": "Signed-out welcome"
     }
   }
 }

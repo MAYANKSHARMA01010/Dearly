@@ -10,12 +10,15 @@ import { InlineNotice, InsetGroup, NavigationRow, ScreenHeading, ScreenSection }
 import StateView from '../../components/common/StateView';
 import AppButton from '../../components/common/AppButton';
 import { createNotificationService } from '../../services/notifications/service';
+import PermissionDialog from '../../components/common/PermissionDialog';
+import { usePermissionPrompt } from '../../hooks/usePermissionPrompt';
 import { registerPush } from '../../services/notifications/device';
 /** @param {{initial:import('../../services/notifications/service').Preferences}} props */
 function SettingsForm({ initial }) {
   const { session } = useAuth(),
     router = useRouter(),
     action = useAsyncAction();
+  const permissionPrompt = usePermissionPrompt();
   const [value, setValue] = useState(initial),
     [notice, setNotice] = useState('');
   return (
@@ -102,13 +105,14 @@ function SettingsForm({ initial }) {
       >
         Save preferences
       </AppButton>
-      <ScreenSection title="This device" description="Save your choices, then enable push here. Your phone will ask for permission if needed.">
+<PermissionDialog kind={permissionPrompt.kind} onChoice={permissionPrompt.finish} />
+      <ScreenSection title="This device" description="Notifications are optional. Enable them here when you’re ready; you can change access in phone Settings.">
       <AppButton
         icon="bell-outline" mode="outlined" disabled={action.busy || !value.pushAlerts}
         onPress={() => {
           void action.run(async () => {
             await createNotificationService(session).save(value);
-            setNotice(await registerPush(session, true));
+            setNotice(await registerPush(session, true, () => permissionPrompt.explain('notifications')));
           });
         }}
       >

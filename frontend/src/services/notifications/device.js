@@ -1,3 +1,4 @@
+import { requestContextualPermission } from '../permissions';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
@@ -16,27 +17,32 @@ async function installation() {
   }
   return id;
 }
-/** @param {Parameters<typeof createNotificationService>[0]} session @param {boolean} [requestPermission] */
-export async function registerPush(session, requestPermission = false) {
+/** @param {Parameters<typeof createNotificationService>[0]} session @param {boolean} [requestPermission] @param {()=>Promise<boolean>} [explain] */
+export async function registerPush(session, requestPermission = false, explain = async () => false) {
   if (!nativePushAvailable)
     return 'Push needs a development build. Your in-app notifications still work.';
   if (typeof pushProjectId !== 'string')
     return 'Push setup is pending. Your in-app notifications still work.';
   const n = await import('expo-notifications');
-  if (Platform.OS === 'android')
-    await n.setNotificationChannelAsync('dearly-updates', {
-      name: 'Dearly updates',
-      importance: n.AndroidImportance.DEFAULT,
+  const channel = async () => {
+    if (Platform.OS === 'android') await n.setNotificationChannelAsync('dearly-updates', {
+      name: 'Dearly updates', importance: n.AndroidImportance.DEFAULT,
     });
-  let permission = await n.getPermissionsAsync();
-  if (!permission.granted && requestPermission)
-    permission = await n.requestPermissionsAsync();
+  };
+  const current = await n.getPermissionsAsync();
+  const permission = { ...current, granted: current.granted || current.ios?.status === n.IosAuthorizationStatus.PROVISIONAL };
+
+  const result = requestPermission
+    ? await requestContextualPermission(permission, async () => { await channel(); return n.requestPermissionsAsync(); }, explain)
+    : permission.granted ? 'granted' : 'denied';
+  if (result === 'canceled') return 'Notifications were not enabled. You can choose this later.';
   const api = createNotificationService(session),
     id = await installation();
-  if (!permission.granted) {
+  if (result !== 'granted') {
     await api.remove(id);
     return 'Notifications are not allowed. You can change this in phone Settings.';
   }
+  await channel();
   const token = await n.getExpoPushTokenAsync({ projectId: pushProjectId });
   await api.register({
     id,
