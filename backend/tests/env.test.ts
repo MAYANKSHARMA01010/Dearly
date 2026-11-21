@@ -66,3 +66,15 @@ test('backend and optional Redis addresses remain separate across local and host
   for (const fields of [{ REDIS_SERVER_URL: 'https://service.example' }, { REDIS_URL: 'private-invalid-url' }, { REDIS_SERVER_URL: 'private-invalid-url' }, { REDIS_LOCAL_URL: 'http://localhost:6379' }, { BACKEND_SERVER_URL: 'private-invalid-url' }, { BACKEND_SERVER_URL: 'http://service.example' }, { BACKEND_SERVER_URL: 'https://localhost:8080' }])
     assert.throws(() => parseEnvironment({ ...base, ...fields }), EnvironmentError);
 });
+
+
+test('WAHA region relocation preserves explicit hosted scope without merging local senders', () => {
+  const fields = { DATABASE_URL: databaseUrl, WHATSAPP_MODE: 'waha',
+    WAHA_API_KEY: 'synthetic-client-key', WAHA_WEBHOOK_SECRET: 'a'.repeat(64),
+    WAHA_LOCAL_API_URL: 'http://localhost:3100', WAHA_SERVER_API_URL: 'https://gateway-new.example.com',
+    WAHA_SERVER_SCOPE_ORIGIN: 'https://gateway-old.example.com' };
+  assert.equal(parseEnvironment({ ...fields, NODE_ENV: 'production' }).whatsapp?.scopeOrigin, fields.WAHA_SERVER_SCOPE_ORIGIN);
+  assert.equal(parseEnvironment(fields).whatsapp?.scopeOrigin, undefined);
+  assert.equal(parseEnvironment({ ...fields, NODE_ENV: 'production', WAHA_SERVER_SCOPE_ORIGIN: undefined }).whatsapp?.scopeOrigin, undefined);
+  assert.throws(() => parseEnvironment({ ...fields, WAHA_SERVER_SCOPE_ORIGIN: 'https://user:private@example.com' }), EnvironmentError);
+});

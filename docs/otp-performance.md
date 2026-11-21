@@ -63,3 +63,29 @@ correlate the existing HTTP duration. Do not enable general body/query logging.
 
 Free Render services and Neon compute can still start cold. No artificial
 keepalive, paid upgrade or instant-login guarantee is part of this repair.
+
+
+## Regional latency investigation and sender-scope continuity
+
+The first instrumented 1.1.4 request returned accepted in 15.253 seconds. Server
+stages were readiness 0 ms, reservation 4641 ms, dispatch 9160 ms and finalization
+1058 ms (total 14860 ms). This shows the direct-connection compatibility repair
+alone did not improve the observed request latency.
+
+Render settings confirmed API and WAHA in Oregon (US West); Neon is in Singapore.
+WAHA's multi-query cryptographic/session work therefore crossed regions. A Free
+Singapore WAHA replacement was prepared using the identical pinned image and
+private environment. The old Oregon gateway was suspended before starting the
+replacement; never run both against the same session store. The new service
+restored the existing session as WORKING without re-pairing. The public Dearly API
+origin is unchanged. Final routing/measurement remains pending until recorded.
+
+A transport URL change normally changes the hashed sender scope. For this same
+paired sender only, production can set WAHA_SERVER_SCOPE_ORIGIN to the previous
+origin while WAHA_SERVER_API_URL targets the replacement. The auth budget and
+receipt service both use that stable scope, preserving quota and receipt matching.
+Without the explicit setting, behavior remains based on the selected API URL.
+Development ignores this hosted override, keeping the independently paired local
+sender separate. Never reuse it to merge unrelated accounts, engines or sessions.
+The field is a logical identity input, not a network destination. Tests cover both
+scope continuity and actual requests reaching the new transport address.

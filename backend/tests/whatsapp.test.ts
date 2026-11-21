@@ -403,3 +403,17 @@ test('OTP readiness never caches an offline state and a failed send invalidates 
   assert.equal(probes, 3);
   assert.equal(posts, 1);
 });
+
+
+test('relocating the same paired sender can retain quota and receipt scope independently of transport', async () => {
+  const old = { ...settings, baseUrl: 'https://gateway-old.example.com' };
+  const relocated = { ...old, baseUrl: 'https://gateway-new.example.com', scopeOrigin: old.baseUrl };
+  assert.equal(new WahaProvider(old).scope, new WahaProvider(relocated).scope);
+  assert.notEqual(new WahaProvider(old).scope, new WahaProvider({ ...relocated, scopeOrigin: undefined }).scope);
+  assert.notEqual(new WahaProvider(old).scope, new WahaProvider({ ...relocated, engine: 'GOWS' }).scope);
+  const moved = new WahaProvider(relocated, async url => {
+    assert.ok(String(url).startsWith(relocated.baseUrl + '/'));
+    return ready();
+  });
+  assert.equal(await moved.readiness(), 'READY');
+});

@@ -167,6 +167,7 @@ const environmentSchema = z
       (v) => (v === '' ? undefined : v),
       origin.optional(),
     ),
+    WAHA_SERVER_SCOPE_ORIGIN: origin.refine(v => { const u = new URL(v); return u.protocol === 'https:' && !['localhost', '127.0.0.1', '[::1]'].includes(u.hostname); }).optional(),
     WAHA_API_KEY: z.string().min(16).max(256).optional(),
     WAHA_WEBHOOK_SECRET: z
       .string()
@@ -317,6 +318,7 @@ export interface AppConfig {
 export interface WahaConfig {
   engine: 'NOWEB' | 'WEBJS' | 'GOWS';
   baseUrl: string;
+  scopeOrigin?: string;
   apiKey: string;
   webhookSecret: string;
   session: 'default';
@@ -470,6 +472,7 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
         ? {
             engine: env.WAHA_ENGINE,
             baseUrl: wahaUrl!,
+            scopeOrigin: env.NODE_ENV === 'production' ? env.WAHA_SERVER_SCOPE_ORIGIN : undefined,
             callbackUrl: env.WAHA_CALLBACK_URL,
             apiKey: env.WAHA_API_KEY!,
             webhookSecret: env.WAHA_WEBHOOK_SECRET!,

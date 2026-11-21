@@ -16,7 +16,7 @@ export type WahaStatus =
   | 'MISCONFIGURED';
 export const wahaScope = (config: WahaConfig) =>
   createHash('sha256')
-    .update(`${config.baseUrl}/${config.session}/${config.engine}`)
+    .update(`${config.scopeOrigin ?? config.baseUrl}/${config.session}/${config.engine}`)
     .digest('hex');
 export function whatsappJid(phone: string) {
   const parsed = parsePhoneNumberFromString(phone);
