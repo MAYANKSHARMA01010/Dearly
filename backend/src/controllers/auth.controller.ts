@@ -4,15 +4,15 @@ import { requireSession } from '../middlewares/requireSession';
 import { sendSuccess } from '../utils/response';
 
 export function authController(service: AuthService) {
-  const action = (fn: (body: Record<string, string>, identity: AuthIdentity) => Promise<unknown>): RequestHandler =>
+  const action = (fn: (body: Record<string, string>, identity: AuthIdentity, requestId?: string) => Promise<unknown>): RequestHandler =>
     (req, res, next) => {
-      void fn(req.body, req.auth!).then((data) => sendSuccess(res, data, req.requestId)).catch(next);
+      void fn(req.body, req.auth!, req.requestId).then((data) => sendSuccess(res, data, req.requestId)).catch(next);
     };
   return {
     requireSession: requireSession(service),
     status: action(() => service.otpStatus()),
-    request: action((body) => service.requestOtp(body.phone)),
-    resend: action((body) => service.resendOtp(body.challengeId)),
+    request: action((body, _identity, requestId) => service.requestOtp(body.phone, undefined, requestId)),
+    resend: action((body, _identity, requestId) => service.resendOtp(body.challengeId, requestId)),
     verify: action((body) => service.verifyOtp(body.challengeId, body.code)),
     refresh: action((body) => service.refresh(body.refreshToken)),
     logout: action((_body, identity) => service.logout(identity)),

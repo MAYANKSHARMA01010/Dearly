@@ -99,6 +99,9 @@ export function createApp(
                 config.whatsappOtpDailyLimit ?? 20,
               )
             : developmentOtpProvider(),
+          undefined,
+          undefined,
+          logger,
         )
       : undefined;
   const activeAuth =

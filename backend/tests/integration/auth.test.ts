@@ -191,6 +191,18 @@ test('PostgreSQL-backed auth security and HTTP contracts', { timeout: 240_000 },
       assert.equal(await db.user.count(), 0);
     });
 
+    await t.test('HTTP OTP timings correlate all stages without exposing the challenge or destination', async () => {
+      const logs = captureLogger();
+      const s = new AuthService(db, pepper, developmentOtpProvider(), now, () => '123456', logs.logger);
+      const app = createApp({ ...config, authMode: 'development' }, { isReady: async () => true, disconnect: async () => {} }, logs.logger, s);
+      const response = await request(app).post('/auth/otp/request').send({ phone, country: 'US' }).expect(200);
+      const timings = logs.entries.filter(e => e.event === 'auth.otp.stage');
+      assert.deepEqual(timings.map(e => e.metadata?.code), ['READINESS_COMPLETED', 'RESERVATION_COMPLETED', 'DISPATCH_COMPLETED', 'FINALIZATION_COMPLETED', 'TOTAL_COMPLETED']);
+      assert.ok(timings.every(e => e.metadata?.requestId === response.body.requestId));
+      const text = JSON.stringify(timings);
+      for (const privateValue of [phone, '123456', response.body.data.challengeId]) assert.ok(!text.includes(privateValue));
+    });
+
     await t.test('pending dispatch cannot verify and superseded dispatch cannot become active', async () => {
       let finish: ((outcome: OtpDispatchResult) => void) | undefined;
       const s = service({ dispatch: () => new Promise((resolve) => { finish = resolve; }) });

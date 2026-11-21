@@ -14,6 +14,7 @@ export interface AppLogger {
 }
 const events = new Set([
   'app.event',
+  'auth.otp.stage',
   'http.request',
   'http.error',
   'server.started',

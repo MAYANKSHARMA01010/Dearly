@@ -3,6 +3,8 @@ import { Prisma, type PrismaClient, type User } from '@prisma/client';
 import { ApiError } from '../utils/ApiError';
 import { matchesHash, newOtp, newToken, otpHash, sessionIdFromToken, tokenHash } from '../utils/authCrypto';
 import type { OtpProvider, OtpDispatchResult } from '../providers/otp/otp.provider';
+import { timeOtpStage } from '../utils/otpTiming';
+import type { AppLogger } from '../utils/logger';
 import type { ProfileInput } from '../validators/auth.validators';
 
 const MINUTE = 60_000;
@@ -25,6 +27,7 @@ export class AuthService {
     private readonly provider: OtpProvider,
     private readonly now: () => Date = () => new Date(),
     private readonly code: () => string = newOtp,
+    private readonly logger?: AppLogger,
   ) {}
 
   private async locked<T>(key: string, work: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
@@ -39,12 +42,15 @@ export class AuthService {
   async otpStatus() {
     return { status: this.provider.readiness ? await this.provider.readiness() : 'READY', channel: this.provider.channel ?? 'simulated' };
   }
-  async requestOtp(phone: string, previousId?: string) {
+  async requestOtp(phone: string, previousId?: string, requestId?: string) {
+    return timeOtpStage('TOTAL', () => this.requestOtpFlow(phone, previousId, requestId), this.logger, requestId);
+  }
+  private async requestOtpFlow(phone: string, previousId?: string, requestId?: string) {
     // Cold-start probes are read-only: do not create a challenge, expire an old
     // code, consume a cooldown or reserve a sender budget until ready.
-    const readiness = await this.otpStatus();
+    const readiness = await timeOtpStage('READINESS', () => this.otpStatus(), this.logger, requestId);
     if(readiness.status !== 'READY') throw new ApiError(503, readiness.status === 'WARMING' ? 'OTP_GATEWAY_WARMING' : 'OTP_GATEWAY_UNAVAILABLE', 'WhatsApp verification is connecting or unavailable. No code was requested. Try again shortly.');
-    const reservation = await this.locked(`phone:${phone}`, async (tx) => {
+    const reservation = await timeOtpStage('RESERVATION', () => this.locked(`phone:${phone}`, async (tx) => {
       const now = this.now();
       if (previousId) {
         const prior = await tx.otpChallenge.findUnique({ where: { id: previousId } });
@@ -77,12 +83,12 @@ export class AuthService {
         id, phone, codeHash: otpHash(this.pepper, id, code), expiresAt: new Date(now.getTime() + OTP_TTL), createdAt: now,
       } });
       return { challenge, code };
-    });
+    }), this.logger, requestId);
     // No provider I/O inside the database transaction; no automatic retries.
     let outcome: OtpDispatchResult;
-    try { outcome = await this.provider.dispatch({ phone, code: reservation.code, challengeId: reservation.challenge.id }); }
+    try { outcome = await timeOtpStage('DISPATCH', () => this.provider.dispatch({ phone, code: reservation.code, challengeId: reservation.challenge.id }), this.logger, requestId); }
     catch { outcome = { status: 'unknown', code: 'DISPATCH_UNCERTAIN' }; }
-    const active = await this.locked(`phone:${phone}`, async (tx) => {
+    const active = await timeOtpStage('FINALIZATION', () => this.locked(`phone:${phone}`, async (tx) => {
       const updated = await tx.otpChallenge.updateMany({ where: {
         id: reservation.challenge.id, consumedAt: null, expiresAt: { gt: this.now() }, dispatchStatus: 'pending',
       }, data: {
@@ -90,7 +96,7 @@ export class AuthService {
         providerMessageId: outcome.status === 'accepted' ? outcome.providerMessageId : null,
       } });
       return updated.count === 1;
-    });
+    }), this.logger, requestId);
     if (!active || outcome.status === 'rejected' || outcome.status === 'unknown') {
       throw new ApiError(503, 'OTP_UNAVAILABLE', 'Code submission could not be confirmed. Try again later.');
     }
@@ -102,10 +108,10 @@ export class AuthService {
     };
   }
 
-  async resendOtp(challengeId: string) {
+  async resendOtp(challengeId: string, requestId?: string) {
     const challenge = await this.db.otpChallenge.findUnique({ where: { id: challengeId } });
     if (!challenge) throw invalidOtp();
-    return this.requestOtp(challenge.phone, challengeId);
+    return this.requestOtp(challenge.phone, challengeId, requestId);
   }
 
   async verifyOtp(challengeId: string, code: string) {
