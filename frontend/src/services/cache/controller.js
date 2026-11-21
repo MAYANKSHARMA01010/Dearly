@@ -40,7 +40,7 @@ export function createCacheController(driver, now = Date.now) {
         } catch { repository = null; enabled = false; }
       });
     },
-    /** No current screen reads this in Phase 20; Phase 21 owns refresh/UI rules.
+    /** Fresh-only read guarded by the active account/backend lease.
      * @param {import('./policy.js').CacheKind} kind @param {string} key */
     read(kind,key) {
       const expected = generation;
@@ -59,6 +59,10 @@ export function createCacheController(driver, now = Date.now) {
           await repository.write(target.kind,target.key,value,{fetchedAt,recordVersion:version}); }
         catch { enabled = false; }
       });
+    },
+    invalidate() {
+      const expected=generation;
+      return serial(async()=>{if(expected===generation)await repository?.purge();});
     },
     purge() {
       suspend(); mustPurge = true;

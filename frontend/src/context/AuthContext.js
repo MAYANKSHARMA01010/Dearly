@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useSyncExternalStore } from 'react';
 import { initializeMediaCache, clearMediaCache } from '../services/attachments/device';
+import * as Network from 'expo-network';
 import { AppState } from 'react-native';
 import { apiClient } from '../api/client';
 import { getApiBaseUrl } from '../config/api';
@@ -15,6 +16,12 @@ export function AuthProvider({ children }) {
     void initializeMediaCache().catch(() => {}).then(() => manager.restore());
     const unsubscribe = manager.subscribe(() => { if (manager.getSnapshot().status === 'anonymous') void clearMediaCache().catch(() => {}); });
     let backgrounded = false;
+    let connected=true;
+    const network=Network.addNetworkStateListener(({isConnected,isInternetReachable})=>{
+      const next=isConnected!==false && isInternetReachable!==false;
+      if(next && !connected && AppState.currentState==='active' && manager.getSnapshot().status==='authenticated') void manager.refreshData();
+      connected=next;
+    });
     const subscription = AppState.addEventListener('change', (next) => {
       if (next === 'background') backgrounded = true;
       if (next === 'active' && backgrounded) {
@@ -22,7 +29,7 @@ export function AuthProvider({ children }) {
         if (manager.getSnapshot().status === 'authenticated') void manager.restore();
       }
     });
-    return () => { subscription.remove(); unsubscribe(); };
+    return () => { network.remove(); subscription.remove(); unsubscribe(); };
   }, []);
   return <AuthContext.Provider value={manager}>{children}</AuthContext.Provider>;
 }

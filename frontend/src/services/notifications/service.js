@@ -83,10 +83,10 @@ export function createNotificationService(session) {
         ),
       );
     },
-    /** @param {AbortSignal} [signal] */
-    async preferences(signal) {
+    /** @param {AbortSignal} [signal] @param {boolean} [fresh] */
+    async preferences(signal,fresh=false) {
       return parsePreferences(
-        await session.request('/notifications/preferences', { signal }),
+        await session.request('/notifications/preferences', { signal, ...(fresh?{cache:'reload'}:{}) }),
       );
     },
     /** @param {Preferences} value */

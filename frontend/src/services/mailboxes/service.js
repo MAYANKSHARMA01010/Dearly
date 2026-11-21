@@ -38,14 +38,14 @@ export function createMailboxService(session) {
           'invalid_response',
         );
     },
-    /** @param {AbortSignal} [signal] */
-    async dashboard(signal) {
+    /** @param {AbortSignal} [signal] @param {boolean} [fresh] */
+    async dashboard(signal, fresh=false) {
       return parseDashboard(
-        await session.request('/messages/dashboard', { signal }),
+        await session.request('/messages/dashboard', { signal, ...(fresh?{cache:'reload'}:{}) }),
       );
     },
-    /** @param {import('./contracts.js').Box} box @param {{status?:string,read?:'all'|'opened'|'unopened',cursor?:string|null}} [filters] @param {AbortSignal} [signal] */
-    async list(box, filters = {}, signal) {
+    /** @param {import('./contracts.js').Box} box @param {{status?:string,read?:'all'|'opened'|'unopened',cursor?:string|null}} [filters] @param {AbortSignal} [signal] @param {boolean} [fresh] */
+    async list(box, filters = {}, signal, fresh=false) {
       if (!boxes.includes(box))
         throw new ApiError('Choose a valid mailbox.', 'configuration');
       const query = new URLSearchParams({
@@ -56,15 +56,15 @@ export function createMailboxService(session) {
         ...(filters.cursor ? { cursor: filters.cursor } : {}),
       });
       return parseMailboxPage(
-        await session.request(`/messages/mailboxes?${query}`, { signal }),
+        await session.request(`/messages/mailboxes?${query}`, { signal, ...(fresh?{cache:'reload'}:{}) }),
         box,
       );
     },
-    /** @param {string} id @param {AbortSignal} [signal] */
-    async owned(id, signal) {
+    /** @param {string} id @param {AbortSignal} [signal] @param {boolean} [fresh] */
+    async owned(id, signal, fresh=false) {
       return parseOwned(
         await session.request(`/messages/mailboxes/owned/${valid(id)}`, {
-          signal,
+          signal, ...(fresh?{cache:'reload'}:{}),
         }),
       );
     },
@@ -77,10 +77,10 @@ export function createMailboxService(session) {
         ),
       );
     },
-    /** @param {string} id @param {AbortSignal} [signal] */
-    async received(id, signal) {
+    /** @param {string} id @param {AbortSignal} [signal] @param {boolean} [fresh] */
+    async received(id, signal, fresh=false) {
       return parseReceived(
-        await session.request(`/messages/inbox/${valid(id)}`, { signal }),
+        await session.request(`/messages/inbox/${valid(id)}`, { signal, ...(fresh?{cache:'reload'}:{}) }),
       );
     },
     /** @param {string} id @param {AbortSignal} [signal] */

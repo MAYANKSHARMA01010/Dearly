@@ -24,7 +24,7 @@ export function createCacheRepository(db, scope, now = Date.now) {
       const time = await prune();
       const row = /** @type {Row|null} */ (await db.getFirstAsync('SELECT payload,record_version,fetched_at,expires_at,deleted_at FROM cache_entries WHERE account=? AND origin=? AND kind=? AND record_key=?', ...parameters(kind,key)));
       if (!row || !Number.isSafeInteger(row.fetched_at) || !Number.isSafeInteger(row.expires_at) || typeof row.record_version !== 'string' || row.deleted_at !== null || row.fetched_at > time || row.expires_at <= time || row.expires_at > row.fetched_at + ttl[kind]) return null;
-      try { return { value: sanitizeCacheValue(kind,JSON.parse(row.payload ?? 'null'),time), fetchedAt:row.fetched_at, expiresAt:row.expires_at, recordVersion:row.record_version }; }
+      try { return { value: sanitizeCacheValue(kind,JSON.parse(row.payload ?? 'null'),time,key), fetchedAt:row.fetched_at, expiresAt:row.expires_at, recordVersion:row.record_version }; }
       catch { await db.runAsync('DELETE FROM cache_entries WHERE account=? AND origin=? AND kind=? AND record_key=?', ...parameters(kind,key)); return null; }
     },
     /** @param {CacheKind} kind @param {string} key @param {unknown} value @param {{fetchedAt?:number,recordVersion?:string,deleted?:boolean}} [metadata] */
@@ -32,7 +32,7 @@ export function createCacheRepository(db, scope, now = Date.now) {
       const time = await prune();
       const fetched = metadata.fetchedAt ?? time;
       if (!Object.hasOwn(ttl,kind) || !key || key.length > 100 || !Number.isSafeInteger(fetched) || fetched > time || fetched + ttl[kind] <= time) return;
-      const payload = metadata.deleted ? null : JSON.stringify(sanitizeCacheValue(kind,value,time));
+      const payload = metadata.deleted ? null : JSON.stringify(sanitizeCacheValue(kind,value,time,key));
       if (payload && payload.length * 4 > 131072) return;
       if (!metadata.deleted && (kind === 'profile' || kind === 'owned' || kind === 'received')) {
         const id = /** @type {{id?:string}} */(JSON.parse(payload ?? '{}')).id;

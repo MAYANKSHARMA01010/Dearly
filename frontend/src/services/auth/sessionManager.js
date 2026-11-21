@@ -1,4 +1,5 @@
 import { ApiError } from '../../api/client.js';
+import { createCachedReads } from '../cache/reads.js';
 import { parseTokens, parseUser } from './contracts.js';
 
 /** @typedef {import('./contracts.js').User} User */
@@ -11,14 +12,20 @@ const expired = () => new ApiError('Your session ended. Please sign in again.', 
 /**
  * All session/profile operations share a queue. Only one refresh may rotate a
  * token at a time. Epoch checks reject results arriving after local sign-out.
- * @param {{ client: ReturnType<typeof import('../../api/client.js').createApiClient>, storage: SessionStorage, getScope: () => string, now?: () => number, cache?: {suspend:()=>void,activate:(account:string,origin:string)=>Promise<unknown>,capture:(path:string,value:unknown)=>Promise<unknown>,purge:()=>Promise<unknown>} }} dependencies
+ * @param {{ client: ReturnType<typeof import('../../api/client.js').createApiClient>, storage: SessionStorage, getScope: () => string, now?: () => number, cache?: import('../cache/reads.js').ReadCache & {suspend:()=>void,activate:(account:string,origin:string)=>Promise<unknown>,capture:(path:string,value:unknown)=>Promise<unknown>,purge:()=>Promise<unknown>} }} dependencies
  */
 export function createSessionManager({ client, storage, getScope, now = Date.now, cache }) {
   let state = /** @type {AuthState} */ ({ status: 'restoring', user: null, message: '' });
   let saved = /** @type {SavedSession | null} */ (null);
   let epoch = 0;
+  let verifiedAt = 0;
   let queue = Promise.resolve();
   const listeners = new Set();
+  const reads=createCachedReads({cache,now,
+    canRead:()=>state.status==='authenticated' && saved?.scope===getScope(),
+    validUntil:()=>Math.min(verifiedAt+60000,Date.parse(saved?.tokens.accessExpiresAt ?? ''),Date.parse(saved?.tokens.sessionExpiresAt ?? '')),
+    load:(path,options)=>{const expected=epoch;return serial(async()=>{if(state.status!=='authenticated')throw expired();return authorized(path,options,expected);});},
+  });
   /** @param {AuthState} next */
   const publish = (next) => { state = next; for (const fn of listeners) fn(); };
   /** @template T @param {() => Promise<T>} work @returns {Promise<T>} */
@@ -28,6 +35,7 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
   /** @param {string} message */
   async function clear(message) {
     saved = null;
+    verifiedAt=0; void reads.invalidate(false);
     await cache?.purge().catch(() => {});
     try { await storage.clear(); publish({ status: 'anonymous', user: null, message }); }
     catch { publish({ status: 'blocked', user: null, recovery: 'storage', message: 'Secure storage could not be cleared. Please retry sign-out.' }); throw new ApiError('Secure storage is unavailable. Please retry.', 'configuration'); }
@@ -65,13 +73,13 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
     const used = saved;
     if (!used) throw expired();
     const send = () => transport(path, { ...options, headers: { ...options.headers, Authorization: `Bearer ${saved?.tokens.accessToken}` } });
-    try { const value = await send(); current(expected); return value; }
+    try { const value = await send(); current(expected); verifiedAt=now(); return value; }
     catch (error) {
       if (!(error instanceof ApiError) || error.status !== 401 || epoch !== expected) throw error;
       await refresh(expected);
       // Only reads are automatically retried. Never replay profile writes.
       if (options.method && options.method !== 'GET') throw new ApiError('Your session was renewed. Please save your changes again.', 'http', 409);
-      try { const value = await send(); current(expected); return value; }
+      try { const value = await send(); current(expected); verifiedAt=now(); return value; }
       catch (retryError) {
         if (epoch === expected && retryError instanceof ApiError && retryError.status === 401) await clear('Your session ended. Please sign in again.');
         throw retryError;
@@ -85,6 +93,7 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
     restore() {
       const expected = ++epoch;
       cache?.suspend();
+      void reads.invalidate(false);
       publish({ status: 'restoring', user: null, message: '' });
       return serial(async () => {
         try {
@@ -101,6 +110,7 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
           await cache?.activate(user.id,getScope()).catch(() => {});
           current(expected);
           void cache?.capture('/auth/me',user).catch(() => {});
+          verifiedAt=now();
           publish({ status: 'authenticated', user, message: '' });
         } catch (error) {
           if (epoch !== expected) return;
@@ -113,6 +123,7 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
     establish(response, signal) {
       const expected = ++epoch;
       cache?.suspend();
+      void reads.invalidate(false);
       return serial(async () => {
         const value = /** @type {{ user: unknown }} */ (response);
         const tokens = parseTokens(response); const user = parseUser(value.user);
@@ -123,6 +134,7 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
           await cache?.activate(user.id,getScope()).catch(() => {});
           current(expected);
           void cache?.capture('/auth/me',user).catch(() => {});
+          verifiedAt=now();
           publish({ status: 'authenticated', user, message: '' });
         } catch (error) { if (epoch === expected) await clear('Sign-in could not be stored securely. Please try again.'); throw error; }
       });
@@ -134,37 +146,41 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
         current(expected); void cache?.capture('/auth/me',user).catch(() => {}); publish({ status: 'authenticated', user, message: '' }); return user;
       });
     },
+    getReadInfo: reads.getInfo,
+    subscribeData: reads.subscribe,
+    async refreshData() {await reads.invalidate();},
     /** @param {string} path @param {RequestInit} [options] @param {typeof client.request} [transport] */
     request(path, options = {}, transport = client.request) {
       const expected = epoch;
+      const isRead=!options.method || options.method==='GET';
+      if(isRead && transport===client.request) return reads.read(path,options);
+      if(!isRead) void reads.invalidate(false);
       return serial(async () => {
         if (state.status !== 'authenticated') throw expired();
-        try {
-          const value = await authorized(path, options, expected, transport);
-          if (!options.method || options.method === 'GET') void cache?.capture(path,value).catch(() => {});
-          return value;
-        }
+        try { return await authorized(path,options,expected,transport); }
         catch (error) {
-          // Foreground restoration can invalidate a response after a write was
-          // accepted. Treat its outcome as unknown instead of allowing replay.
           if (epoch !== expected && options.method && !['GET', 'HEAD'].includes(options.method)) {
             throw new ApiError('The save result could not be confirmed. Check your drafts before trying again.', 'aborted');
           }
           throw error;
-        }
+        } finally {if(!isRead)await reads.invalidate();}
       });
     },
     /** @param {{ name: string | null, email: string | null, timezone: string }} input */
     updateProfile(input) {
       const expected = epoch;
+      void reads.invalidate(false);
       return serial(async () => {
+        try {
         const user = parseUser(await authorized('/auth/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) }, expected));
-        current(expected); void cache?.capture('/auth/me',user).catch(() => {}); publish({ status: 'authenticated', user, message: '' }); return user;
+        current(expected); publish({ status: 'authenticated', user, message: '' }); return user;
+        } finally {await reads.invalidate();}
       });
     },
     logout() {
       ++epoch;
       cache?.suspend();
+      void reads.invalidate(false);
       const old = saved; saved = null;
       publish({ status: 'restoring', user: null, message: '' });
       return serial(async () => {
