@@ -16,7 +16,7 @@
 
 The current topology is in [Render deployment](render-deployment.md). The backend
 runs locally on port 8080; Neon remains its remote database. The hosted backend is
-`https://dearly-z8zm.onrender.com`, and WAHA is `https://dearly-waha.onrender.com`.
+`https://dearly-z8zm.onrender.com`, and active WAHA is `https://dearly-waha-singapore.onrender.com`.
 Public service URLs are not credentials. Provider keys, connection passwords,
 operational sender/test identities and private device IDs are server configuration.
 Users' phone/email records are authenticated account data in PostgreSQL, not global
@@ -137,3 +137,15 @@ examples/mobile public variables for common credential/personal-data mistakes.
 These checks complement private-value scans; they are not proof that no possible
 secret exists anywhere in Git history. Release packaging also excludes private
 runtime files, environments, signing material and dependencies from source ZIPs.
+
+
+## Hosted WAHA relocation identity
+
+`WAHA_SERVER_API_URL` selects the actual hosted transport. For the same paired
+sender moved to Singapore, `WAHA_SERVER_SCOPE_ORIGIN` retains the old hosted HTTPS
+origin to preserve quota and receipt matching. It must be a credential-free remote
+HTTPS origin. Omit it for new senders; never merge unrelated accounts/sessions.
+It is ignored in development so the independently paired local gateway retains
+its own identity. This setting does not redirect network requests. The production
+example and validator cover this optional field. See [deployment](render-deployment.md)
+and [Phase 19 evidence](otp-performance.md). Credentials remain in private settings.

@@ -23,8 +23,8 @@ WAHA database/role passed TLS/authentication and five parameterized read-only
 queries before the proposed rollout. Neither local query timings nor a connection
 check prove faster OTP delivery.
 
-The repair changes only the hosted WAHA session-store endpoint from pooled to
-direct. Preserve its existing database, role, password, namespace, worker, engine,
+The connection compatibility repair changes the hosted WAHA session-store endpoint
+from pooled to direct; the regional relocation below addresses measured latency. Preserve its existing database, role, password, namespace, worker, engine,
 image, webhook configuration and paired data. The application's Prisma connection
 remains pooled. Do not reset/relink the sender or change OTP limits/locks/replay
 behavior. See [Neon pooling guidance](https://neon.com/docs/connect/connection-pooling)
@@ -48,14 +48,14 @@ correlate the existing HTTP duration. Do not enable general body/query logging.
 
 ## Verification and rollout status
 
-- Backend checks: 116 unit tests, lint/types/build passed before deployment.
+- Backend checks: 118 unit tests, lint/types/build passed before deployment.
 - Isolated PostgreSQL auth integration: 17 runner entries passed, including stage
   correlation, no private-value leakage, expiry, limits and uncertain/superseded
   dispatch behavior. Test database is a disposable local container, not live Neon.
 - Timing unit checks preserve returned values/errors and exactly one dispatch even
   if logging throws. The actual logger accepts the event without private payloads.
 - Live configuration repair, matching application rollout, before/after timing and
-  downloadable release acceptance are pending until recorded below.
+  release evidence are recorded below.
 - User authorized up to two timed WhatsApp login tests to the designated own
   account. No authorization for SMS, email, or automatic repeated POSTs is implied.
   The pre-repair baseline did not submit; any after-repair test must record its
@@ -78,7 +78,7 @@ Singapore WAHA replacement was prepared using the identical pinned image and
 private environment. The old Oregon gateway was suspended before starting the
 replacement; never run both against the same session store. The new service
 restored the existing session as WORKING without re-pairing. The public Dearly API
-origin is unchanged. Final routing/measurement remains pending until recorded.
+origin is unchanged. Final routing and measurement passed as recorded below.
 
 A transport URL change normally changes the hashed sender scope. For this same
 paired sender only, production can set WAHA_SERVER_SCOPE_ORIGIN to the previous
@@ -89,3 +89,48 @@ Development ignores this hosted override, keeping the independently paired local
 sender separate. Never reuse it to merge unrelated accounts, engines or sessions.
 The field is a logical identity input, not a network destination. Tests cover both
 scope continuity and actual requests reaching the new transport address.
+
+
+## Final acceptance — 22 November 2026
+
+The production API uses `https://dearly-waha-singapore.onrender.com`
+(`srv-dc0ndfe7bikc73bas48g`, Free/Singapore). The old Oregon gateway
+(`srv-dbvbrcek1f9s73c3dl2g`) remains suspended for rollback. Keep it suspended while
+the replacement uses the same session database. The stable scope origin remains
+`https://dearly-waha.onrender.com`; it is not the transport destination.
+
+| Measurement | Before regional move | After regional move |
+| --- | ---: | ---: |
+| Client OTP POST | 15,253 ms | 6,848 ms |
+| Server readiness | 0 ms | 0 ms |
+| Database reservation | 4,641 ms | 4,647 ms |
+| Gateway dispatch | 9,160 ms | 838 ms |
+| Final persistence | 1,058 ms | 1,053 ms |
+| Auth service total | 14,860 ms | 6,539 ms |
+| HTTP request | 14,943 ms | 6,558 ms |
+
+The final warm readiness GET took 700 ms. Both specifically authorized OTP POSTs
+returned accepted and the user confirmed both arrived. No additional OTP was sent.
+The first attempted baseline stopped at WARMING before a POST. These single warm
+observations show about 55% lower request latency, not a latency distribution or
+phone-arrival stopwatch. Roughly 5.7 seconds of reservation/finalization remains
+between the Oregon API and Singapore Neon. A cold gateway probe took about 52.7
+seconds; free sleeping services still add startup delay. No keepalive was added.
+
+Source `79aeec0ea53b7ef770630f3fc490f294683172ba` was independently observed Live
+on Render. Backend 118 tests/lint/types/build, 17 isolated PostgreSQL auth runner
+entries, frontend 106 tests/lint/types, and
+[full CI 44932660441](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44932660441)
+passed. Timing tests cover privacy, failures and exactly one dispatch; scope tests
+cover preserved sender identity, new transport routing and development isolation.
+
+[1.1.4 RC1](https://github.com/MAYANKSHARMA01010/Dearly/releases/tag/v1.1.4-rc.1)
+contains the exact-commit signed ARM64 APK (Android code 8), source ZIP, manifest
+and checksums. Local packaging and fresh downloaded assets passed verification;
+the signer matches the previous release.
+[Release verification 44936439203](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44936439203)
+passed for the exact release commit. Installation of this APK and physical
+Android permissions/push/background acceptance remain separate pending gates.
+The simulator was stopped without erasure to free build resources; no UI changes
+or new native UI acceptance are claimed. Phase 19 is complete; Phase 20 has not
+started.

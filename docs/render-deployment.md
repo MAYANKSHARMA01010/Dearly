@@ -1,6 +1,6 @@
 # Dearly hosted deployment
 
-Topology established 20 November 2026; documentation reconciled 21 November.
+Topology established 20 November 2026; Phase 19 routing verified 22 November.
 See [current release evidence and open gates](follow-up-phases.md). This document
 is a deployment runbook, not a fresh inspection of live settings or logs.
 
@@ -11,7 +11,8 @@ paid plan, trial, public media bucket or app-store submission is used.
 | Component | Configuration |
 | --- | --- |
 | Backend | https://dearly-z8zm.onrender.com; `srv-dbvbkc67bikc7385bv8g` |
-| WAHA | https://dearly-waha.onrender.com; `srv-dbvbrcek1f9s73c3dl2g` |
+| WAHA active | https://dearly-waha-singapore.onrender.com; `srv-dc0ndfe7bikc73bas48g`; Free, Singapore |
+| WAHA rollback | https://dearly-waha.onrender.com; `srv-dbvbrcek1f9s73c3dl2g`; Oregon, suspended |
 | Key Value | Existing `red-d7ek15t7vvec73cqu2u0`, internal connection only |
 | Database | Existing Neon production branch, PostgreSQL 18 |
 | Media | Neon private `dearly-private` bucket; local disk is a disposable cache |
@@ -100,3 +101,18 @@ old Gmail password revocation, and the application Neon role password was rotate
 and applied to local/Render/relay consumers. The corrected Render rollout is Live
 and API/database readiness passed. SMSGate retains its existing password by explicit
 user request; this exception is recorded in the audit. OTP latency remains open.
+
+
+## Phase 19 regional cutover
+
+The API stays in Oregon at its existing public origin. The active WAHA gateway
+runs in Singapore beside Neon, using the same pinned image, direct session-store
+connection, namespace, worker and paired data. No re-pair/reset was required.
+Never run the old suspended gateway and replacement simultaneously against that
+store. Rollback requires stopping the replacement before starting the old gateway,
+then changing the API transport URL and verifying readiness without replaying OTPs.
+
+`WAHA_SERVER_API_URL` is the Singapore transport. `WAHA_SERVER_SCOPE_ORIGIN`
+retains the old hosted origin solely for this same sender's existing quota and
+receipt scope. Development ignores this override. Never use it to merge unrelated
+senders. See [measured rollout and release evidence](otp-performance.md).

@@ -47,7 +47,7 @@ Do not infer authorization for a new live message from a historical test.
 | --- | --- | --- | --- |
 | 17 Rules and audit | Documentation; baseline inspection | Complete: rules, roadmap, current-state reconciliation; links/paths and whitespace checked | Not required: documentation only; commit IDs are in Git history |
 | 18 Environment and sensitive data | Backend config / operations; 17 | Complete with explicit SMSGate credential exception; examples/config checks and 114 backend tests passed | Backend/WAHA config live; Gmail replaced and old password revoked; Neon role rotated/consumers checked; see [audit](environment-audit.md) |
-| 19 Render logs and OTP performance | Auth / WAHA / operations; 18 | Pending; 15.157-second baseline remains unresolved | Pending measured hosted rollout; separately authorized real OTP and arrival evidence |
+| 19 Render logs and OTP performance | Auth / WAHA / operations; 18 | Complete: safe stage timings and regional repair; warm request 15.253 → 6.848 seconds | Final source Live, 1.1.4 RC1 published/verified; both authorized OTPs arrived; see [evidence](otp-performance.md). New APK device acceptance remains pending |
 | 20 SQLite foundation | Mobile storage / auth boundary; 19 | Pending | Pending rebuilt APK and native cache/migration checks |
 | 21 Synchronization and fewer reads | Mobile services / backend reads; 20 | Pending | Pending request-count comparison and account/revocation checks |
 | 22 Persistent media and viewer UI | Mobile media / UI; 21 | Pending | Pending rebuilt APK, native media/cleanup/accessibility checks |
@@ -266,3 +266,17 @@ The pre-existing `.gitignore` edit is outside scope and remains untouched.
 [Environment audit](environment-audit.md) records changed consumers, configuration
 rollouts, private-value scan scope and final credential acceptance/user exception. No runtime source
 or APK changed. Phase 19 has not started; OTP latency remains unresolved.
+
+
+## Phase 19 verification record — 22 November 2026
+
+[OTP performance evidence](otp-performance.md) records the bounded log diagnosis,
+direct WAHA database connection, Singapore relocation, stable sender scope,
+stage comparisons and free-host limitations. Commits: `c29d741` instrumentation,
+`b863f80` release preparation, `79aeec0` scope continuity. Final source was observed
+Live; [1.1.4 RC1](https://github.com/MAYANKSHARMA01010/Dearly/releases/tag/v1.1.4-rc.1)
+is the matching signed APK/source/checksum release (native build 8). Full CI and
+fresh release-asset verification passed. Both authorized OTPs arrived. Remaining
+database roundtrips and cold starts are documented; no instant delivery promise.
+Phase 20 SQLite is next and has not started. Historical baseline/Phase 18 notes
+above remain dated records. The unrelated root `.gitignore` edit was preserved.
