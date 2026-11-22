@@ -10,12 +10,12 @@ const root = resolve(__dirname, '../..');
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 const names = (text: string) => new Set([...text.matchAll(/^\s*(?:#\s*)?([A-Z][A-Z0-9_]*)=/gm)].map((m) => m[1]));
 const local = read('backend/.env.example');
-const hosted = read('backend/.env.production.example');
+const hosted = Object.fromEntries(Object.entries(dotenv.parse(local)).filter(([key]) => key.startsWith('HOSTED_') && !key.startsWith('HOSTED_WAHA_SERVICE_')).map(([key, value]) => [key.slice(7), value]));
 
 test('backend examples document every validated variable and operational input', () => {
   const schemaNames = [...read('backend/src/configs/env.ts').matchAll(/^ {4}([A-Z][A-Z0-9_]*):/gm)].map((m) => m[1]);
   assert.ok(schemaNames.length > 50);
-  for (const text of [local, hosted]) {
+  for (const text of [local]) {
     const documented = names(text);
     for (const key of [...schemaNames, 'SMSGATE_CALLBACK_URL', 'PERSISTENT_STORAGE_CONFIRMED', 'BACKUP_ENCRYPTION_KEY', 'PG_DUMP_BIN', 'PG_RESTORE_BIN', 'RESTORE_DATABASE_URL', 'RESTORE_STORAGE_ROOT']) {
       assert.ok(documented.has(key), `Example is missing ${key}`);
@@ -38,7 +38,7 @@ test('local template validates with disabled providers and explicit hosted conte
 });
 
 test('hosted template fails closed until provisioned, then supports relay without SMTP password', () => {
-  const template = dotenv.parse(hosted);
+  const template = Object.fromEntries(Object.entries(hosted).filter(([, value]) => value !== ''));
   assert.throws(() => parseEnvironment(template), EnvironmentError);
   const env = {
     ...template,
@@ -65,7 +65,7 @@ test('hosted template fails closed until provisioned, then supports relay withou
 });
 
 test('examples contain no provisioned keys or personal destinations and mobile config is public-only', () => {
-  for (const path of ['backend/.env.example', 'backend/.env.production.example', 'backend/waha.env.example', 'frontend/.env.example']) {
+  for (const path of ['backend/.env.example', 'frontend/.env.example']) {
     const text = read(path);
     assert.doesNotMatch(text, /\b(?:npg_|gh[pousr]_|AIza)[A-Za-z0-9_-]{16,}/);
     assert.doesNotMatch(text, /\b[0-9a-f]{64,128}\b/i, 'Provisioned-looking key in an example');
@@ -73,14 +73,14 @@ test('examples contain no provisioned keys or personal destinations and mobile c
     assert.doesNotMatch(text, /\+91\d{10}\b/);
   }
   const frontend = dotenv.parse(read('frontend/.env.example'));
-  assert.deepEqual(Object.keys(frontend).sort(), ['EXPO_PUBLIC_API_URL', 'EXPO_PUBLIC_APP_ENV', 'EXPO_PUBLIC_SERVER_API_URL']);
+  assert.deepEqual(Object.keys(frontend).sort(), ['EXPO_OWNER', 'EXPO_PUBLIC_API_TARGET', 'EXPO_PUBLIC_API_URL', 'EXPO_PUBLIC_APP_ENV', 'EXPO_PUBLIC_PROJECT_ID', 'EXPO_PUBLIC_SERVER_API_URL']);
   assert.equal(frontend.EXPO_PUBLIC_API_URL, 'http://localhost:8080');
   assert.equal(frontend.EXPO_PUBLIC_SERVER_API_URL, 'https://dearly-z8zm.onrender.com');
   for (const value of Object.values(frontend)) if (/^https?:/.test(value)) {
     const u = new URL(value);
     assert.equal(u.username + u.password + u.search + u.hash, '');
   }
-  const waha = dotenv.parse(read('backend/waha.env.example'));
+  const waha = Object.fromEntries(Object.entries(dotenv.parse(local)).filter(([key]) => key.startsWith('HOSTED_WAHA_SERVICE_')).map(([key, value]) => [key.slice('HOSTED_WAHA_SERVICE_'.length), value]));
   assert.equal(waha.WAHA_DASHBOARD_ENABLED, 'false');
   assert.equal(waha.WHATSAPP_SWAGGER_ENABLED, 'false');
   assert.equal(waha.WAHA_PRINT_QR, 'False');

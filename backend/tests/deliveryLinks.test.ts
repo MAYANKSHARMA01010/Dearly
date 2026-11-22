@@ -16,7 +16,7 @@ test('outgoing message links reject loopback, private IPs, local hostnames and c
 test('email includes public app downloads and truthful phone-only registration instructions', () => {
   const template = emailTemplate('https://dearly.example/external/#proof');
   for (const text of [template.text, template.html]) {
-    assert.ok(text.includes(appDownloadUrl));
+    assert.ok(text.includes(appDownloadUrl()));
     assert.match(text, /prerelease/);
     assert.match(text, /mobile number/);
     assert.match(text, /Email is not a login method/);
@@ -34,4 +34,17 @@ test('SMS and WhatsApp reject local content links before any provider request', 
   const whatsapp = new WahaProvider({ baseUrl: 'http://127.0.0.1:3100', apiKey: 'synthetic-test-key', webhookSecret: 'a'.repeat(64), session: 'default', engine: 'GOWS', dailyLimit: 1 }, request);
   assert.equal((await sms.send('+12025550181', 'http://localhost:8080/external/#proof', '00000000-0000-4000-8000-000000000000')).code, 'INVALID_CONTENT_URL');
   assert.equal((await whatsapp.send('+12025550181', 'http://localhost:8080/external/#proof')).code, 'INVALID_CONTENT_URL');
+});
+
+test('app download configuration rejects missing and credential-bearing destinations', () => {
+  const previous = process.env.APP_DOWNLOAD_URL;
+  try {
+    for (const value of ['', 'http://localhost:8080', 'https://user:secret@example.com', 'https://app.example.com/?token=secret']) {
+      process.env.APP_DOWNLOAD_URL = value;
+      assert.throws(() => appDownloadUrl(), /APP_DOWNLOAD_URL/);
+    }
+  } finally {
+    if (previous === undefined) delete process.env.APP_DOWNLOAD_URL;
+    else process.env.APP_DOWNLOAD_URL = previous;
+  }
 });

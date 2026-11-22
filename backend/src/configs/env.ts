@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { publicDeliveryLink } from '../utils/deliveryLinks';
 
 const origin = z
   .string()
@@ -48,6 +49,7 @@ const environmentSchema = z
     ),
     PORT: z.coerce.number().int().min(1).max(65535).default(8080),
     BACKEND_LOCAL_URL: origin.optional(),
+    APP_DOWNLOAD_URL: z.string().url().refine(publicDeliveryLink).optional(),
     BACKEND_SERVER_URL: z.preprocess(
       (v) => (v === '' ? undefined : v),
       origin

@@ -39,7 +39,7 @@ export function createExternalAccessRouter(
       );
     next();
   });
-  router.get('/', (_req, res) => res.type('html').send(externalViewer));
+  router.get('/', (_req, res) => res.type('html').send(externalViewer()));
   router.get('/viewer.js', (_req, res) => res.type('js').send(externalScript));
   if (!db || !config.externalAccess) {
     router.use((_req, _res, next) =>

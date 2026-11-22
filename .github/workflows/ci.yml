@@ -52,6 +52,7 @@ jobs:
       - run: node scripts/release.mjs check
       - run: node --test scripts/operations/*.test.mjs scripts/release/*.test.mjs
       - run: npm ci --prefix backend
+      - run: node --test scripts/environment.test.mjs
       - run: npm ci --prefix frontend
       - run: npm run check --prefix backend
       - run: npm run check --prefix frontend

@@ -184,8 +184,7 @@ function pack(tag, input) {
           p,
         ) ||
         (/(^|\/)\.env(?:\.|$)/.test(p) &&
-          !p.endsWith('.env.example') &&
-          !p.endsWith('.env.production.example')),
+          !['backend/.env.example', 'frontend/.env.example'].includes(p)),
     )
   )
     throw Error('Private/generated files are tracked; packaging refused.');

@@ -10,7 +10,7 @@ import {releasePlan} from './plan.mjs';
 import {validateMigrations,deploymentReady,ciReady,sha256,advance,tagMatches} from './policy.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 const require=createRequire(resolve(root,'backend/package.json'));
-const {parse}=require('dotenv');
+import {readPrivateEnvironment,selectEnvironment} from '../environment.mjs';
 const [mode,tag]=process.argv.slice(2);
 if(!['run','resume'].includes(mode)||!/^v\d+\.\d+\.\d+-rc\.[1-9]\d*$/.test(tag??''))throw Error('Use run or resume with an explicit RC tag. Stable promotion needs device acceptance.');
 const area=resolve(root,'backend/.runtime/releases',tag),lock=resolve(root,'backend/.runtime/release.lock');
@@ -60,12 +60,13 @@ async function main(){
  if((await git('ls-remote','origin','refs/heads/main')).split(/\s/)[0]!==commit)throw Error('REMOTE_MAIN_MISMATCH');
  if(!tagMatches(await git('ls-remote','origin','refs/tags/'+tag,'refs/tags/'+tag+'^{}'),commit))throw Error('REMOTE_TAG_SOURCE_MISMATCH');
  const metadata=JSON.parse(await command(process.execPath,['scripts/release.mjs','check',tag]));
- const env=parse(readFileSync(resolve(root,'backend/.env')));
- const config=parse(readFileSync(resolve(root,'backend/.runtime/release.env')));
+ const source=readPrivateEnvironment();
+ const env=selectEnvironment(source,'backend-hosted');
+ const config=selectEnvironment(source,'release');
  const base=new URL(config.RELEASE_API_URL);
- if(base.origin!=='https://dearly-z8zm.onrender.com'||base.href!==base.origin+'/')throw Error('INVALID_RELEASE_ORIGIN');
+ if(base.origin!==new URL(env.BACKEND_SERVER_URL).origin||base.href!==base.origin+'/')throw Error('INVALID_RELEASE_ORIGIN');
  const hook=new URL(readFileSync(config.RELEASE_DEPLOY_HOOK_FILE,'utf8').trim());
- if(hook.origin!=='https://api.render.com'||hook.pathname!=='/deploy/srv-dbvbkc67bikc7385bv8g'||!hook.searchParams.get('key'))throw Error('INVALID_DEPLOY_HOOK');
+ if(!/^srv-[a-z0-9]+$/.test(config.RELEASE_RENDER_SERVICE_ID??'')||hook.origin!=='https://api.render.com'||hook.pathname!=='/deploy/'+config.RELEASE_RENDER_SERVICE_ID||!hook.searchParams.get('key'))throw Error('INVALID_DEPLOY_HOOK');
  if(!/^[a-f0-9]{64}$/.test(env.MONITORING_TOKEN??''))throw Error('MONITOR_CONFIGURATION_REQUIRED');
  await step('CI',async()=>poll(async()=>{const runs=JSON.parse(await gh('run','list','--workflow','ci.yml','--commit',commit,'--limit','30','--json','headSha,headBranch,event,status,conclusion,databaseId'));if(runs.some(r=>r.headSha===commit&&r.event==='push'&&r.status==='completed'&&r.conclusion!=='success'))throw Error('CI_FAILED');if(!ciReady(runs,commit))return false;state.ciRun=runs.find(r=>r.conclusion==='success').databaseId;return true;},35));
  // Read-only migration verification is rerun on resume; no unreviewed SQL is applied.
