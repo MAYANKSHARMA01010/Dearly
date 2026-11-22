@@ -1,3 +1,4 @@
+import { releaseIdentity } from './releaseIdentity.service';
 import { Client } from 'pg';
 import type { PrismaClient } from '@prisma/client';
 import type { AppConfig } from '../configs/env';
@@ -78,6 +79,6 @@ export class OperationsService {
             (async () => { const now = await databaseTime(this.db); const [worker, overdueDeliveryWork, expiredLeases, pendingPush, lastMaintenance] = await Promise.all([workerStatus(this.db), this.db.deliveryWork.count({ where: { state: 'READY', nextAttemptAt: { lt: new Date(now.getTime() - 3600000) }, message: { deliveryEnabled: true, status: { in: ['SCHEDULED', 'DISPATCHING'] } } } }), this.db.deliveryWork.count({ where: { state: 'RUNNING', leaseExpiresAt: { lt: now } } }), this.db.pushJob.count({ where: { state: 'READY' } }), this.db.operationsRun.findFirst({ orderBy: { startedAt: 'desc' }, select: { id: true, state: true, startedAt: true, finishedAt: true, counts: true } })]); return { worker: worker.status, queueHealthy: overdueDeliveryWork === 0, overdueDeliveryWork, expiredLeases, pendingPush, lastMaintenance }; })(),
             this.config.whatsapp ? new WahaProvider(this.config.whatsapp).readiness(65000) : Promise.resolve('DISABLED'),
         ]);
-        return { backend: backend.status === 'fulfilled' ? { database: 'ready', ...backend.value } : { database: 'unavailable', worker: 'unavailable', lastMaintenance: null }, waha: { status: waha.status === 'fulfilled' ? waha.value : 'UNAVAILABLE' } };
+        return { release: releaseIdentity(), backend: backend.status === 'fulfilled' ? { database: 'ready', ...backend.value } : { database: 'unavailable', worker: 'unavailable', lastMaintenance: null }, waha: { status: waha.status === 'fulfilled' ? waha.value : 'UNAVAILABLE' } };
     }
 }
