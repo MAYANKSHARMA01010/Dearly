@@ -338,7 +338,8 @@ unrelated bundle, and do not split every file into a separate commit.
   keepalive traffic; missing activation/configuration must fail closed.
 - Scheduled maintenance and service monitoring must be bounded and non-overlapping.
   On 22 November 2026, the user explicitly requested two cron-job.org liveness
-  jobs every five minutes: backend `/health/live` and WAHA `/ping`. These GETs
+  jobs, later reduced to once an hour to conserve the shared Render allowance:
+  backend `/health/live` and WAHA `/ping`. These GETs
   must not query the database or carry credentials. See the deployment runbook
   for job IDs and limits. This scoped request supersedes the earlier no-keepalive
   preference; do not expand it to DB readiness or provider actions. Never bypass

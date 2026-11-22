@@ -92,8 +92,9 @@ and real Android push/background acceptance remain operational follow-up items.
 
 ### External liveness schedule — 22 November 2026
 
-At the user's explicit request, two enabled cron-job.org jobs use GET every five
-minutes (`*/5 * * * *`, UTC; interval is unchanged in IST):
+At the user's explicit request, two enabled cron-job.org jobs now use GET once an hour
+(`0 * * * *`, UTC). The initial five-minute schedule was reduced on the same day
+to leave shared Render hours for other backends:
 
 | Job | ID | URL |
 | --- | --- | --- |
@@ -111,6 +112,9 @@ the workspace each month. Two continuously running services consume two hours
 per elapsed hour, so these jobs cannot guarantee full-month availability. Quota
 exhaustion must not trigger billing or attempts to bypass the cap. This external
 configuration record changes no app code and requires no APK/version bump.
+Hourly checks allow idle services to sleep between requests; cold starts and
+delayed scheduled delivery remain possible. Actual usage depends on other
+traffic too, so this interval does not guarantee staying within the allowance.
 
 ## Phase 18 private configuration reconciliation — 21 November 2026
 
