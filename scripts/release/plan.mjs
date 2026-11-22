@@ -2,6 +2,8 @@ import {execFileSync} from 'node:child_process';
 import {propose} from './policy.mjs';
 const git=(...args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
 export function releasePlan(){
+ // Published tags may have been created through GitHub since this checkout.
+ git('fetch','origin','--tags');
  const tags=git('tag','--merged','HEAD','--sort=-version:refname','--list','v*').split('\n').filter(t=>/^v\d+\.\d+\.\d+(?:-rc\.\d+)?$/.test(t));
  const published=JSON.parse(execFileSync('gh',['release','list','--limit','100','--json','tagName,isDraft'],{encoding:'utf8'})).filter(r=>!r.isDraft).map(r=>r.tagName);
  const tag=tags.find(t=>published.includes(t));if(!tag)throw Error('PUBLISHED_BASE_REQUIRED');
