@@ -159,19 +159,22 @@ export class NeonStorage implements ObjectStore {
       throw unavailable();
     }
   }
-  async remove(key: string) {
+  async remove(key: string, signal?: AbortSignal) {
+    signal?.throwIfAborted();
     this.path(key);
     try {
       if (!key.endsWith('.part'))
         await this.client.send(
           new DeleteObjectCommand({ Bucket: this.config.bucket, Key: key }),
+          {abortSignal: signal ? AbortSignal.any([signal,AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000)},
         );
       await this.cache.remove(key);
     } catch {
       throw unavailable();
     }
   }
-  async entries() {
+  async entries(signal?: AbortSignal) {
+    signal?.throwIfAborted();
     const rows: { key: string; modified: number; bytes?: number }[] = [];
     let token: string | undefined;
     try {
@@ -182,6 +185,7 @@ export class NeonStorage implements ObjectStore {
             MaxKeys: 1000,
             ContinuationToken: token,
           }),
+          {abortSignal: signal ? AbortSignal.any([signal,AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000)},
         );
         for (const object of result.Contents ?? []) {
           if (!object.Key || !/^[0-9a-f-]{36}$/.test(object.Key)) continue;

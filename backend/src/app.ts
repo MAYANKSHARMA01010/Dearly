@@ -1,3 +1,4 @@
+import { createOperationsRouter } from './routes/operations.routes';
 import { createEmailVerificationRouter } from './routes/emailVerification.routes';
 import { createNotificationRouter } from './routes/notification.routes';
 import { createSmsWebhookRouter } from './routes/smsWebhook.routes';
@@ -84,6 +85,7 @@ export function createApp(
   app.use('/webhooks/smsgate', createSmsWebhookRouter(database.prisma, config.sms));
   app.use(express.json({ limit: config.bodyLimitBytes }));
   app.use('/', createRootRouter());
+  app.use('/internal/operations', createOperationsRouter(config, database.prisma));
   app.use('/health', createHealthRouter(database));
   const auth =
     config.authMode !== 'disabled' &&

@@ -96,28 +96,33 @@ export class AttachmentService {
     if (!removed) return {id,deleted:true};
     await this.erase(id); return { id, deleted: true };
   }
-  private async erase(id: string) {
-    await this.store.remove(id);
-    for (const entry of await this.store.entries()) if (entry.key.startsWith(`${id}.`)) await this.store.remove(entry.key);
+  private async erase(id: string, signal?: AbortSignal) {
+    signal?.throwIfAborted();
+    await this.store.remove(id, signal);
+    for (const entry of await this.store.entries(signal)) if (entry.key.startsWith(`${id}.`)) { signal?.throwIfAborted(); await this.store.remove(entry.key, signal); }
     await this.db.attachment.deleteMany({ where: { id, state: 'DELETING' } });
   }
-  async cleanup(now = new Date()) {
+  async cleanup(now = new Date(), options: {signal?:AbortSignal;limit?:number} = {}) {
+    const {signal} = options; const limit = Math.min(100,Math.max(1,options.limit ?? 100));
+    signal?.throwIfAborted();
     let removed = 0; let orphans = 0;
     const stale = new Date(now.getTime() - limits.leaseMs);
-    const rows = await this.db.attachment.findMany({ where: { OR: [{ draftId: null }, { state: 'DELETING' }, { state: { not: 'READY' }, expiresAt: { lte: now } }, { state: 'UPLOADING', updatedAt: { lt: stale } }] }, take: 100 });
+    const rows = await this.db.attachment.findMany({ where: { OR: [{ draftId: null }, { state: 'DELETING' }, { state: { not: 'READY' }, expiresAt: { lte: now } }, { state: 'UPLOADING', updatedAt: { lt: stale } }] }, take: limit });
     for (const row of rows) {
+      signal?.throwIfAborted();
       if (row.state === 'UPLOADING' && row.updatedAt >= stale) continue;
       const marked = await this.db.attachment.updateMany({ where: { id: row.id, updatedAt: row.updatedAt, state: row.state }, data: { state: 'DELETING' } });
-      if (marked.count) { await this.erase(row.id); removed++; }
+      if (marked.count) { await this.erase(row.id, signal); removed++; }
     }
-    for (const entry of await this.store.entries()) {
-      if (entry.modified > now.getTime() - limits.reservationMs || orphans >= 100) continue;
+    for (const entry of await this.store.entries(signal)) {
+      signal?.throwIfAborted();
+      if (entry.modified > now.getTime() - limits.reservationMs || orphans >= limit) continue;
       const id = entry.key.slice(0, 36);
       await this.db.$transaction(async (tx) => {
         // A reservation using the same UUID cannot race an orphan's last check.
         await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(582817)`;
         const row = await tx.attachment.findUnique({ where: { id }, select: { state: true } });
-        if (!row || (entry.key.endsWith('.part') && row.state !== 'UPLOADING')) { await this.store.remove(entry.key); orphans++; }
+        if (!row || (entry.key.endsWith('.part') && row.state !== 'UPLOADING')) { signal?.throwIfAborted(); await this.store.remove(entry.key, signal); orphans++; }
       });
     }
     return { removed, orphans };

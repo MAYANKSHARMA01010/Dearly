@@ -32,6 +32,8 @@ const redisConnectionUrl = z
 
 const environmentSchema = z
   .object({
+    OPERATIONS_TOKEN: z.preprocess(v => v === '' ? undefined : v, z.string().regex(/^[a-f0-9]{64}$/).optional()),
+    MONITORING_TOKEN: z.preprocess(v => v === '' ? undefined : v, z.string().regex(/^[a-f0-9]{64}$/).optional()),
     NODE_ENV: z
       .enum(['development', 'test', 'production'])
       .default('development'),
@@ -275,6 +277,7 @@ const environmentSchema = z
           'Development auth requires loopback, a pepper and a non-production environment.',
       });
     }
+    if(env.OPERATIONS_TOKEN && env.OPERATIONS_TOKEN===env.MONITORING_TOKEN)ctx.addIssue({code:'custom',path:['MONITORING_TOKEN'],message:'Use a separate monitoring credential.'});
     if (
       env.AUTH_MODE === 'whatsapp' &&
       (!env.OTP_PEPPER || env.WHATSAPP_MODE !== 'waha')
@@ -311,6 +314,8 @@ export interface AppConfig {
   authMode: 'disabled' | 'development' | 'whatsapp';
   whatsappOtpDailyLimit?: number;
   otpPepper?: string;
+  operationsToken?: string;
+  monitoringToken?: string;
   storageRoot: string;
   ffprobePath: string;
 }
@@ -521,6 +526,8 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     authMode: env.AUTH_MODE,
     whatsappOtpDailyLimit: env.WHATSAPP_OTP_DAILY_LIMIT,
     otpPepper: env.OTP_PEPPER,
+    operationsToken: env.OPERATIONS_TOKEN,
+    monitoringToken: env.MONITORING_TOKEN,
     storageRoot: env.STORAGE_ROOT,
     remoteStorage:
       env.STORAGE_PROVIDER === 'neon'

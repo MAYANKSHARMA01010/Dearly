@@ -494,3 +494,14 @@ model EmailVerification {
   @@index([email, createdAt])
   @@map("email_verifications")
 }
+
+// Sanitized maintenance journal; never stores account records, payloads or secrets.
+model OperationsRun {
+  id String @id @db.Uuid
+  state String @db.VarChar(16)
+  startedAt DateTime @default(now()) @db.Timestamptz(3)
+  finishedAt DateTime? @db.Timestamptz(3)
+  counts Json?
+  @@index([startedAt])
+  @@map("operations_runs")
+}

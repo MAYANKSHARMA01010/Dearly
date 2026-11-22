@@ -20,8 +20,8 @@ export interface ObjectStore {
     bytes: number,
     signal?: AbortSignal,
   ): Promise<string>;
-  remove(key: string): Promise<void>;
-  entries(): Promise<{ key: string; modified: number; bytes?: number }[]>;
+  remove(key: string, signal?: AbortSignal): Promise<void>;
+  entries(signal?: AbortSignal): Promise<{ key: string; modified: number; bytes?: number }[]>;
 }
 // Private directory only; never mounted with express.static or named by a client filename.
 export class LocalStorage implements ObjectStore {
