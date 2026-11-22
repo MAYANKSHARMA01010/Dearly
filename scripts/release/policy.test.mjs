@@ -43,3 +43,10 @@ test('failed gates stop later effects; resume preserves completed stages and rec
  assert.ok(journal.some(j=>j.stage==='DEPLOY'&&!j.completed.includes('DEPLOY')));
  await scenario(false);assert.equal(effects.length,5);
 });
+test('an existing tag cannot silently redirect a release to another source',async()=>{
+ const {tagMatches}=await import('./policy.mjs');const sha='a'.repeat(40);
+ assert.equal(tagMatches('',sha),true);
+ assert.equal(tagMatches(sha+'\trefs/tags/v1.6.1-rc.1',sha),true);
+ assert.equal(tagMatches('b'.repeat(40)+'\trefs/tags/v1.6.1-rc.1',sha),false);
+ assert.equal(tagMatches('b'.repeat(40)+'\trefs/tags/v1.6.1-rc.1\n'+sha+'\trefs/tags/v1.6.1-rc.1^{}',sha),true);
+});

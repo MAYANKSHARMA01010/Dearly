@@ -59,7 +59,8 @@ The coordinator requires matching remote main and synchronized versions. It:
    database readiness, running delivery worker, healthy queue and ready WAHA.
    It rechecks immediately before publication. It sends no OTP or provider message.
 6. Creates an immutable-target RC draft with APK/source ZIP/release.json/SHA256SUMS,
-   downloads and independently verifies it, publishes it, downloads public assets
+   downloads and independently verifies it locally and through a source-pinned
+   Linux GitHub draft-check workflow, publishes only after both pass, downloads public assets
    again, and waits for the separate release-verification workflow to pass.
 
 The release verifier checks source ZIP entries, file contents, executable/symlink

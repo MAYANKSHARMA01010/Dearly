@@ -32,3 +32,9 @@ export async function advance(state,name,work,save){
  state.stage=name;await save();
  await work();state.completed.push(name);await save();
 }
+export function tagMatches(refs,commit){
+ const lines=refs.trim().split('\n').filter(Boolean).map(line=>line.split(/\s+/));
+ if(!lines.length)return true;
+ const peeled=lines.find(row=>row[1]?.endsWith('^{}'));
+ return (peeled??lines[0])[0]===commit;
+}

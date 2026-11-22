@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
 import {homedir} from 'node:os';
 import {releasePlan} from './plan.mjs';
-import {validateMigrations,deploymentReady,ciReady,sha256,advance} from './policy.mjs';
+import {validateMigrations,deploymentReady,ciReady,sha256,advance,tagMatches} from './policy.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
 const require=createRequire(resolve(root,'backend/package.json'));
 const {parse}=require('dotenv');
@@ -58,6 +58,7 @@ async function main(){
  if(await git('diff','--name-only','HEAD','--','frontend','backend','scripts','docs','.github','VERSION','AGENTS.md','README.md'))throw Error('DIRTY_RELEASE_SOURCE');
  if(await git('ls-files','--others','--exclude-standard','--','frontend','backend','scripts','docs','.github','VERSION'))throw Error('UNTRACKED_RELEASE_SOURCE');
  if((await git('ls-remote','origin','refs/heads/main')).split(/\s/)[0]!==commit)throw Error('REMOTE_MAIN_MISMATCH');
+ if(!tagMatches(await git('ls-remote','origin','refs/tags/'+tag,'refs/tags/'+tag+'^{}'),commit))throw Error('REMOTE_TAG_SOURCE_MISMATCH');
  const metadata=JSON.parse(await command(process.execPath,['scripts/release.mjs','check',tag]));
  const env=parse(readFileSync(resolve(root,'backend/.env')));
  const config=parse(readFileSync(resolve(root,'backend/.runtime/release.env')));
@@ -109,8 +110,18 @@ async function main(){
   await gh('release','create',tag,...['Dearly-'+tag+'-arm64.apk','Dearly-'+tag+'-source.zip','release.json','SHA256SUMS'].map(n=>resolve(assets,n)),'--target',commit,'--draft','--prerelease','--title','Dearly '+metadata.version+' RC'+tag.split('-rc.')[1],'--notes-file',notes);
  });
  await step('DRAFT_VERIFIED',async()=>{const out=resolve(area,'draft-download');await gh('release','download',tag,'--dir',out,'--clobber');await command(process.execPath,['scripts/release.mjs','verify',out]);});
+ await step('HOSTED_DRAFT_VERIFIED',async()=>{
+  const dispatchedAt=new Date(Math.floor(Date.now()/1000)*1000).toISOString();state.draftCheckRequestedAt=dispatchedAt;save();
+  await gh('workflow','run','release.yml','--ref','main','-f','tag='+tag,'-f','source='+commit);
+  await poll(async()=>{
+   const runs=JSON.parse(await gh('run','list','--workflow','release.yml','--event','workflow_dispatch','--commit',commit,'--limit','20','--json','status,conclusion,databaseId,displayTitle,createdAt'));
+   const found=runs.find(r=>r.displayTitle==='Verify '+tag&&r.createdAt>=dispatchedAt);
+   if(!found||found.status!=='completed')return false;
+   state.draftAssetRun=found.databaseId;if(found.conclusion!=='success')throw Error('DRAFT_ASSET_CHECK_FAILED');return true;
+  },12);
+ });
  await step('PUBLISH',async()=>{const r=JSON.parse(await gh('release','view',tag,'--json','isDraft,targetCommitish'));if(r.targetCommitish!==commit)throw Error('RELEASE_SOURCE_MISMATCH');if(r.isDraft)await gh('release','edit',tag,'--draft=false','--prerelease');});
- await step('PUBLIC_VERIFIED',async()=>{const out=resolve(area,'published-download');await gh('release','download',tag,'--dir',out,'--clobber');await command(process.execPath,['scripts/release.mjs','verify',out]);await poll(async()=>{const runs=JSON.parse(await gh('run','list','--workflow','release.yml','--commit',commit,'--limit','10','--json','status,conclusion,databaseId'));if(runs.some(r=>r.status==='completed'&&r.conclusion!=='success'))throw Error('PUBLISHED_ASSET_CHECK_FAILED');const passed=runs.find(r=>r.status==='completed'&&r.conclusion==='success');if(passed)state.assetRun=passed.databaseId;return !!passed;},12);});
+ await step('PUBLIC_VERIFIED',async()=>{const out=resolve(area,'published-download');await gh('release','download',tag,'--dir',out,'--clobber');await command(process.execPath,['scripts/release.mjs','verify',out]);await poll(async()=>{const runs=JSON.parse(await gh('run','list','--workflow','release.yml','--event','release','--commit',commit,'--limit','10','--json','status,conclusion,databaseId'));if(runs.some(r=>r.status==='completed'&&r.conclusion!=='success'))throw Error('PUBLISHED_ASSET_CHECK_FAILED');const passed=runs.find(r=>r.status==='completed'&&r.conclusion==='success');if(passed)state.assetRun=passed.databaseId;return !!passed;},12);});
  state.stage='COMPLETE';delete state.failure;save();console.log(JSON.stringify({status:'complete',tag,commit,ciRun:state.ciRun,assetRun:state.assetRun}));
 }
 // Deploy ambiguity: skip a repeat POST and reconcile exact hosted identity instead.
