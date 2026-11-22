@@ -142,3 +142,13 @@ safe failure records, sanitized scheduler output and no POST retry. Isolated rea
 PostgreSQL tests cover cross-connection lock contention, migrations, orphan cleanup,
 failed-run replay prevention and interrupted-run recovery. Hosted activation and
 observed workflow outcomes are recorded in the dated phase closeout after execution.
+
+## Hosted activation — 22 November 2026
+
+Version 1.5.0 is Live on release source `e8fb6b3`. The independent scoped secrets
+are installed privately and `OPERATIONS_ENABLED=true` is set in GitHub Actions.
+[First combined run](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44987240246)
+completed successfully: maintenance succeeded, backend ready and WAHA ready.
+Unauthenticated monitoring and maintenance attempted with the monitoring key both
+returned 401. See the [dated closeout](follow-up-phases.md#phase-23-closeout--22-november-2026)
+for CI, deployment, signed APK and release evidence. No provider message was sent.

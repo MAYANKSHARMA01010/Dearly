@@ -51,7 +51,7 @@ Do not infer authorization for a new live message from a historical test.
 | 20 SQLite foundation | Mobile storage / auth boundary; 19 | Complete: encrypted snapshots, migrations, TTL/isolation/purge and auth lifecycle; screen cache consumption remains Phase 21 | 1.2.0 RC1 / build 9; native Android synthetic persistence/encryption checks passed; physical phone and native iOS acceptance remain pending |
 | 21 Synchronization and fewer reads | Mobile services / backend reads; 20 | Complete: bounded cached reads, coalescing, invalidation, retry/cancellation and screen states | 1.3.0 RC1 / build 10; measured 3 → 1 sequential requests, native synthetic checks passed; phone/iOS acceptance remain pending |
 | 22 Persistent media and viewer UI | Mobile media / UI; 21 | Complete: encrypted media reuse, online access/version checks, bounded retention, cleanup, viewer expiry and Settings controls | 1.4.0 RC1 / build 11; native synthetic encryption/restart/playback and labelled-control checks passed; phone/iOS and full screen-reader acceptance remain pending |
-| 23 API docs and scheduled operations | API contracts / operations; 19 and 22 | Implemented and locally verified: Swagger, scoped operations, journal/locking, bounded cleanup and monitoring | Hosted activation, matching release and observed workflow outcome pending |
+| 23 API docs and scheduled operations | API contracts / operations; 19 and 22 | Complete: read-only Swagger, scoped operations, durable journal/locking, bounded cleanup and independent monitoring | 1.5.0 RC1 / build 12; exact source Live, scheduled access activated and first live job passed; published assets independently verified. Device acceptance remains deferred |
 | 24 Coordinated CI/CD and acceptance | Release tooling / operations; 18–23 | Pending | Pending exact-commit APK, deployment and published assets; device checks remain separately recorded |
 
 For each phase, record dated results here (or link its detailed evidence), focused
@@ -267,7 +267,6 @@ The pre-existing `.gitignore` edit is outside scope and remains untouched.
 rollouts, private-value scan scope and final credential acceptance/user exception. No runtime source
 or APK changed. Phase 19 has not started; OTP latency remains unresolved.
 
-
 ## Phase 19 verification record — 22 November 2026
 
 [OTP performance evidence](otp-performance.md) records the bounded log diagnosis,
@@ -280,7 +279,6 @@ fresh release-asset verification passed. Both authorized OTPs arrived. Remaining
 database roundtrips and cold starts are documented; no instant delivery promise.
 Phase 20 SQLite is next and has not started. Historical baseline/Phase 18 notes
 above remain dated records. The unrelated root `.gitignore` edit was preserved.
-
 
 ## Phase 20 verification record — 22 November 2026
 
@@ -313,7 +311,6 @@ checksums. Signature matches 1.1.4; local and freshly downloaded packages verifi
 passed. This is a release candidate. Phase 20 is complete;
 Phase 21 screen integration, synchronization and fewer reads has not started.
 The unrelated root `.gitignore` edit remains untouched.
-
 
 ## Phase 21 verification record — 22 November 2026
 
@@ -360,7 +357,6 @@ checksums. The signer matches 1.2.0. Local and fresh-download verification plus 
 passed. Physical phone installation and native iOS runtime
 checks remain pending. This remains a release candidate. Phase 21 is complete;
 Phase 22 has not started. The unrelated root `.gitignore` edit was preserved.
-
 
 ## Phase 22 verification record — 22 November 2026
 
@@ -411,3 +407,56 @@ passed. Physical-phone installation, native iOS runtime, full screen-reader inte
 real push acceptance remain pending. This is a release candidate. Phase 22 is
 complete; Phase 23 API documentation and scheduled operations has not started.
 The unrelated root `.gitignore` edit remains untouched.
+
+## Phase 23 closeout — 22 November 2026
+
+The [API reference](https://dearly-z8zm.onrender.com/api/docs) now documents all
+64 application operations across 55 paths. It is self-hosted and read-only, uses
+synthetic examples, validates against OpenAPI, and derives request inputs from
+runtime Zod validators. Both Stitch and Impeccable guided the focused documentation
+layout; desktop and narrow-width rendering were checked. No application screen
+was redesigned in this phase.
+
+Separate maintenance and monitoring credentials are configured privately locally,
+on Render and in GitHub Actions. Missing credentials and an attempted write with
+the monitoring credential were rejected with 401 on the hosted backend. The
+additive `20261122060000_operations_journal` migration was the only pending
+migration and applied without a reset. Maintenance uses immutable UUID runs,
+cross-instance transaction locking, bounded cleanup and safe journal results.
+Read-only monitoring checks the backend/database, worker, overdue queue and WAHA
+separately. The [operations runbook](api-and-scheduled-operations.md) records exact
+limits, cancellation and missed-run behavior.
+
+`OPERATIONS_ENABLED=true` activates hourly bounded maintenance and six-hourly
+monitoring. The first manual combined production run
+[44987240246](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44987240246)
+passed with maintenance succeeded, backend ready and WAHA ready. Hosted health,
+database readiness, worker running and queue health also passed. These are actual
+maintenance/monitoring jobs, not keepalive pings; free hosts and Actions schedules
+can delay work. Actions failures are recorded as failed runs with sanitized
+summaries; GitHub account notification settings govern delivered alerts. Backups
+remain manual until stopped-writer consistency, an independent encryption key,
+durable destination and restore validation are available.
+
+Focused commits: `d544c7d` operations/journal, `ccd48d1` API reference,
+`14bfd12` scheduler/runbook, and `e8fb6b3` version preparation. Exact release source
+`e8fb6b3227c0b156a4835e4084c9aaedafe35bfd` was observed Live in Render deployment
+`dep-dc179p5g1s2s73b1m52g`.
+[Full CI 44986671375](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44986671375)
+passed: backend 125 tests, frontend 133 tests, backend integration 101 tests,
+three mobile/API integration scenarios, four scheduler tests, backup recovery,
+version/container checks and both platform bundles. Isolated PostgreSQL cases
+include lock contention, cleanup, failed-run replay prevention and interrupted-run
+recovery. No live OTP, email, SMS or WhatsApp message was sent.
+
+[1.5.0 RC1](https://github.com/MAYANKSHARMA01010/Dearly/releases/tag/v1.5.0-rc.1)
+contains the signed local ARM64 APK, exact-source ZIP, manifest and checksums;
+Android versionCode and iOS build number are 12. Retained build application source,
+app configuration and dependency lock match the release commit; Expo prebuild
+only rewrote the two package launch scripts. APK signing identity matches 1.4.0.
+Local, draft-downloaded and fresh published assets passed release verification;
+[release workflow 44987370060](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44987370060)
+passed independently. Physical Android, native iOS, real push and full screen-reader
+acceptance remain deferred; this is a release candidate. Phase 23 is complete.
+Phase 24 coordinated CI/CD has not started. The unrelated root `.gitignore` edit
+remains untouched.
