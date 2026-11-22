@@ -15,7 +15,29 @@ permissions:
   contents: read
 jobs:
   verify:
-    if: github.repository == 'MAYANKSHARMA01010/Dearly' && (github.event_name == 'release' || github.ref == 'refs/heads/main')
+    if: github.repository == 'MAYANKSHARMA01010/Dearly' && github.event_name == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - name: Check release version
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: node scripts/release.mjs check
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: gh release download "$RELEASE_TAG" --dir /tmp/dearly-release
+      - run: node scripts/release.mjs verify /tmp/dearly-release
+  draft:
+    permissions:
+      contents: write
+    if: github.repository == 'MAYANKSHARMA01010/Dearly' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -25,6 +47,8 @@ jobs:
           EXPECTED_SOURCE: ${{ inputs.source }}
         run: test "$EXPECTED_SOURCE" = "$GITHUB_SHA"
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '22'

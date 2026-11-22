@@ -121,3 +121,10 @@ Phone installation, notifications, media permissions, push arrival, native iOS a
 full screen-reader operation require actual observations. Follow the dated
 [phase checklist](follow-up-phases.md) for current results. Free Render/Actions
 limits still apply; no paid runner/cron service, keepalive or provider test is added.
+
+
+The unpublished-draft verifier needs GitHub `contents: write` to see draft release
+assets. This permission is limited to the manual, exact-source, main-only draft
+job, with checkout credential persistence disabled and no provider/signing secrets.
+The published-release verifier retains `contents: read`. The job downloads/checks
+assets; it does not publish them. Its failure stops local publication.
