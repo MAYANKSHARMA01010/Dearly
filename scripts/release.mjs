@@ -234,7 +234,14 @@ function pack(tag, input) {
 function verify(directory) {
   const out = resolve(directory),
     manifest = JSON.parse(readFileSync(resolve(out, 'release.json'), 'utf8'));
-  check(manifest.tag);
+  const identity = check(manifest.tag);
+  const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+  if (!/^[a-f0-9]{40}$/.test(manifest.commit ?? '') || manifest.commit !== commit ||
+      Object.entries(identity).some(([key,value]) => manifest[key] !== value))
+    throw Error('Release source or native metadata mismatch.');
+  const archived = execFileSync('git', ['archive', '--format=zip', '--prefix=Dearly-' + manifest.tag + '/', commit], {cwd:root,maxBuffer:32*1024*1024});
+  if (createHash('sha256').update(archived).digest('hex') !== hash(resolve(out, 'Dearly-' + manifest.tag + '-source.zip')))
+    throw Error('Release source archive mismatch.');
   if (!Array.isArray(manifest.files) || manifest.files.length !== 2)
     throw Error('Invalid release manifest.');
   const expected = new Set([
@@ -258,10 +265,11 @@ function verify(directory) {
     .trim()
     .split('\n');
   if (sums.length !== 3) throw Error('Invalid checksum list.');
+  const allowedSums = new Set([...manifest.files.map(item => item.name), 'release.json']);
   for (const line of sums) {
     const match = line.match(/^([a-f0-9]{64})  ([A-Za-z0-9._-]+)$/);
     if (
-      !match ||
+      !match || !allowedSums.delete(match[2]) ||
       basename(match[2]) !== match[2] ||
       hash(resolve(out, match[2])) !== match[1]
     )

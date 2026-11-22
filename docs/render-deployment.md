@@ -31,8 +31,9 @@ then supervises separate API, delivery and push processes in the web instance.
 PostgreSQL work leases, fencing and submission markers remain authoritative.
 Redis is optional and is never used as the durable delivery queue. No independent
 paid worker service is required. The recorded Auto-Deploy policy is After CI Checks Pass for main. Inspect CI
-and the actual Render deploy result before calling a release healthy; publication
-is still a separate step until Phase 24. Do not push during docs-only work merely
+and the actual Render deploy result before calling a release healthy; Phase 24
+uses a service-scoped exact-commit deploy hook after CI/build checks; an explicit
+hook ref disables auto-deploys. See [the coordinated pipeline](release-pipeline.md). Do not push during docs-only work merely
 to trigger a deployment.
 
 ## Private durable media and WhatsApp sessions

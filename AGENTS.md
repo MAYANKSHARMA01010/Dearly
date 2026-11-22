@@ -340,9 +340,13 @@ unrelated bundle, and do not split every file into a separate commit.
   Never use artificial keepalive jobs to bypass free-host sleeping or promise exact
   delivery while services sleep. Do not create paid Render cron services. Never
   schedule WAHA logout/reset/relink or automatic replay of uncertain submissions.
-- CI/CD currently checks code/version and verifies published assets; it does not
-  yet orchestrate signed builds, deployment verification and publication. Phase 24
-  extends it. Protect signing credentials and restrict signing runners to trusted
+- Phase 24 coordinates release proposals, trusted local signing, exact-commit
+  Render deployment and immutable publication; follow [the pipeline](docs/release-pipeline.md).
+  Use `scripts/release/prepare.mjs` for semantic proposals and the explicit local
+  coordinator for run/resume. No public-repository self-hosted runner is permitted.
+  The Mac being offline leaves publication pending. Keep deployment identity and
+  migration checksum gates, signer continuity, private journals, no repeated uncertain
+  deployment POSTs and separate physical acceptance. Protect signing credentials and restrict signing runners to trusted
   release jobs; untrusted pull requests must never receive secrets or runner access.
 - Documentation-only work needs link/path/whitespace checks and focused commits,
   not a version bump, rebuild, deployment or release. Runtime deployment closeout

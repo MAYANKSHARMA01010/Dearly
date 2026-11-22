@@ -50,7 +50,7 @@ jobs:
       - name: Install media validation tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg postgresql-client-16
       - run: node scripts/release.mjs check
-      - run: node --test scripts/operations/*.test.mjs
+      - run: node --test scripts/operations/*.test.mjs scripts/release/*.test.mjs
       - run: npm ci --prefix backend
       - run: npm ci --prefix frontend
       - run: npm run check --prefix backend
@@ -58,6 +58,11 @@ jobs:
       - run: npm run test:integration --prefix backend
       - run: npm run test:integration --prefix frontend
       - run: npm run test:backup-drill --prefix backend
+      - name: Exercise compatible code rollback on disposable data
+        env:
+          ROLLBACK_DATABASE_URL: postgresql://dearly_ci:ci-disposable-only@127.0.0.1:5432/dearly_ci
+          ROLLBACK_TAG: v1.5.0-rc.1
+        run: node scripts/release/rollback-drill.mjs
       - name: Bundle iOS and Android without signing credentials
         working-directory: frontend
         env:

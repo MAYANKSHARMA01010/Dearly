@@ -1,0 +1,28 @@
+name: Propose release
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['backend/src/**', 'backend/prisma/**', 'backend/functions/**', 'frontend/src/**', 'scripts/**', '.github/workflows/**']
+permissions:
+  contents: read
+jobs:
+  proposal:
+    if: github.repository == 'MAYANKSHARMA01010/Dearly' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - name: Record proposed version and changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/release/plan.mjs > /tmp/dearly-release-plan.json
+          echo '### Proposed release (requires trusted local build)' >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/dearly-release-plan.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

@@ -241,8 +241,10 @@ Network failures never silently replay an OTP or write against another backend.
 
 ## Automation status
 
-The existing CI validates source/version and platform exports; the release workflow
-verifies assets after publication. It does not yet build/sign APKs, verify Render
-deployment and publish releases as one coordinated pipeline. Phase 24 owns that
-extension. Phase 23 owns scheduled maintenance/monitoring, including separate
-backend and WAHA status. No new schedules are established by this runbook.
+Phase 24 adds automatic semantic release proposals and a trusted local coordinator
+for exact-source CI, migration verification, signed APK builds, Render deployment,
+protected health gates and immutable RC publication. See the
+[release pipeline](release-pipeline.md) for commands, private configuration,
+partial rollout/resumption and rollback boundaries. GitHub hosted runners never
+receive signing material or access to the signing Mac. Scheduled maintenance and
+monitoring remain separate Phase 23 operations.
