@@ -28,7 +28,7 @@ version or native build number. No app release is required for later closeout do
 Use the release section of [the single backend template](../backend/.env.example)
 in private `backend/.env`. Set `RELEASE_API_URL`, `RELEASE_RENDER_SERVICE_ID` and
 `RELEASE_DEPLOY_HOOK_FILE` to the existing service-scoped hook file. The coordinator
-reads `HOSTED_DATABASE_URL` and `HOSTED_MONITORING_TOKEN` from that same source;
+selects the shared `DATABASE_URL` and `MONITORING_TOKEN` (or deliberate hosted overrides) from that same source;
 there is no separate `release.env`. No backend settings reach the Android build.
 Native signing remains in the existing private signing files. Never print the
 hook or put it in GitHub secrets merely to simplify release automation.

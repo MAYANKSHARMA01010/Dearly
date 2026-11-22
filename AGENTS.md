@@ -384,10 +384,11 @@ unrelated bundle, and do not split every file into a separate commit.
   `frontend/.env.example` as the package dotenv files. Do not add production,
   local, WAHA, release or provider dotenv variants. Private files stay ignored
   and owner-readable only. The examples document every supported setting safely.
-- Backend unprefixed settings are local; `HOSTED_` is an explicit complete hosted
-  profile. Separate WAHA and Gmail profiles use the prefixes documented in
-  `docs/environment-setup.md`. Never fall back to local provider credentials in
-  production, merge paired senders or pass the whole backend file to a service.
+- Keep shared settings once under canonical names; `HOSTED_` contains only real
+  hosted differences. WAHA process options and intentional exceptions follow
+  `docs/environment-setup.md`. Do not duplicate every field under service prefixes.
+  Preserve the explicit local-only exclusion list, never replay against another
+  backend, merge paired senders or pass the complete file to a service.
 - Use `scripts/environment.mjs` to select service settings in memory. Hosted
   platform settings still need deliberate synchronization; a local edit is not
   a deployment. No raw environment dumps in logs, screenshots or tool output.

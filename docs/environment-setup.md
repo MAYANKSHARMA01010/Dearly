@@ -13,16 +13,36 @@
 
 ### Single-source profiles
 
-`backend/.env` retains the existing unprefixed local Express keys. Other sections
-use explicit prefixes so local and hosted credentials never silently overwrite
-one another:
+`backend/.env` is organized into numbered sections: API, database/Redis,
+authentication, recipient links, Gmail, WhatsApp, SMSGate, push, private storage,
+backup, hosted differences, gateway configuration and release tools.
 
-- `HOSTED_`: production Express keys, stripped only when deliberately selected.
-- `LOCAL_WAHA_SERVICE_` and `HOSTED_WAHA_SERVICE_`: separate gateway environments;
-  paired sender identities and API-key verifier formats must stay distinct.
-- `MAIL_RELAY_`: Gmail function settings only; Neon injects its database connection.
-- `RELEASE_`: trusted local coordinator settings, including the scoped deploy-hook
-  path and Render service ID. Signing files remain private native key files.
+Shared settings appear once under their canonical names. `HOSTED_` keys are
+**overrides only**, for values that actually differ (runtime, proxy settings,
+filesystem paths, provider mode or callbacks). The selector has an explicit list
+of local-only settings that are never inherited by a hosted API. A shared Neon
+connection or sender credential is intentional; it is not a fallback to another
+backend after a request fails.
+
+- `SMTP_USER` defines Gmail's sender identity; SMTP_FROM is generated for provider
+  consumers. The Gmail app password is stored once. Relay-mode APIs do not receive it.
+- `SMSGATE_API_URL` defines the shared Cloud endpoint. Legacy local/server aliases
+  remain accepted by the validator for existing deployments, but are not maintained
+  in the canonical files. `REDIS_URL` and `EMAIL_PUBLIC_URL` are also retired aliases.
+- The content origin defaults to `BACKEND_SERVER_URL`. Set `CONTENT_PUBLIC_URL`
+  only for a genuinely different hosted viewer. Release origin is generated from
+  that same server setting; it is not another copied URL.
+- `GATEWAY_` contains common WAHA process options. `LOCAL_GATEWAY_` and
+  `HOSTED_GATEWAY_` contain actual process/session/storage differences. The selector
+  generates vendor aliases (port, namespace and admin username) and the hosted
+  SHA512 verifier from the existing client key. Paired sender identities and
+  separate admin passwords remain intact. Local volume-backed sessions do not
+  receive the hosted session database.
+- Relay settings are selected from the shared Gmail and hosted link settings;
+  Neon injects its database connection. `MAIL_RELAY_` is supported only for a
+  deliberate different value, not a copied profile. Current files need no such section.
+- `RELEASE_` contains only the trusted deploy-hook path and service ID. Signing
+  files remain private native key files.
 
 `node scripts/environment.mjs check backend-hosted` reports key names only.
 `run TARGET -- COMMAND` selects values in memory and filters inherited environment
@@ -46,7 +66,7 @@ mode and passes public values to the local build in memory. `eas.json` contains
 build mechanics, not duplicate API configuration. `app.config.js` reads Expo
 owner/project identity from the frontend environment; app identifiers, versions,
 plugins, styles and protocol/security constants remain source-controlled.
-`APP_DOWNLOAD_URL` in each relevant backend/relay profile supplies the public
+The single shared `APP_DOWNLOAD_URL` supplies the public
 GitHub Releases destination. Examples contain placeholders, not real identities.
 
 On 22 November 2026, 23 historical plaintext dotenv exports were retired after
@@ -88,7 +108,7 @@ for reporting. Restart the intended process after changing its environment.
 | Mobile API | `EXPO_PUBLIC_SERVER_API_URL` first; local URL when server is absent or `EXPO_PUBLIC_API_TARGET=local` is explicit | Remote HTTPS server required; local override rejected |
 | Backend address metadata | `BACKEND_LOCAL_URL`, defaulting to localhost and PORT; separate `BACKEND_SERVER_URL` | Explicit hosted server URL |
 | WhatsApp client | `WAHA_LOCAL_API_URL` | `WAHA_SERVER_API_URL` only; no local fallback |
-| SMSGate gateway | `SMSGATE_LOCAL_API_URL` | `SMSGATE_SERVER_API_URL` only; no local fallback |
+| SMSGate gateway | Shared `SMSGATE_API_URL` | Same Cloud URL; legacy separate aliases supported only for existing deployments |
 | Optional Redis | `REDIS_LOCAL_URL`, then legacy `REDIS_URL` | `REDIS_SERVER_URL` only |
 | Outgoing recipient origin | `CONTENT_PUBLIC_URL`, then `BACKEND_SERVER_URL`, then legacy `EMAIL_PUBLIC_URL` | Same precedence; hosted HTTPS required |
 
@@ -150,7 +170,7 @@ compatible with the source PostgreSQL major version (hosted database: 18).
 `RESTORE_DATABASE_URL` and `RESTORE_STORAGE_ROOT` are separate empty isolated
 targets, never the live source. `SMSGATE_CALLBACK_URL` is consumed by SMS setup and
 release checks; `PERSISTENT_STORAGE_CONFIRMED` is consumed by release preflight.
-`LOCAL_WAHA_SERVICE_WAHA_IMAGE` is a Compose-only profile input, not an Express configuration field.
+`WAHA_IMAGE` is a Compose-only profile input, not an Express configuration field.
 See [operations/recovery](release-operations.md) before using these settings.
 
 ## Credential replacement and verification

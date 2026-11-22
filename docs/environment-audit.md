@@ -133,3 +133,27 @@ was performed. Hosted platform settings remain independently injected; local
 profile edits do not automatically synchronize or deploy them. Runtime changes
 are on the configuration branch and still require the normal versioned release
 process before deployment.
+
+### Canonical grouping and de-duplication — 22 November 2026
+
+Replaced full copied service profiles with shared canonical settings and only
+actual runtime differences. The backend is grouped into 13 numbered feature
+sections; the frontend has three sections for runtime choice, backend addresses
+and Expo identity. Both real/example files use matching comments and ordering.
+Removed redundant REDIS_URL, EMAIL_PUBLIC_URL, SMTP_FROM, RELEASE_API_URL and the
+paired SMSGate URL aliases from the maintained files. Existing deployment aliases
+remain accepted for compatibility. SMTP sender, content/release origins, WAHA
+vendor aliases and hosted SHA512 verifier are generated from their canonical
+inputs. Different security secrets were not merged merely because their values
+have similar shapes. Local gateway volume/session behavior remains distinct.
+
+Before/after effective configuration comparison passed for both API profiles,
+both gateways, Gmail relay and release tools. Frontend values were unchanged.
+Encrypted before-change recovery and comparison material remains ignored and
+private. No credentials were rotated, no sessions relinked and no deployment or
+live provider submission was performed.
+
+Final result: 176 → 96 active backend keys, no redundant hosted values, and one
+private/example pair per package. Backend lint/types/build and all 130 tests,
+16 tooling tests, nine focused template/SMTP tests, Compose validation, known-value
+source scan and whitespace checks passed. Both private files retain mode 600.
