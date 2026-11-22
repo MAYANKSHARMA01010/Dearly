@@ -328,6 +328,14 @@ unrelated bundle, and do not split every file into a separate commit.
   cache OTP/auth decisions or schedule confirmation as authoritative. Define TTL,
   account isolation, logout purge, encryption/key handling and offline revocation
   limits before persisting private content. Redis must not become a durable queue.
+- Phase 23 API reference and scheduled operations follow
+  [the operations runbook](docs/api-and-scheduled-operations.md). Keep Swagger
+  read-only, self-hosted and free of private data. Test route inventory and validator
+  input contracts whenever routes change. Maintenance/monitor credentials are
+  independent from user/provider credentials; never log them or accept them in URLs.
+  Preserve cross-instance transaction locks, immutable run IDs, cancellation,
+  bounded batches and sanitized outcomes. Actions schedules do real work, not
+  keepalive traffic; missing activation/configuration must fail closed.
 - Scheduled maintenance and service monitoring must be bounded and non-overlapping.
   Never use artificial keepalive jobs to bypass free-host sleeping or promise exact
   delivery while services sleep. Do not create paid Render cron services. Never

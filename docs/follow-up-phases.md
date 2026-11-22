@@ -51,7 +51,7 @@ Do not infer authorization for a new live message from a historical test.
 | 20 SQLite foundation | Mobile storage / auth boundary; 19 | Complete: encrypted snapshots, migrations, TTL/isolation/purge and auth lifecycle; screen cache consumption remains Phase 21 | 1.2.0 RC1 / build 9; native Android synthetic persistence/encryption checks passed; physical phone and native iOS acceptance remain pending |
 | 21 Synchronization and fewer reads | Mobile services / backend reads; 20 | Complete: bounded cached reads, coalescing, invalidation, retry/cancellation and screen states | 1.3.0 RC1 / build 10; measured 3 → 1 sequential requests, native synthetic checks passed; phone/iOS acceptance remain pending |
 | 22 Persistent media and viewer UI | Mobile media / UI; 21 | Complete: encrypted media reuse, online access/version checks, bounded retention, cleanup, viewer expiry and Settings controls | 1.4.0 RC1 / build 11; native synthetic encryption/restart/playback and labelled-control checks passed; phone/iOS and full screen-reader acceptance remain pending |
-| 23 API docs and scheduled operations | API contracts / operations; 19 and 22 | Pending | Pending route deployment, scheduler setup and observed job outcomes |
+| 23 API docs and scheduled operations | API contracts / operations; 19 and 22 | Implemented and locally verified: Swagger, scoped operations, journal/locking, bounded cleanup and monitoring | Hosted activation, matching release and observed workflow outcome pending |
 | 24 Coordinated CI/CD and acceptance | Release tooling / operations; 18–23 | Pending | Pending exact-commit APK, deployment and published assets; device checks remain separately recorded |
 
 For each phase, record dated results here (or link its detailed evidence), focused

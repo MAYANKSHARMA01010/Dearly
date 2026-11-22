@@ -84,7 +84,9 @@ no database URLs or credentials. No external monitoring account was created.
 From a trusted maintenance checkout with dependencies and the correct private
 environment, run `npm run attachments:cleanup` hourly through the host scheduler;
 repeat to drain batches. Run `whatsapp:cleanup` and `sms:cleanup` for receipt
-retention. No unattended cron installation is claimed. Never run maintenance
+retention. Phase 23 adds protected, bounded GitHub scheduled operations; see
+[the scheduler runbook](api-and-scheduled-operations.md) and its activation evidence.
+The manual CLI commands remain available. Never run maintenance
 against a different storage mount from the API/worker.
 
 The logger now filters event names and metadata at runtime. It accepts only

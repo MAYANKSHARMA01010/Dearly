@@ -263,3 +263,17 @@ Start from `.env.production.example`; keep real values in ignored private files.
 Read [operations and recovery](../docs/release-operations.md) before deployment or
 backup commands, and [release verification](../docs/release-verification.md) for
 passed checks and deferred physical/hosted acceptance. No deployment is implied.
+
+
+## API reference and bounded operations
+
+`GET /api/docs` serves a self-hosted, read-only Swagger reference;
+`GET /api/openapi.json` serves OpenAPI 3.1.1. Loading the reference never sends
+provider messages; live execution, external validation and persisted authorization
+are disabled. Session ownership/state validation still applies to API calls.
+
+See [the operations runbook](../docs/api-and-scheduled-operations.md) for dedicated
+maintenance/monitor credentials, protected endpoints, journal/idempotency keys,
+batch/deadline limits, GitHub UTC schedules, activation, failure alerts and recovery.
+Never give scheduled jobs OTP/provider/signing credentials or publish private
+backups as Actions artifacts.
