@@ -157,3 +157,45 @@ Final result: 176 → 96 active backend keys, no redundant hosted values, and on
 private/example pair per package. Backend lint/types/build and all 130 tests,
 16 tooling tests, nine focused template/SMTP tests, Compose validation, known-value
 source scan and whitespace checks passed. Both private files retain mode 600.
+
+## Render service reconciliation — 22 November 2026
+
+Inspected fresh private exports from the existing API and Singapore WAHA services.
+Before/after material is encrypted under the ignored environment-consolidation
+recovery directory; no additional plaintext dotenv files were created.
+
+The API's published runtime remains source
+`0e473ab3861871888c988e6a40ff7dd227c0216a` / version 1.6.2. Compared the proposed
+settings using that exact commit's environment parser and confirmed identical
+effective AppConfig before applying. Mapped the canonical SMSGATE_API_URL into
+SMSGATE_SERVER_API_URL for this published version. SMTP_FROM remains generated
+from SMTP_USER because the published parser still expects it; it is not another
+maintained sender identity in the private source.
+
+Changes: added APP_DOWNLOAD_URL and made BODY_LIMIT_BYTES, RATE_LIMIT_WINDOW_MS,
+RATE_LIMIT_MAX, SHUTDOWN_TIMEOUT_MS and FFPROBE_PATH explicit with their existing
+defaults. Removed redundant CONTENT_PUBLIC_URL (same origin as BACKEND_SERVER_URL)
+and unused SMTP_HOST/SMTP_PORT from the relay-mode API. No credential value changed.
+The 59 saved API fields exactly match the intended private selection.
+
+Used Render's Save and deploy option, reusing the existing built source rather
+than publishing branch code. Deployment `dep-dc1d76ajnfac738eugjg` succeeded in
+30.6 seconds and is Live. This settings-only deployment does not introduce a new
+application version or APK.
+
+WAHA's 22 saved fields already match the selected hosted gateway configuration,
+including its SHA512 verifier, dedicated database connection and stable paired
+identity. No WAHA edit, redeployment, reset or relink was needed. Vendor-required
+port/namespace/admin field aliases remain generated from canonical inputs;
+removing them arbitrarily from the service is not the same as de-duplicating the
+maintained source.
+
+Read-only post-update checks: API /health/live HTTP 200 alive, /health/ready HTTP
+200 ready, /health/worker HTTP 200 running; WAHA /ping HTTP 200 pong; API
+/auth/otp/status HTTP 200 READY on WhatsApp. The first cold WAHA ping exceeded its
+60-second client deadline; the subsequent request succeeded. Hourly wake checks
+still permit sleeping/cold-start delays. A preliminary request used the incorrect
+/api/auth/otp/status path and returned 404; the configured /auth route passed.
+No OTP, email, SMS or push was submitted. Readiness does not establish fresh
+end-to-end message arrival. Secrets, free plans and the suspended rollback gateway
+were unchanged. Safe deployment proof is kept in the ignored recovery directory.

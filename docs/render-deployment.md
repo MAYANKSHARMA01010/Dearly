@@ -143,3 +143,17 @@ then changing the API transport URL and verifying readiness without replaying OT
 retains the old hosted origin solely for this same sender's existing quota and
 receipt scope. Development ignores this override. Never use it to merge unrelated
 senders. See [measured rollout and release evidence](otp-performance.md).
+
+## Canonical environment reconciliation — 22 November 2026
+
+API environment-only deployment `dep-dc1d76ajnfac738eugjg` is Live on the existing
+1.6.2 source `0e473ab`. Its 59 saved settings were compared exactly with the
+service-specific selection from the single private backend source. Six public or
+existing-default settings were added; three unused/redundant fields were removed.
+Credentials and effective runtime configuration were preserved. The published
+runtime still requires the legacy SMSGATE_SERVER_API_URL and SMTP_FROM field names;
+those are generated during synchronization, not stored as duplicate canonical
+inputs. Do not apply new variable names to an older image without checking its
+parser. Singapore WAHA's 22 fields already matched, so it was not restarted.
+API/database/worker liveness and WhatsApp sender READY passed without live sends.
+See [the reconciliation evidence](environment-audit.md).
