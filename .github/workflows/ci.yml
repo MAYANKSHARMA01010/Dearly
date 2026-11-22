@@ -50,6 +50,7 @@ jobs:
       - name: Install media validation tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg postgresql-client-16
       - run: node scripts/release.mjs check
+      - run: node --test scripts/operations/*.test.mjs
       - run: npm ci --prefix backend
       - run: npm ci --prefix frontend
       - run: npm run check --prefix backend

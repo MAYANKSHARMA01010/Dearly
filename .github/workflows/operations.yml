@@ -1,0 +1,42 @@
+name: Dearly scheduled operations
+on:
+  schedule:
+    - cron: '17 * * * *'
+    - cron: '43 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [both, maintenance, monitor]
+        default: both
+        description: Bounded maintenance or read-only monitoring
+permissions:
+  contents: read
+concurrency:
+  group: dearly-scheduled-operations
+  cancel-in-progress: false
+jobs:
+  operations:
+    if: vars.OPERATIONS_ENABLED == 'true' && github.repository == 'MAYANKSHARMA01010/Dearly' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - name: Run one bounded job
+        env:
+          OPERATIONS_API_URL: https://dearly-z8zm.onrender.com
+          OPERATIONS_TOKEN: ${{ secrets.OPERATIONS_TOKEN }}
+          MONITORING_TOKEN: ${{ secrets.MONITORING_TOKEN }}
+          OPERATIONS_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '17 * * * *' && 'maintenance' || 'monitor') }}
+        run: node scripts/operations/run.mjs
+      - name: Record outcome
+        if: always()
+        env:
+          JOB_OUTCOME: ${{ job.status }}
+        run: |
+          echo "### Dearly scheduled operations" >> "$GITHUB_STEP_SUMMARY"
+          echo "Outcome: $JOB_OUTCOME. Inspect the sanitized step result and protected maintenance journal." >> "$GITHUB_STEP_SUMMARY"
+          echo "Failed runs are alerts in Actions. Enable GitHub Actions failure notifications for your account." >> "$GITHUB_STEP_SUMMARY"
