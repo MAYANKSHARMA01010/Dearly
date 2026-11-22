@@ -6,6 +6,8 @@ export const apiInfo: RequestHandler = (req, res) => {
     name: 'Dearly API',
     status: 'running',
     endpoints: {
+      docs: '/api/docs',
+      openapi: '/api/openapi.json',
       health: '/health',
       databaseHealth: '/health/db',
       liveness: '/health/live',
