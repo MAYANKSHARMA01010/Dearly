@@ -62,10 +62,13 @@ The coordinator requires matching remote main and synchronized versions. It:
    downloads and independently verifies it, publishes it, downloads public assets
    again, and waits for the separate release-verification workflow to pass.
 
-The release verifier binds source ZIP bytes, source commit, semantic/native
+The release verifier checks source ZIP entries, file contents, executable/symlink
+attributes and source commit independently of ZIP compression, plus semantic/native
 metadata, allowed filenames and all checksums to the checked-out release source.
 Editing a manifest and regenerating checksums cannot legitimize another source.
-All published releases remain RC until separately recorded required device/push
+Python 3 is required locally and is available on the GitHub hosted verifier.
+Archives are bounded and checked without extraction, including duplicate/path and
+size rejection. All published releases remain RC until separately recorded required device/push
 acceptance is complete; the pipeline cannot promote an RC to stable.
 
 ## Failure and resumption

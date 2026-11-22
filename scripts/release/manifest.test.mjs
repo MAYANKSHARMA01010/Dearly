@@ -9,8 +9,9 @@ test('real release verifier rejects source/native metadata tampering and duplica
  const root=mkdtempSync(resolve(tmpdir(),'dearly-release-contract-'));
  try{
   const write=(p,v)=>writeFileSync(resolve(root,p),typeof v==='string'?v:JSON.stringify(v));
-  for(const p of ['scripts','backend','frontend','assets'])mkdirSync(resolve(root,p));
+  for(const p of ['scripts','scripts/release','backend','frontend','assets'])mkdirSync(resolve(root,p));
   copyFileSync(new URL('../release.mjs',import.meta.url),resolve(root,'scripts/release.mjs'));
+  copyFileSync(new URL('./verify-source.py',import.meta.url),resolve(root,'scripts/release/verify-source.py'));
   write('VERSION','1.6.0');
   for(const name of ['backend','frontend']){write(name+'/package.json',{version:'1.6.0'});write(name+'/package-lock.json',{version:'1.6.0',packages:{'':{version:'1.6.0'}}});}
   write('frontend/app.json',{expo:{version:'1.6.0',android:{versionCode:13,package:'test.dearly'},ios:{buildNumber:'13'}}});
@@ -24,6 +25,8 @@ test('real release verifier rejects source/native metadata tampering and duplica
   const save=(duplicate=false)=>{write('assets/release.json',manifest);const names=duplicate?[apk,apk,'release.json']:[apk,zip,'release.json'];write('assets/SHA256SUMS',names.map(n=>sha256(readFileSync(resolve(root,'assets',n)))+'  '+n).join('\n')+'\n');};
   const run=()=>spawnSync(process.execPath,['scripts/release.mjs','verify','assets'],{cwd:root,encoding:'utf8'}).status;
   save();assert.equal(run(),0);
+  execFileSync('python3',['-c', 'import zipfile,sys,os; p=sys.argv[1]; z=zipfile.ZipFile(p); entries=[(i,z.read(i)) for i in z.infolist()]; z.close(); os.rename(p,p+".old"); out=zipfile.ZipFile(p,"w",compression=zipfile.ZIP_STORED); [(out.writestr(i,data,compress_type=zipfile.ZIP_STORED)) for i,data in entries]; out.close()',resolve(root,'assets',zip)]);
+  manifest.files[1]={name:zip,sha256:sha256(readFileSync(resolve(root,'assets',zip))),bytes:readFileSync(resolve(root,'assets',zip)).length};save();assert.equal(run(),0,'identical source with different compression must verify');
   manifest.androidVersionCode=12;save();assert.notEqual(run(),0);
   manifest.androidVersionCode=13;manifest.commit='f'.repeat(40);save();assert.notEqual(run(),0);
   manifest.commit=commit;save(true);assert.notEqual(run(),0);

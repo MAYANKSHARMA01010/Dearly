@@ -240,8 +240,7 @@ function verify(directory) {
       Object.entries(identity).some(([key,value]) => manifest[key] !== value))
     throw Error('Release source or native metadata mismatch.');
   const archived = execFileSync('git', ['archive', '--format=zip', '--prefix=Dearly-' + manifest.tag + '/', commit], {cwd:root,maxBuffer:32*1024*1024});
-  if (createHash('sha256').update(archived).digest('hex') !== hash(resolve(out, 'Dearly-' + manifest.tag + '-source.zip')))
-    throw Error('Release source archive mismatch.');
+  execFileSync('python3', [resolve(root, 'scripts/release/verify-source.py'), resolve(out, 'Dearly-' + manifest.tag + '-source.zip'), 'Dearly-' + manifest.tag + '/'], {input:archived,stdio:['pipe','pipe','pipe']});
   if (!Array.isArray(manifest.files) || manifest.files.length !== 2)
     throw Error('Invalid release manifest.');
   const expected = new Set([
