@@ -4,15 +4,55 @@
 
 | File/settings | Purpose | Committed? |
 | --- | --- | --- |
-| `backend/.env` | Local backend; parsed by `configs/loadEnvironment.ts` regardless of working directory | No |
-| `backend/.env.example` | Safe local defaults, disabled providers and documented optional inputs | Yes |
-| `backend/.env.production.example` | Incomplete hosted Render template: Gmail relay and Neon object storage | Yes |
-| `backend/waha.env.example` | Separate WAHA service settings; never load this as the Express environment | Yes |
-| Render backend environment | Production API plus supervised delivery/push processes | Private service settings |
-| Render WAHA environment | Protected WhatsApp gateway, stable worker/session identity and dedicated database role | Private service settings |
-| Neon `dearlymail` function environment | Gmail app password and relay signing/access configuration | Private function settings |
-| `frontend/.env` / `.env.example` | Public API selection for development | Only example committed |
-| `frontend/eas.json` preview profile | Public hosted URL baked into the locally signed APK | Yes; no server secrets |
+| `backend/.env` | Single private source for local backend, hosted/service profiles and release tools | No; mode 600 |
+| `backend/.env.example` | Single safe backend template covering all profiles | Yes |
+| `frontend/.env` | Single public/build configuration source, including API URLs and Expo identity | No; mode 600 |
+| `frontend/.env.example` | Single safe frontend template | Yes |
+| Render backend / WAHA settings | Private service-specific settings injected by the host | Platform settings, not extra repository env files |
+| Neon Gmail relay settings | Private service-specific Gmail configuration; database URL injected by Neon | Platform settings, not extra repository env files |
+
+### Single-source profiles
+
+`backend/.env` retains the existing unprefixed local Express keys. Other sections
+use explicit prefixes so local and hosted credentials never silently overwrite
+one another:
+
+- `HOSTED_`: production Express keys, stripped only when deliberately selected.
+- `LOCAL_WAHA_SERVICE_` and `HOSTED_WAHA_SERVICE_`: separate gateway environments;
+  paired sender identities and API-key verifier formats must stay distinct.
+- `MAIL_RELAY_`: Gmail function settings only; Neon injects its database connection.
+- `RELEASE_`: trusted local coordinator settings, including the scoped deploy-hook
+  path and Render service ID. Signing files remain private native key files.
+
+`node scripts/environment.mjs check backend-hosted` reports key names only.
+`run TARGET -- COMMAND` selects values in memory and filters inherited environment
+variables; it never prints settings or writes another dotenv file. Available
+profiles are `backend-local`, `backend-hosted`, `waha-local`, `waha-hosted`,
+`mail-relay`, `release` and `frontend-release`. Never send the complete backend
+file to Render, WAHA, Neon, GitHub Actions, an Android build or a log. Supply only
+that service's selected keys through its private settings. Editing the local file
+does not itself update a running hosted service.
+
+Examples:
+
+```sh
+node scripts/environment.mjs run backend-hosted -- docker compose -f scripts/compose.release.yaml up -d
+node scripts/environment.mjs run waha-local -- docker compose -f scripts/whatsapp.compose.yaml up -d
+sh scripts/build-android-apk.sh
+```
+
+The APK script reads only `frontend/.env`, enforces the hosted target/production
+mode and passes public values to the local build in memory. `eas.json` contains
+build mechanics, not duplicate API configuration. `app.config.js` reads Expo
+owner/project identity from the frontend environment; app identifiers, versions,
+plugins, styles and protocol/security constants remain source-controlled.
+`APP_DOWNLOAD_URL` in each relevant backend/relay profile supplies the public
+GitHub Releases destination. Examples contain placeholders, not real identities.
+
+On 22 November 2026, 23 historical plaintext dotenv exports were retired after
+an AES-256-GCM encrypted recovery copy was verified. Recovery material is ignored
+under `backend/.runtime/environment-consolidation/`; keep its key private and back
+it up independently. It is not loaded by application or release tools.
 
 The current topology is in [Render deployment](render-deployment.md). The backend
 runs locally on port 8080; Neon remains its remote database. The hosted backend is
@@ -69,7 +109,7 @@ runtime; configuration does not prove connectivity or implement caching.
 
 ## Hosted environment
 
-The production template intentionally fails validation until private credentials
+The `HOSTED_` section intentionally fails validation until private credentials
 are supplied. It uses the current public service origins, Gmail relay, private
 Neon storage and explicit quotas. Push defaults disabled until the actual project
 is configured; the full release preflight additionally requires configured push.
@@ -110,7 +150,7 @@ compatible with the source PostgreSQL major version (hosted database: 18).
 `RESTORE_DATABASE_URL` and `RESTORE_STORAGE_ROOT` are separate empty isolated
 targets, never the live source. `SMSGATE_CALLBACK_URL` is consumed by SMS setup and
 release checks; `PERSISTENT_STORAGE_CONFIRMED` is consumed by release preflight.
-`WAHA_IMAGE` is a Compose input, not an Express configuration field.
+`LOCAL_WAHA_SERVICE_WAHA_IMAGE` is a Compose-only profile input, not an Express configuration field.
 See [operations/recovery](release-operations.md) before using these settings.
 
 ## Credential replacement and verification
@@ -146,6 +186,6 @@ sender moved to Singapore, `WAHA_SERVER_SCOPE_ORIGIN` retains the old hosted HTT
 origin to preserve quota and receipt matching. It must be a credential-free remote
 HTTPS origin. Omit it for new senders; never merge unrelated accounts/sessions.
 It is ignored in development so the independently paired local gateway retains
-its own identity. This setting does not redirect network requests. The production
+its own identity. This setting does not redirect network requests. The hosted section of the single
 example and validator cover this optional field. See [deployment](render-deployment.md)
 and [Phase 19 evidence](otp-performance.md). Credentials remain in private settings.

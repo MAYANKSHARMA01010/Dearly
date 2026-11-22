@@ -16,8 +16,10 @@ and fencing live in PostgreSQL. Never use a Render web URL or an incomplete Redi
 resource name as a connection string. Keep local API port 8080 and the separate
 hosted URL; production never falls back to localhost.
 
-For self-managed Compose, copy `backend/.env.production.example` into ignored
-`backend/.env.production` and fill values privately. It is deliberately incomplete.
+For self-managed Compose, fill the `HOSTED_` section of the single `backend/.env`
+using `backend/.env.example`. Select it with `node scripts/environment.mjs run
+backend-hosted -- docker compose -f scripts/compose.release.yaml up -d`.
+Never pass the complete multi-service file into a container.
 For the existing Render deployment, use private service settings and the hosted
 entrypoint; do not replace its Neon storage or Gmail relay settings with Compose
 filesystem/SMTP assumptions. Phase 18 owns env/example reconciliation. Set the

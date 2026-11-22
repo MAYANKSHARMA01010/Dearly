@@ -377,3 +377,25 @@ unrelated bundle, and do not split every file into a separate commit.
   separate requirements. Enable them through the authorized feature flow and
   distinguish gateway acceptance from observed arrival. A test-send permission is
   limited to its stated recipient/count; do not replay or send another automatically.
+
+## Single-source environment configuration
+
+- Maintain exactly `backend/.env`, `backend/.env.example`, `frontend/.env` and
+  `frontend/.env.example` as the package dotenv files. Do not add production,
+  local, WAHA, release or provider dotenv variants. Private files stay ignored
+  and owner-readable only. The examples document every supported setting safely.
+- Backend unprefixed settings are local; `HOSTED_` is an explicit complete hosted
+  profile. Separate WAHA and Gmail profiles use the prefixes documented in
+  `docs/environment-setup.md`. Never fall back to local provider credentials in
+  production, merge paired senders or pass the whole backend file to a service.
+- Use `scripts/environment.mjs` to select service settings in memory. Hosted
+  platform settings still need deliberate synchronization; a local edit is not
+  a deployment. No raw environment dumps in logs, screenshots or tool output.
+- Deployment-specific URLs, sender credentials and build/project identity belong
+  in the appropriate environment. Never put backend secrets in frontend config,
+  EXPO_PUBLIC values, EAS profiles or APK assets. User-entered account/message data
+  belongs in the authenticated database, not the environment. Fixed vendor origins,
+  protocol identifiers, security bounds and test fixtures may remain in code.
+- Preserve native signing/Firebase credential-file formats; they are not dotenv
+  files and must not be pasted into env values. Tests use synthetic settings.
+  Run environment isolation tests alongside package checks after configuration changes.

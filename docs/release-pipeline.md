@@ -25,13 +25,13 @@ version or native build number. No app release is required for later closeout do
 
 ## Run
 
-Copy [the safe template](../scripts/release/.env.example) privately to
-`backend/.runtime/release.env`, setting the hosted origin and the path to this
-service's existing private Render deploy hook. Backend/.env supplies only the
-selected database connection and independent read-only monitoring key to the
-coordinator; they are never passed into the Android build. Local signing remains
-in the existing private mobile signing files. Never print the hook or put it in
-GitHub secrets merely to simplify release automation.
+Use the release section of [the single backend template](../backend/.env.example)
+in private `backend/.env`. Set `RELEASE_API_URL`, `RELEASE_RENDER_SERVICE_ID` and
+`RELEASE_DEPLOY_HOOK_FILE` to the existing service-scoped hook file. The coordinator
+reads `HOSTED_DATABASE_URL` and `HOSTED_MONITORING_TOKEN` from that same source;
+there is no separate `release.env`. No backend settings reach the Android build.
+Native signing remains in the existing private signing files. Never print the
+hook or put it in GitHub secrets merely to simplify release automation.
 
 Run on the trusted Mac, from the exact clean tracked release source on main:
 

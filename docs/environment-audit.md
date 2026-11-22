@@ -93,3 +93,43 @@ Provider reference for phone password changes:
 [SMSGate password guidance](https://docs.sms-gate.app/faq/general/). Cloud changes
 take effect immediately across clients. Do not create a new device/account or
 reset the configured Signing Key as a shortcut.
+
+## Single-source consolidation — 22 November 2026
+
+The active configuration now consists of one private `.env` and one safe
+`.env.example` per package. The earlier production, WAHA and release templates
+were folded into backend profile sections; they are no longer active files.
+Twenty-three historical plaintext dotenv exports were retired after verified
+AES-256-GCM recovery encryption. Recovery material remains ignored and private.
+Existing local credentials, the distinct hosted gateway verifier/session identity,
+Gmail credentials and native signing identity were preserved; no credential or
+session was rotated as part of this work.
+
+Added explicit in-memory service selection and inherited-environment filtering.
+Production cannot fill missing configuration from the local master file; local
+runtime loading excludes hosted, relay and release sections. Container definitions
+receive selected variable names rather than the whole multi-service file. Hosted
+relay selection excludes the local SMTP password. The release coordinator reads
+its settings and hosted database/monitor configuration from the same backend
+source. Outgoing app-download destinations now come from APP_DOWNLOAD_URL.
+
+The local APK wrapper reads only frontend/.env and forces production/hosted mode;
+Expo owner/project configuration comes from that file. Removed duplicate EAS URL
+settings. Fixed API vendor origins and protocol/security constants remain in code.
+GitHub's existing operations URL variable was synchronized and its workflow now
+reads that variable rather than a project URL literal.
+
+Validation: backend check (128 tests plus lint/types/build), frontend check (133
+tests plus lint/types), 15 tooling tests, five focused environment regressions,
+service Compose validation, exact existing Expo owner/project identity comparison,
+iOS/Android exports, shell syntax, release version consistency and whitespace
+checks passed. A bounded known-value scan found zero private credential/sender
+matches in tracked source and both generated platform exports. Both private env
+files remain ignored, with owner-only permissions. This is not an exhaustive
+secret-history audit or real provider/native-device acceptance.
+
+No live messages, production restart, Render deployment, APK build or publication
+was performed. Hosted platform settings remain independently injected; local
+profile edits do not automatically synchronize or deploy them. Runtime changes
+are on the configuration branch and still require the normal versioned release
+process before deployment.

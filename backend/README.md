@@ -259,7 +259,8 @@ been claimed. Alert opt-out does not cancel scheduled message delivery.
 
 Phase 16 adds strict `release:check`, read-only `ops:check`, gated compiled API and
 worker startup, CI/container definitions, and encrypted backup/isolated restore.
-Start from `.env.production.example`; keep real values in ignored private files.
+Start from the hosted section of `.env.example`; keep all real settings in the
+single ignored `.env`. Select service profiles using `../scripts/environment.mjs`.
 Read [operations and recovery](../docs/release-operations.md) before deployment or
 backup commands, and [release verification](../docs/release-verification.md) for
 passed checks and deferred physical/hosted acceptance. No deployment is implied.
