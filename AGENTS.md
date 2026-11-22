@@ -337,8 +337,13 @@ unrelated bundle, and do not split every file into a separate commit.
   bounded batches and sanitized outcomes. Actions schedules do real work, not
   keepalive traffic; missing activation/configuration must fail closed.
 - Scheduled maintenance and service monitoring must be bounded and non-overlapping.
-  Never use artificial keepalive jobs to bypass free-host sleeping or promise exact
-  delivery while services sleep. Do not create paid Render cron services. Never
+  On 22 November 2026, the user explicitly requested two cron-job.org liveness
+  jobs every five minutes: backend `/health/live` and WAHA `/ping`. These GETs
+  must not query the database or carry credentials. See the deployment runbook
+  for job IDs and limits. This scoped request supersedes the earlier no-keepalive
+  preference; do not expand it to DB readiness or provider actions. Never bypass
+  hosting quotas or promise exact delivery/continuous uptime on free services.
+  Do not create paid Render cron services. Never
   schedule WAHA logout/reset/relink or automatic replay of uncertain submissions.
 - Phase 24 coordinates release proposals, trusted local signing, exact-commit
   Render deployment and immutable publication; follow [the pipeline](docs/release-pipeline.md).

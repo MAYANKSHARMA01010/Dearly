@@ -85,10 +85,32 @@ Android signing files independently protected.
 files on restart and shares its monthly running-hour allowance across free web
 services. PostgreSQL/object storage preserve data and session state; they do not
 make a sleeping worker run on time. Scheduled dispatch and WhatsApp reconnection
-can be delayed until services wake. No artificial keepalive, unlimited-uptime
-promise or paid upgrade is configured. Neon and Gmail quotas still apply. Stop at
+can be delayed until services wake. The user-requested liveness jobs below do not
+guarantee unlimited uptime, and no paid upgrade is configured. Neon and Gmail quotas still apply. Stop at
 quota exhaustion instead of enabling billing. Hosted backup scheduling/retention
 and real Android push/background acceptance remain operational follow-up items.
+
+### External liveness schedule — 22 November 2026
+
+At the user's explicit request, two enabled cron-job.org jobs use GET every five
+minutes (`*/5 * * * *`, UTC; interval is unchanged in IST):
+
+| Job | ID | URL |
+| --- | --- | --- |
+| Dearly backend — liveness | 8916060 | `https://dearly-z8zm.onrender.com/health/live` |
+| Dearly WAHA — liveness | 8916069 | `https://dearly-waha-singapore.onrender.com/ping` |
+
+Both endpoints returned HTTP 200 during setup. Neither liveness handler queries
+the database; normal background workers/session activity can still access Neon.
+No credentials, custom headers or request body were added. Jobs use the default
+30-second timeout and do not expire. A cold start can exceed that timeout.
+Existing GitHub maintenance/monitoring schedules remain unchanged.
+
+[Render Free](https://render.com/docs/free) provides 750 instance-hours shared by
+the workspace each month. Two continuously running services consume two hours
+per elapsed hour, so these jobs cannot guarantee full-month availability. Quota
+exhaustion must not trigger billing or attempts to bypass the cap. This external
+configuration record changes no app code and requires no APK/version bump.
 
 ## Phase 18 private configuration reconciliation — 21 November 2026
 
