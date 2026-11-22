@@ -146,6 +146,7 @@ const environmentSchema = z
     WHATSAPP_MODE: z.enum(['disabled', 'waha']).default('disabled'),
     SMS_PROVIDER: z.enum(['disabled', 'smsgate']).default('disabled'),
     SMSGATE_CONNECTION: z.enum(['local', 'cloud']).default('local'),
+    SMSGATE_API_URL: z.string().url().optional(),
     SMSGATE_LOCAL_API_URL: z.string().url().optional(),
     SMSGATE_SERVER_API_URL: z.preprocess(
       (v) => (v === '' ? undefined : v),
@@ -362,7 +363,7 @@ export interface SmtpConfig {
 export class EnvironmentError extends Error {}
 
 export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
-  const result = environmentSchema.safeParse(source);
+  const result = environmentSchema.safeParse({ ...source, SMTP_FROM: source.SMTP_FROM ?? source.SMTP_USER });
   if (!result.success) {
     // Only field names are safe: Zod errors may otherwise contain supplied values.
     const fields = [
@@ -409,10 +410,10 @@ export function parseEnvironment(source: NodeJS.ProcessEnv): AppConfig {
     );
   if (env.PUSH_PROVIDER === 'expo' && !env.EXPO_PROJECT_ID)
     throw new EnvironmentError('Invalid environment settings: EXPO_PROJECT_ID');
-  const smsUrl =
+  const smsUrl = env.SMSGATE_API_URL ?? (
     env.NODE_ENV === 'production'
       ? env.SMSGATE_SERVER_API_URL
-      : env.SMSGATE_LOCAL_API_URL;
+      : env.SMSGATE_LOCAL_API_URL);
   if (env.SMS_PROVIDER === 'smsgate') {
     if (
       !smsUrl ||

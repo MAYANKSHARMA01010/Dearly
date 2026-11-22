@@ -11,7 +11,7 @@ export function loadEnvironment(source: NodeJS.ProcessEnv = process.env, environ
     const local: Record<string, string> = {};
     dotenv.config({ path: environmentPath, processEnv: local });
     for (const [key, value] of Object.entries(local)) {
-      if (!/^(HOSTED_|LOCAL_WAHA_SERVICE_|MAIL_RELAY_|RELEASE_)/.test(key) && source[key] === undefined) {
+      if (!/^(HOSTED_|GATEWAY_|LOCAL_GATEWAY_|MAIL_RELAY_|RELEASE_)/.test(key) && source[key] === undefined) {
         source[key] = value;
       }
     }
