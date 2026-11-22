@@ -73,11 +73,6 @@
       ]
     ],
     "scheme": "dearly",
-    "owner": "manku_dada",
-    "extra": {
-      "eas": {
-        "projectId": "b19a93b4-f755-42ec-86a7-115c8b5ac098"
-      }
-    }
+    "extra": {}
   }
 }
