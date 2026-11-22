@@ -52,7 +52,7 @@ Do not infer authorization for a new live message from a historical test.
 | 21 Synchronization and fewer reads | Mobile services / backend reads; 20 | Complete: bounded cached reads, coalescing, invalidation, retry/cancellation and screen states | 1.3.0 RC1 / build 10; measured 3 → 1 sequential requests, native synthetic checks passed; phone/iOS acceptance remain pending |
 | 22 Persistent media and viewer UI | Mobile media / UI; 21 | Complete: encrypted media reuse, online access/version checks, bounded retention, cleanup, viewer expiry and Settings controls | 1.4.0 RC1 / build 11; native synthetic encryption/restart/playback and labelled-control checks passed; phone/iOS and full screen-reader acceptance remain pending |
 | 23 API docs and scheduled operations | API contracts / operations; 19 and 22 | Complete: read-only Swagger, scoped operations, durable journal/locking, bounded cleanup and independent monitoring | 1.5.0 RC1 / build 12; exact source Live, scheduled access activated and first live job passed; published assets independently verified. Device acceptance remains deferred |
-| 24 Coordinated CI/CD and acceptance | Release tooling / operations; 18–23 | Pending | Pending exact-commit APK, deployment and published assets; device checks remain separately recorded |
+| 24 Coordinated CI/CD and acceptance | Release tooling / operations; 18–23 | Complete engineering: semantic proposals, trusted local coordinator, gated deployment/publication, recovery and rollback drill | 1.6.2 RC1 / build 15; CI, exact hosted identity, Linux draft and public asset checks passed. Physical Android install/login and one push arrival verified; standalone iOS and full screen-reader acceptance remain separate |
 
 For each phase, record dated results here (or link its detailed evidence), focused
 commit IDs, deployed SHA/version, release URL and native acceptance separately.
@@ -245,7 +245,7 @@ required acceptance is observed. No automatic live provider test or paid upgrade
 
 **Version policy:** PATCH for compatible fixes; MINOR for compatible features such
 as persistent caching; MAJOR for breaking changes. Choose versions from actual
-published history at release time, not phase numbers. Current baseline is 1.1.3;
+published history at release time, not phase numbers. Read the current baseline from published release history and the dated closeouts;
 this plan does not reserve future versions.
 
 **Commit groups:** release preparation/validation; protected build/deploy workflow;
@@ -460,3 +460,75 @@ passed independently. Physical Android, native iOS, real push and full screen-re
 acceptance remain deferred; this is a release candidate. Phase 23 is complete.
 Phase 24 coordinated CI/CD has not started. The unrelated root `.gitignore` edit
 remains untouched.
+
+
+## Phase 24 closeout — 22 November 2026
+
+All 24 implementation phases are complete. The release remains a candidate,
+with platform/device acceptance distinguished below. The
+[coordinated pipeline](release-pipeline.md) adds automatic minimum semantic-version
+proposals/changelogs and an explicitly invoked trusted local signer/coordinator.
+GitHub runs source checks on disposable hosted runners; no public-repository
+self-hosted runner, cloud APK build, AAB, signing key or provider credential was
+introduced into Actions. Missing/offline local signing leaves publication pending.
+
+The coordinator binds exact main/source, successful push CI, migration checksums,
+local ARM64 APK identity and signer continuity, exact hosted commit/version/schema
+files, DB/worker/queue/WAHA readiness, immutable release assets, draft verification
+and fresh public-download verification. A private lock and stage journal support
+reviewed resumption; uncertain deploy POSTs are reconciled rather than blindly
+repeated. No SQL migration was added or applied in this phase. Existing migration
+history was checked read-only. Source ZIP verification compares entries/contents
+and executable/symlink attributes without extraction, independently of compression.
+
+Initial 1.6.0 exposed a Mac/Linux ZIP-compression comparison defect after
+publication; its assets/tag are retained and its notes explicitly flag the failed
+verification. The patched 1.6.1 draft was correctly blocked before publication
+because the default read-only Actions token could not see drafts. The final
+main-only manual draft job has the necessary repository contents-write access,
+exact-source guard and non-persisted checkout credentials; public release checks
+retain contents-read. No provider, database, Render hook or signing credential
+was given to that job. The existing service-scoped Render hook remains private
+locally, and Auto-Deploy is now Off so CI/build checks precede explicit deployment.
+The corrected final pipeline completed without bypassing any verification gate.
+
+Final source: `0e473ab3861871888c988e6a40ff7dd227c0216a`; Render deployment
+`dep-dc18g12jnfac7381tkm0`; version 1.6.2, Android versionCode 15 and iOS build 15.
+[CI 44991163762](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44991163762)
+passed: 126 backend tests, 133 frontend tests, 101 backend integration tests,
+three mobile/API scenarios and 11 scheduler/release tests, plus encrypted backup
+recovery, a current → 1.5.0 → current code rollback with preserved synthetic data,
+both platform bundles and container/version checks. An independent Linux container
+also verified the Mac-generated source archive against Git objects.
+[Linux draft verification 44992915295](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44992915295)
+passed before publication;
+[public asset verification 44992948665](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44992948665)
+passed after a fresh download. The
+[1.6.2 RC1 release](https://github.com/MAYANKSHARMA01010/Dearly/releases/tag/v1.6.2-rc.1)
+contains APK/source ZIP/release.json/SHA256SUMS. Its source and signing identity,
+metadata and downloaded bytes were verified. Earlier failed/blocked states remain
+recorded rather than being relabelled successful or overwritten.
+
+The user's physical iQOO Neo 9 Pro (Android 16) accepted the signed upgrades
+without clearing data. The final installed package reports 1.6.2/build 15;
+authenticated Home, refreshed mailbox counts and saved push preferences were
+observed. A read canceled during rollout recovered with the displayed Try again
+read action; no OTP/write was replayed. The user had granted OS microphone and
+notification permissions, but the app's Push alerts preference was off. Enabling
+and saving it, then registering this device, enabled the authorized one-device
+push test. Exactly one generic notification was submitted; gateway acceptance and
+user-confirmed phone arrival were recorded separately. This test ran on 1.6.1;
+final 1.6.2 preserves identical mobile application source/dependencies apart from
+version metadata, and grants/login/preferences persisted after its installation.
+No extra push, WhatsApp, SMS, email or microphone recording was performed.
+Installed-APK byte retrieval was unavailable; signed install and package identity
+were checked, without claiming an installed-file hash comparison.
+
+The iPhone 17 Pro Max rendered Welcome and Sign-in in the existing Expo client,
+with no login permission prompt or OTP submitted. This does not establish standalone
+iOS, physical iOS/APNs or a complete TalkBack/VoiceOver session. Those acceptance
+limits remain explicit; the release is not promoted to stable. Production backup
+scheduling/offsite retention still requires the consistency/storage prerequisites
+already documented; no unsafe unattended backup was enabled. Closeout documentation
+is a subsequent documentation-only commit, not a new app version or deployment.
+The unrelated root `.gitignore` edit remains untouched.

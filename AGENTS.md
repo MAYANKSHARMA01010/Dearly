@@ -352,3 +352,22 @@ unrelated bundle, and do not split every file into a separate commit.
   not a version bump, rebuild, deployment or release. Runtime deployment closeout
   above still applies when runtime behavior changes. Do not mark a later phase
   done merely because its rules are documented here.
+
+
+## Phase 24 release controls
+
+- Keep source and remote main unchanged while a release coordinator runs. Add
+  closing documentation after completion; documentation-only commits do not need
+  another APK or deployment. Record release-source SHA separately from later docs.
+- Linux draft verification must pass before publication. Only the trusted main-only
+  manual draft-check job has contents-write access to read unpublished assets;
+  public verification stays read-only. Never broaden this to pull requests/forks,
+  persist its checkout token or give it signing/provider/DB/Render credentials.
+- Verify source archive contents against the matching release checkout, independently
+  of compression; never restore byte-identical compressed-ZIP comparisons. Never
+  overwrite a failed published release to hide its failure: flag it and issue a
+  properly versioned correction, preserving unique native build numbers.
+- Phone OS permission, account Push alerts preference and device registration are
+  separate requirements. Enable them through the authorized feature flow and
+  distinguish gateway acceptance from observed arrival. A test-send permission is
+  limited to its stated recipient/count; do not replay or send another automatically.

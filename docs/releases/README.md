@@ -63,3 +63,12 @@ release needs the exact source commit, passed checks, matching verified APK,
 observed deployment evidence and immutable GitHub assets. Record partial failures
 and device acceptance separately. Use `scripts/release.mjs` rather than manually
 editing version fields independently.
+
+
+The strengthened verifier must run from the matching release-source checkout:
+later main commits (even closeout docs) have a different source identity. Use a
+separate checkout/worktree at the tag rather than resetting a working checkout.
+The [coordinated pipeline](../release-pipeline.md) performs local and Linux draft
+checks before publication, then verifies fresh public downloads. Its proposal is
+a minimum compatible version; it never permits a prepared/published version to
+move backwards. Do not prepare again when that version is already prepared.
