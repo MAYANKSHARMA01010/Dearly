@@ -16,7 +16,7 @@ def inventory(source, prefix):
         for entry in archive.infolist():
             name = entry.filename
             if (not name.startswith(prefix) or '\\' in name or
-                    any(part in ('.', '..') for part in name.split('/')) or
+                    any(part in ('.', '..', '.local-notes') for part in name.split('/')) or
                     name in result or entry.flag_bits & 1):
                 raise ValueError('invalid entry')
             total += entry.file_size

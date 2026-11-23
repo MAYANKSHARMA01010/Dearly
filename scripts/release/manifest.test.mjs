@@ -30,6 +30,13 @@ test('real release verifier rejects source/native metadata tampering and duplica
   manifest.androidVersionCode=12;save();assert.notEqual(run(),0);
   manifest.androidVersionCode=13;manifest.commit='f'.repeat(40);save();assert.notEqual(run(),0);
   manifest.commit=commit;save(true);assert.notEqual(run(),0);
+  save();
+  mkdirSync(resolve(root,'.local-notes'));write('.local-notes/context.md','synthetic private context');
+  git('add','-f','.local-notes');git('-c','user.name=Synthetic Test','-c','user.email=test@example.invalid','commit','-m','synthetic accidental private notes');
+  manifest.commit=git('rev-parse','HEAD').toString().trim();
+  writeFileSync(resolve(root,'assets',zip),git('archive','--format=zip','--prefix=Dearly-'+tag+'/','HEAD'));
+  manifest.files[1]={name:zip,sha256:sha256(readFileSync(resolve(root,'assets',zip))),bytes:readFileSync(resolve(root,'assets',zip)).length};
+  save();assert.notEqual(run(),0,'private notes must be rejected even if accidentally tracked and hashes match');
   save();write('assets/'+zip,'forged archive');manifest.files[1]={name:zip,sha256:sha256('forged archive'),bytes:14};save();assert.notEqual(run(),0);
  }finally{rmSync(root,{recursive:true,force:true});}
 });

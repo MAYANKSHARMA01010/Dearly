@@ -180,7 +180,7 @@ function pack(tag, input) {
   if (
     tracked.some(
       (p) =>
-        /(^|\/)(?:\.runtime|\.secrets|node_modules|artifacts)\/|(?:^|\/)credentials\.json$|\.(?:jks|keystore|apk|aab)$/.test(
+        /(^|\/)(?:\.runtime|\.secrets|\.local-notes|node_modules|artifacts)\/|(?:^|\/)credentials\.json$|\.(?:jks|keystore|apk|aab)$/.test(
           p,
         ) ||
         (/(^|\/)\.env(?:\.|$)/.test(p) &&

@@ -19,3 +19,6 @@
 **/*.keystore
 frontend
 temp
+
+# Internal AI context and encrypted local recovery archives
+.local-notes/
