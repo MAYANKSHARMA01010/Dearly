@@ -167,3 +167,20 @@ Documentation-only edits need link/path/anchor and whitespace checks. Native
 module/configuration changes also need SDK-matched Expo documentation, Doctor,
 Android export and a rebuilt native app as appropriate. Test counts and dated
 acceptance evidence belong in private context, not setup instructions.
+
+## Local build storage
+
+`node_modules/` contains installed dependencies, not duplicate application source.
+Keep it while developing. Package lockfiles, tests, Prisma migrations, assets used
+by app configuration, signing files and private environments are required.
+
+Old Android build workspaces, synthetic probe APKs, stale Expo exports and release
+verification downloads are disposable after their jobs finish. Keep the latest
+verified release package; older local release copies may be removed after checking
+all assets against GitHub digests. Preserve release journals for failed/resumable
+work and never clean while a coordinator/build is active. Preview APKs can be
+rebuilt with the existing helper; build outputs remain ignored.
+
+Keep dated probe results/screenshots and one-off investigation scripts in ignored
+local notes, not package source/runtime folders. Keep active referenced config,
+WAHA session data, durable objects and encrypted recovery backups in place.

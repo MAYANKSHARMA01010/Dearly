@@ -168,3 +168,14 @@ Follow [operations/recovery](docs/operations.md) and [releases](docs/releases.md
 - Run sh scripts/attention-sound.sh before a blocking question/handoff and final
   reply, as requested. Do not change volume, output device or Focus. Report playback
   failures; command success does not prove the user heard it.
+
+## Local artifact hygiene
+
+- Remove completed temporary build/probe/export/download output after verification;
+  keep the latest verified package and small release journals. Check active
+  coordinators/builds and configured path references before cleaning runtime areas.
+- Check remote asset digests before removing old local release copies. Never
+  delete installed dependencies, migrations, tests, signing/Firebase credentials,
+  active service/session data or recovery backups as speculative "unused files."
+- Historical screenshots/probe scripts/results belong in ignored local notes.
+  Keep private file permissions and record what was removed, retained or archived.
