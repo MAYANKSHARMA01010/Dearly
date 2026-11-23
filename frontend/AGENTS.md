@@ -33,7 +33,7 @@ Documentation-only changes use link/path and whitespace checks.
 ## Building with EAS
 
 The requested release artifact is a locally built, signed ARM64 APK. Follow
-`../scripts/build-android-apk.sh` and `../docs/releases/README.md`; preserve private
+`../scripts/build-android-apk.sh` and `../docs/releases.md`; preserve private
 signing identity and synchronize version/native build numbers with the root
 release tool. Do not default to cloud builds, AAB, app-store submission or OTA
 publication. Cloud build/submission is a separate requested scope.
@@ -74,29 +74,23 @@ proposal, reconcile both with native conventions, then verify rendered results.
 Keep existing Paper tokens, NativeWind setup and accessible controls. Commit each
 completed screen coherently before moving to the next requested screen.
 
-Phases 20–22 in `../docs/follow-up-phases.md` own SQLite, synchronization and
-persistent media. Phase 22 deliberately separates retained encrypted downloads from temporary
-playback files; follow `../docs/persistent-media.md`. Before retaining private content, define
-account/backend namespacing, expiry checked before reads, encryption/key handling,
-logout/account-change purge, bounded disk use and stale/revoked access handling.
-Do not persist session tokens in SQLite or automatically replay writes offline.
-Use SDK-matched Expo docs before adding native modules; verify with rebuilt native
-apps, not Expo Go or browser checks alone.
+Follow [cache architecture](../docs/architecture.md#android-cache-and-synchronization)
+for SQLite, synchronization and reusable media. Retained ciphertext and temporary
+playback files have different lifecycles. Define account/API scope, encryption,
+expiry, logout purge, disk bounds and stale/revoked access before persisting data.
+Never persist tokens in SQLite or queue/replay writes offline. Use SDK-matched
+native documentation and rebuilt Android binaries for native verification.
 
-Phase 20 now provides SQLCipher-backed SQLite snapshots under `services/cache/`.
-Follow `../docs/mobile-cache.md`: require cipher_version before writing private
-content, keep the random key in device-only SecureStore, serialize migrations and
-queries, scope by account/API origin, check TTL before reads and revoke cache
-leases synchronously on auth transitions. Server authentication remains required.
-Web persistence is disabled. Never migrate private values into plaintext as a
-fallback or delete a database to conceal a migration failure. Logout clears only
-Dearly's disposable cache/key. Phase 21 now connects eligible screen reads,
-invalidation, refresh
-and bounded saved-copy presentation; follow `../docs/mobile-synchronization.md`.
-Do not extend copy validity on failure or cache auth/schedule decisions. Keep
-manual refresh authoritative, preserve unsaved settings, discard appended mailbox
-pages when their first page changes, and stop timers on blur. Phase 22 adds encrypted media files/index, per-open online access, seven-day/250 MiB
-LRU bounds and Settings cleanup. Preserve those boundaries.
+SQLCipher snapshots under `services/cache/` require cipher_version before private
+writes and a device-only SecureStore key. Serialize migrations/queries, check TTL
+before reads and revoke leases synchronously on auth transitions. No plaintext
+fallback, migration-error deletion workaround or cached auth approval. Web private
+persistence stays disabled. Logout clears only Dearly's disposable cache/key.
+
+Preserve read invalidation, forced refresh, bounded saved-copy windows and unsaved
+settings. Discard appended pages when page one changes; stop timers on blur. Every
+reusable media open authorizes online. Keep the seven-day/250 MiB LRU bounds,
+encrypted index/files, temporary-player cleanup and explicit Settings clearing.
 
 ## Current platform scope
 

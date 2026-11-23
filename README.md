@@ -28,7 +28,7 @@ SMSGate requires the configured physical Android/SIM. Redis is optional.
 
 1. Install package dependencies in `backend/` and `frontend/`.
 2. Create each package's private `.env` from its single `.env.example`.
-3. Follow [environment setup](docs/environment-setup.md); keep credentials backend-only.
+3. Follow [environment setup](docs/setup.md#environment-ownership); keep credentials backend-only.
 4. Run `npm run dev --prefix backend` for the local API on port 8080.
 5. Run `npm run android --prefix frontend` when Android testing is needed.
 
@@ -42,12 +42,12 @@ Run `npm run check --prefix backend`, `npm run check --prefix frontend` and
 CI additionally uses disposable PostgreSQL for integration/recovery checks and
 exports Android. Tests never send real provider messages.
 
-Use [Android builds](docs/android-apk.md) and [the release pipeline](docs/release-pipeline.md)
+Use [Android builds](docs/releases.md#build-a-local-apk) and [the release pipeline](docs/releases.md#coordinated-release)
 for local signing, MAJOR.MINOR.PATCH versions, gated deployment and immutable
 GitHub APK/source/checksum publication. Published builds remain release candidates
 until the required Android acceptance is recorded. Free hosting can sleep and
 cannot promise exact delivery times.
 
 See [all project documentation](docs/README.md), [backend setup](backend/README.md)
-and [repository structure](docs/project-structure.md). Private progress/history
+and [repository structure](docs/architecture.md#code-and-data-ownership). Private progress/history
 is stored locally and excluded from Git and release archives.
