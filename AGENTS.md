@@ -400,8 +400,10 @@ unrelated bundle, and do not split every file into a separate commit.
   under ignored `.local-notes/`; never stage that directory or add its contents
   to a release archive. Keep useful setup, API/security contracts and recovery
   instructions in public docs. Public docs must not depend on private notes.
-- `.local-notes/context.md` is optional local continuity; a fresh clone must remain
-  understandable through README.md, docs/README.md and these instructions.
+- When `.local-notes/context.md` exists, read it at task start and update current
+  state, decisions, checks and outstanding work after meaningful changes. Never
+  store secrets or private message content in narrative notes. A fresh clone must
+  remain understandable through README.md, docs/README.md and these instructions.
 - Current verification is Android + backend. iOS is outside current acceptance,
   not a blocker or a claimed tested platform. Keep semantic version/native metadata
   consistency, signed APK verification and existing security/release gates.
