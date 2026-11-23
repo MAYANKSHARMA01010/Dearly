@@ -64,10 +64,10 @@ jobs:
           ROLLBACK_DATABASE_URL: postgresql://dearly_ci:ci-disposable-only@127.0.0.1:5432/dearly_ci
           ROLLBACK_TAG: v1.5.0-rc.1
         run: node scripts/release/rollback-drill.mjs
-      - name: Bundle iOS and Android without signing credentials
+      - name: Bundle Android without signing credentials
         working-directory: frontend
         env:
           NODE_ENV: production
-        run: npx expo export --platform ios --platform android --output-dir /tmp/dearly-ci-export
+        run: npx expo export --platform android --output-dir /tmp/dearly-ci-export
       - name: Validate container definitions
         run: docker compose -f scripts/compose.release.yaml config --no-env-resolution --no-interpolate > /dev/null

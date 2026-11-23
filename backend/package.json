@@ -1,6 +1,6 @@
 {
   "name": "backend",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "description": "Dearly Backend API with Node.js, Express, Prisma & PostgreSQL",
   "main": "dist/server.js",
   "scripts": {

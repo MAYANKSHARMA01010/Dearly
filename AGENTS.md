@@ -13,15 +13,11 @@ Implemented channels are in-app, WhatsApp, SMS, and email; provider acceptance,
 phone arrival, and content opening remain separate evidence. Support drafts and editing,
 rescheduling, and canceling messages before delivery.
 
-Read the original [Phases 1–16](docs/implementation-phases.md), the current
-[Phases 17–24 and acceptance checklist](docs/follow-up-phases.md), and
-[the structure guide](docs/project-structure.md) before implementation. Consult
-[messaging options](docs/messaging-options.md) before provider work; it records
-ShopSmart reuse evidence and editable suggestions, not final provider decisions. Work on
-the phase or task requested by the user. Finish, verify, document, and commit that
-scope before moving on; do not implement all phases in one run. Report completion
-and the next phase, then wait for the user to start it. A request for a small task
-within a phase does not authorize the entire phase.
+Read [current project documentation](docs/README.md) and the relevant API/security
+contracts before implementation. Work only on the requested task. Finish, verify,
+document and commit that scope before adding unrelated features. Historical plans
+and progress are optional local context under ignored `.local-notes/`; public
+setup must not depend on those files.
 
 ## Inspect first and preserve conventions
 
@@ -158,7 +154,7 @@ within a phase does not authorize the entire phase.
 ## Phase 16 operations boundaries
 
 - Follow [release operations](docs/release-operations.md) and the dated
-  [verification record](docs/release-verification.md). The user requested all
+  [current project documentation](docs/README.md). The user requested all
   remaining implementation, then explicitly deferred APK/physical-device testing.
   Complete non-device work without repeating device prompts. Do not mark real
   push/native or hosted acceptance as passed from build/export evidence.
@@ -181,13 +177,10 @@ within a phase does not authorize the entire phase.
   change system volume, output device or Focus settings. Report sound failures;
   do not claim the user heard a sound just because playback returned successfully.
 
-- Use a single iOS simulator: iPhone 18 Pro Max if installed; otherwise iPhone
-  17 Pro Max. Do not create additional iPhone or iPad targets for routine work.
-  Keep one suitable Android phone emulator for Android checks, and leave it
-  stopped unless Android verification is needed. Default interactive development
-  runs the iOS app and backend; do not launch Android automatically. Simulator
-  resets erase local device data and are performed when requested, not on every
-  startup. This preference supersedes earlier multi-device QA habits.
+- Android is the only current acceptance and release target. Use the physical
+  iQOO when authorized; start an Android emulator only when needed. Do not launch
+  iOS, run iOS exports or request APNs/iOS acceptance for current work. Preserve
+  existing iOS compatibility/configuration for a future explicitly requested scope.
 - Establish the baseline and use existing scripts where available. For frontend
   implementation, follow the lint/typecheck requirements in `frontend/AGENTS.md`.
   For backend implementation, run relevant build/type checks and focused tests.
@@ -302,7 +295,7 @@ unrelated bundle, and do not split every file into a separate commit.
 
 ## Follow-up work: Phases 17–24
 
-- Work only on the requested phase in [the follow-up plan](docs/follow-up-phases.md).
+- Work only on the requested phase in [current project documentation](docs/README.md).
   Its checklist is the current completion index; dated verification records are
   evidence, not a claim that every later release passed every historical check.
 - Distinguish implemented, verified, deployed, released and device-accepted work.
@@ -400,3 +393,15 @@ unrelated bundle, and do not split every file into a separate commit.
 - Preserve native signing/Firebase credential-file formats; they are not dotenv
   files and must not be pasted into env values. Tests use synthetic settings.
   Run environment isolation tests alongside package checks after configuration changes.
+
+## Private project context
+
+- Historical phase plans, progress logs, audit evidence and task context belong
+  under ignored `.local-notes/`; never stage that directory or add its contents
+  to a release archive. Keep useful setup, API/security contracts and recovery
+  instructions in public docs. Public docs must not depend on private notes.
+- `.local-notes/context.md` is optional local continuity; a fresh clone must remain
+  understandable through README.md, docs/README.md and these instructions.
+- Current verification is Android + backend. iOS is outside current acceptance,
+  not a blocker or a claimed tested platform. Keep semantic version/native metadata
+  consistency, signed APK verification and existing security/release gates.

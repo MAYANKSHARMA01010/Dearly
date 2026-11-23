@@ -97,3 +97,11 @@ Do not extend copy validity on failure or cache auth/schedule decisions. Keep
 manual refresh authoritative, preserve unsaved settings, discard appended mailbox
 pages when their first page changes, and stop timers on blur. Phase 22 adds encrypted media files/index, per-open online access, seven-day/250 MiB
 LRU bounds and Settings cleanup. Preserve those boundaries.
+
+## Current platform scope
+
+Android is the only requested testing and release target. Use Android exports,
+the signed ARM64 APK and an authorized physical Android device for acceptance.
+Do not launch iOS or require iOS/APNs checks during current work. Preserve existing
+iOS source/configuration without claiming it tested. Shared lint/typechecks remain
+required. Private progress/context records belong in ../.local-notes/, not public docs.
