@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
       if (next === 'background') backgrounded = true;
       if (next === 'active' && backgrounded) {
         backgrounded = false;
-        if (manager.getSnapshot().status === 'authenticated') void manager.restore();
+        if (manager.getSnapshot().status === 'authenticated') void manager.restore({ preserveNavigation: true });
       }
     });
     return () => { network.remove(); subscription.remove(); unsubscribe(); };

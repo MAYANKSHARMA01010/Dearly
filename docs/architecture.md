@@ -47,7 +47,13 @@ expiry and a live session check. Sessions expire absolutely after 30 days. Refre
 rotates both tokens; replay revokes the session. Native SecureStore keeps the pair
 atomically. Refresh is serialized, and uncertainty requires sign-in again rather
 than replaying an old token. Startup/foreground restoration checks `/auth/me`
-online before protected content appears. Logout clears local credentials and
+online before protected content appears. Foreground checks retain the existing
+navigation/editor behind a blocking privacy curtain; Android picker and permission
+returns must not reset the route or discard a pending selection. Success resumes
+the same screen; offline failure stays locked with explicit retry/sign-out. A
+revoked or different account removes protected navigation. Saved-media playback
+needs reopening after an auth suspension; writes are never replayed.
+Logout clears local credentials and
 caches, disables session devices and attempts server revocation.
 
 Email is **not login**. In Profile, save an address and verify its Gmail code to

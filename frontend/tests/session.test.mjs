@@ -223,3 +223,64 @@ test('cache failure cannot stop server authentication or replay a request; write
   const s=manager(memory(),async()=>{requests++;return {ok:true};},{cache});await s.establish({...tokens(),user});assert.equal(s.getSnapshot().status,'authenticated');
   await s.request('/messages/drafts',{method:'POST'});assert.equal(requests,1);assert.equal(captures.includes('/messages/drafts'),false);await s.logout();assert.equal(s.getSnapshot().status,'anonymous');
 });
+
+test('foreground verification preserves navigation identity while blocking protected operations', async () => {
+  let resolveProfile;
+  const pending = new Promise(resolve => { resolveProfile = resolve; });
+  const s = manager(memory(), async path => { assert.equal(path, '/auth/me'); return pending; });
+  await s.establish({ ...tokens(), user });
+  const restore = s.restore({ preserveNavigation: true });
+  assert.equal(s.getSnapshot().status, 'restoring');
+  assert.deepEqual(s.getSnapshot().user, user);
+  await assert.rejects(s.request('/messages/dashboard'), e => e.kind === 'aborted' || e.status === 401);
+  resolveProfile(user); await restore;
+  assert.equal(s.getSnapshot().status, 'authenticated');
+  assert.equal(s.getSnapshot().user.id, user.id);
+});
+
+test('offline foreground verification retains locked editor identity until explicit retry succeeds', async () => {
+  const store = memory(); let offline = true;
+  const s = manager(store, async () => { if (offline) throw network(); return user; });
+  await s.establish({ ...tokens(), user });
+  await s.restore({ preserveNavigation: true });
+  assert.equal(s.getSnapshot().status, 'blocked');
+  assert.deepEqual(s.getSnapshot().user, user);
+  assert.ok(store.value);
+  offline = false; await s.restore({ preserveNavigation: true });
+  assert.equal(s.getSnapshot().status, 'authenticated');
+  assert.equal(s.getSnapshot().user.id, user.id);
+});
+
+test('foreground verification never redirects a preserved editor to a different account', async () => {
+  const store = memory();
+  const s = manager(store, async () => ({ ...user, id: 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb' }));
+  await s.establish({ ...tokens(), user });
+  await s.restore({ preserveNavigation: true });
+  assert.equal(s.getSnapshot().status, 'anonymous');
+  assert.equal(s.getSnapshot().user, null);
+  assert.equal(store.value, null);
+});
+
+test('revoked sessions remove preserved navigation identity rather than exposing an old editor', async () => {
+  const store = memory(); const s = manager(store, async () => { throw unauthorized(); });
+  await s.establish({ ...tokens(), user });
+  await s.restore({ preserveNavigation: true });
+  assert.equal(s.getSnapshot().status, 'anonymous');
+  assert.equal(s.getSnapshot().user, null);
+  assert.equal(store.value, null);
+});
+
+test('sign-out during foreground verification cannot restore the previous account', async () => {
+  let resolveProfile;
+  const pending = new Promise(resolve => { resolveProfile = resolve; });
+  const store = memory();
+  const s = manager(store, async path => path === '/auth/me' ? pending : { loggedOut: true });
+  await s.establish({ ...tokens(), user });
+  const restore = s.restore({ preserveNavigation: true });
+  await until(() => s.getSnapshot().status === 'restoring');
+  const logout = s.logout(); resolveProfile(user);
+  await Promise.all([restore, logout]);
+  assert.equal(s.getSnapshot().status, 'anonymous');
+  assert.equal(s.getSnapshot().user, null);
+  assert.equal(store.value, null);
+});

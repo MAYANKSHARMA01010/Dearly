@@ -84,6 +84,11 @@ Follow [architecture/security](docs/architecture.md) and [API workflows](docs/ap
   draft/early file access. Verified phone/email proof is required for inbox claims;
   bind once and never redirect old/recycled destinations. Imported inbox ownership
   survives later profile/link changes. GET/refresh/playback never marks opened.
+- Foreground verification must keep navigation/editor state mounted behind a
+  blocking privacy curtain. Android-owned pickers/permission activities can report
+  background; do not reset the Stack or delete pending files on their return.
+  Retained identity is never authorization: block requests/cache reads until
+  remote verification succeeds; clear it on revocation/account mismatch.
 - OTP dispatch is separate from scheduled messages. Read-only readiness precedes
   code generation/budget reservation. Cold-start polling retries only bounded,
   abortable GETs. Never replay uncertain OTP/refresh POSTs, expose development

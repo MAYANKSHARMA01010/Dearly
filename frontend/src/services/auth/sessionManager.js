@@ -90,11 +90,16 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
     getSnapshot: () => state,
     /** @param {() => void} listener */
     subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener); }; },
-    restore() {
+    /** Keep the existing navigation identity only behind the locked recovery view.
+     * It never authorizes reads/writes until the remote check succeeds.
+     * @param {{preserveNavigation?: boolean}} [options]
+     */
+    restore({ preserveNavigation = false } = {}) {
+      const retainedUser = preserveNavigation ? state.user : null;
       const expected = ++epoch;
       cache?.suspend();
       void reads.invalidate(false);
-      publish({ status: 'restoring', user: null, message: '' });
+      publish({ status: 'restoring', user: retainedUser, message: '' });
       return serial(async () => {
         try {
           const raw = await storage.read(); current(expected);
@@ -107,6 +112,7 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
           } catch { await clear('Please sign in again.'); return; }
           saved = value;
           const user = parseUser(await authorized('/auth/me', {}, expected));
+          if (retainedUser && user.id !== retainedUser.id) { await clear('Please sign in again.'); return; }
           await cache?.activate(user.id,getScope()).catch(() => {});
           current(expected);
           void cache?.capture('/auth/me',user).catch(() => {});
@@ -115,7 +121,7 @@ export function createSessionManager({ client, storage, getScope, now = Date.now
         } catch (error) {
           if (epoch !== expected) return;
           if (state.status === 'anonymous' || state.status === 'blocked') return;
-          publish({ status: 'blocked', user: null, message: error instanceof ApiError ? error.message : 'Your session could not be restored. Check your connection and retry.' });
+          publish({ status: 'blocked', user: retainedUser, message: error instanceof ApiError ? error.message : 'Your session could not be restored. Check your connection and retry.' });
         }
       });
     },

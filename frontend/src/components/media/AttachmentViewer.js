@@ -6,14 +6,18 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import {mediaPlaybackInfo,discardLocal} from '../../services/attachments/device';
 import MediaPreview from './MediaPreview';
+import {useAuth} from '../../context/AuthContext';
 import { mediaIdentity } from './AttachmentRow';
 import { darkTheme, spacing } from '../../theme';
 
 /** @param {{uri:string,mime:string,name:string,onClose:()=>void}} props */
 export default function AttachmentViewer({ uri, mime, name, onClose }) {
   const theme = useTheme();
-  const info=mediaPlaybackInfo(uri);
+  const {status}=useAuth();
+  const [info]=useState(()=>mediaPlaybackInfo(uri));
   const [expired,setExpired]=useState(false);
+  const needsAccessCheck=expired || (Boolean(info) && status!=='authenticated');
+  useEffect(()=>{if(info && status!=='authenticated')setExpired(true);},[info,status]);
   useEffect(()=>{
     if(!info)return;
     const timer=setTimeout(()=>setExpired(true),Math.max(0,info.expiresAt-Date.now()));
@@ -37,8 +41,8 @@ export default function AttachmentViewer({ uri, mime, name, onClose }) {
               <Text variant="bodySmall" style={{ color: viewerTheme.colors.onSurfaceVariant }}>{mediaIdentity(mime).label}</Text>
             </View>
           </View>
-          {expired?<View style={{flex:1,justifyContent:'center',padding:spacing.lg,gap:spacing.md}}><Text variant="titleLarge" accessibilityRole="header">Open the attachment again</Text><Text>Access needs another check. Close this viewer and reopen the attachment while connected.</Text></View>:<MediaPreview key={uri} uri={uri} mime={mime} name={name} />}
-          {info && !expired?<View style={{paddingHorizontal:spacing.md,paddingVertical:spacing.sm}}><Text variant="bodySmall" style={{color:viewerTheme.colors.onSurfaceVariant}}>{info.cacheHit?'Opened from a saved download':'Downloaded and verified'} · Available until {new Date(info.expiresAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',hour12:true})}</Text></View>:null}
+          {needsAccessCheck?<View style={{flex:1,justifyContent:'center',padding:spacing.lg,gap:spacing.md}}><Text variant="titleLarge" accessibilityRole="header">Open the attachment again</Text><Text>Access needs another check. Close this viewer and reopen the attachment while connected.</Text></View>:<MediaPreview key={uri} uri={uri} mime={mime} name={name} />}
+          {info && !needsAccessCheck?<View style={{paddingHorizontal:spacing.md,paddingVertical:spacing.sm}}><Text variant="bodySmall" style={{color:viewerTheme.colors.onSurfaceVariant}}>{info.cacheHit?'Opened from a saved download':'Downloaded and verified'} · Available until {new Date(info.expiresAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',hour12:true})}</Text></View>:null}
         </SafeAreaView>
       </GestureHandlerRootView>
     </PaperProvider>
