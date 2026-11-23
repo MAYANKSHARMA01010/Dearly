@@ -13,11 +13,11 @@ import { darkTheme, spacing } from '../../theme';
 /** @param {{uri:string,mime:string,name:string,onClose:()=>void}} props */
 export default function AttachmentViewer({ uri, mime, name, onClose }) {
   const theme = useTheme();
-  const {status}=useAuth();
+  const {status,session}=useAuth();
   const [info]=useState(()=>mediaPlaybackInfo(uri));
   const [expired,setExpired]=useState(false);
   const needsAccessCheck=expired || (Boolean(info) && status!=='authenticated');
-  useEffect(()=>{if(info && status!=='authenticated')setExpired(true);},[info,status]);
+  useEffect(()=>session.subscribe(()=>{if(info && session.getSnapshot().status!=='authenticated')setExpired(true);}),[info,session]);
   useEffect(()=>{
     if(!info)return;
     const timer=setTimeout(()=>setExpired(true),Math.max(0,info.expiresAt-Date.now()));
