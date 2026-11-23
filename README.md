@@ -1,58 +1,53 @@
 # Dearly
 
-Schedule text, photos, video, voice, and attachments for yourself or others.
+Dearly is an Android app for writing private messages now and delivering them
+later. Messages can contain text, photos, video, voice recordings and files.
 
-- `frontend/`: Expo SDK 58 with Router, NativeWind v4, Paper themes, and an API client.
-- `backend/`: Express/TypeScript runtime with Prisma/PostgreSQL readiness checks.
-- `docs/`: Project structure and implementation notes.
-- `scripts/`: Shared development scripts when needed.
+The current distribution is a signed ARM64 Android APK. Android and the backend
+are the active testing targets; iOS distribution and testing are outside current
+scope. Existing iOS-compatible source is retained for future work.
 
-Phase 1 established the folder structure. Phase 2 adds the backend runtime,
-database readiness, request safeguards, and automated checks. Phase 3 adds mobile
-routing, a home/service-status shell, shared components, and frontend checks. Those
-foundations were restored after the frontend reset on 16 November 2026. Phase 4
-adds phone OTP/session/profile APIs with explicit local simulation. Phase 13 adds
-real WhatsApp login OTP. Phase 5 adds mobile phone login, secure session recovery and
-own-profile editing, with explicit test-code labeling. Phase 6 adds private, versioned draft and recipient
-APIs. Phase 7 adds the mobile composer, manual recipients, draft list, explicit
-save/edit/delete, and unsaved/conflict recovery. See [mobile drafts](docs/mobile-drafts.md).
-Phase 8 adds private attachments, voice recording/playback, format validation and
-cleanup. See [attachments and storage](docs/attachments.md) for supported types,
-limits and the persistent-disk requirement.
-Phase 9 adds timezone-aware schedule review, confirmation, edits, rescheduling and
-cancellation. Phase 10 adds durable PostgreSQL work, a separate in-app delivery
-worker and private recipient inbox APIs; existing paused plans require a new review.
-Phase 11 adds the mobile dashboard, scoped mailboxes, private message/attachment
-details, durable activity and an explicit opened choice. See [mailboxes](docs/mailboxes.md). See [worker operations](docs/delivery-workers.md). See [scheduling](docs/scheduling.md).
-See [backend authentication](docs/authentication.md) and
-[mobile authentication](docs/mobile-auth.md) for setup and security limits.
-The [draft API contract](docs/draft-api.md) covers private message work and recipients.
+## Features
 
-See [Project structure](docs/project-structure.md) for folder responsibilities,
-feature placement, and the next implementation steps.
+- Phone-number sign-in through WhatsApp OTP; verified profile email linking.
+- Private drafts with editable manual recipients and attachments.
+- Timezone-aware scheduling, rescheduling and cancellation before dispatch.
+- Received/sent mailboxes and separate submission, delivery and opening evidence.
+- In-app, WhatsApp, SMSGate and Gmail notification channels.
+- Android push alerts, encrypted SQLite snapshots and encrypted reusable media.
 
-Follow the [implementation phases](docs/implementation-phases.md) for the roadmap
-and [backend setup](backend/README.md) to run the API on port `8080`.
+Recipients can be yourself, a Dearly user ID, a phone number or an email address.
+There is no address-book import, contact search or background contacts collection.
 
-Phases 1–14 are complete within their documented scope. Phase 12 adds real Gmail
-SMTP notifications and private links; Phase 13 adds free WAHA Core WhatsApp delivery
-and immediate login OTP. Live self-tests verified inbox arrival, user-confirmed
-WhatsApp arrival, private content and revoked-link rejection. Hosted URLs remain
-empty; localhost message links open on this Mac only. Phase 14 verifies a real scheduled SMS through SMSGate Cloud and the physical
-SIM 1 sender, signed single-part sent/delivered receipts, private content access
-and test-link revocation. See [SMS setup](docs/sms-delivery.md).
+## Stack and setup
 
-For development-task attention alerts on this Mac, run
-`sh scripts/attention-sound.sh`. Agents use it before waiting for input and finishing.
-It plays a local sound without changing Focus, volume or output settings. This is
-separate from Dearly's product notifications.
+The mobile app uses Expo SDK 58, React Native, Expo Router, NativeWind v4 and
+React Native Paper. The API uses Node 22, Express, Prisma and PostgreSQL. Neon
+stores database records and private objects; Render runs the API and WAHA.
+SMSGate requires the configured physical Android/SIM. Redis is optional.
 
-Phase 15 adds notifications and account preferences; native push acceptance remains
-pending. See [notification contracts](docs/notifications-settings.md) and
-[local Android APK builds](docs/android-apk.md).
+1. Install package dependencies in `backend/` and `frontend/`.
+2. Create each package's private `.env` from its single `.env.example`.
+3. Follow [environment setup](docs/environment-setup.md); keep credentials backend-only.
+4. Run `npm run dev --prefix backend` for the local API on port 8080.
+5. Run `npm run android --prefix frontend` when Android testing is needed.
 
-All planned code through Phase 16 is implemented. Final device/push checks are
-deferred at the user's request, and hosted deployment awaits the server URL.
-See [release verification and deferred checks](docs/release-verification.md) and
-[production operations, backup and restore](docs/release-operations.md). CI uses
-disposable PostgreSQL and fake providers; no live messages are sent by tests.
+The app prefers the configured hosted API. Local access from a phone requires
+an intentional LAN/USB setup; localhost on the phone refers to the phone itself.
+
+## Checks and releases
+
+Run `npm run check --prefix backend`, `npm run check --prefix frontend` and
+`node --test scripts/environment.test.mjs scripts/operations/*.test.mjs scripts/release/*.test.mjs`.
+CI additionally uses disposable PostgreSQL for integration/recovery checks and
+exports Android. Tests never send real provider messages.
+
+Use [Android builds](docs/android-apk.md) and [the release pipeline](docs/release-pipeline.md)
+for local signing, MAJOR.MINOR.PATCH versions, gated deployment and immutable
+GitHub APK/source/checksum publication. Published builds remain release candidates
+until the required Android acceptance is recorded. Free hosting can sleep and
+cannot promise exact delivery times.
+
+See [all project documentation](docs/README.md), [backend setup](backend/README.md)
+and [repository structure](docs/project-structure.md). Private progress/history
+is stored locally and excluded from Git and release archives.

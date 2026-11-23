@@ -25,3 +25,6 @@ frontend/ios/
 **/*.pem
 # Firebase Android client config belongs in the native app, never server keys.
 !frontend/google-services.json
+
+# Internal AI context and encrypted local recovery archives
+.local-notes/

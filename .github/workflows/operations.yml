@@ -27,7 +27,7 @@ jobs:
           node-version: '22'
       - name: Run one bounded job
         env:
-          OPERATIONS_API_URL: https://dearly-z8zm.onrender.com
+          OPERATIONS_API_URL: ${{ vars.OPERATIONS_API_URL }}
           OPERATIONS_TOKEN: ${{ secrets.OPERATIONS_TOKEN }}
           MONITORING_TOKEN: ${{ secrets.MONITORING_TOKEN }}
           OPERATIONS_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '17 * * * *' && 'maintenance' || 'monitor') }}

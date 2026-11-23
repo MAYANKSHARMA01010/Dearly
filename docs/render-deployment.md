@@ -1,7 +1,7 @@
 # Dearly hosted deployment
 
 Topology established 20 November 2026; Phase 19 routing verified 22 November.
-See [current release evidence and open gates](follow-up-phases.md). This document
+See [current project documentation](README.md). This document
 is a deployment runbook, not a fresh inspection of live settings or logs.
 
 Neon holds the PostgreSQL database and private media. Render hosts the API,
@@ -74,7 +74,7 @@ check reached READY; this deployment did not submit a real test email.
 
 ## Verification and free-service limits
 
-See [release verification](release-verification.md) for dated evidence and remaining
+See [current project documentation](README.md) for dated evidence and remaining
 physical-device checks, and [releases](releases/README.md) for the signed APK/source
 ZIP/checksum workflow. A private encrypted backup was taken while the backend was
 suspended before applying the additive relay migration. PostgreSQL 18 tools are
@@ -85,14 +85,40 @@ Android signing files independently protected.
 files on restart and shares its monthly running-hour allowance across free web
 services. PostgreSQL/object storage preserve data and session state; they do not
 make a sleeping worker run on time. Scheduled dispatch and WhatsApp reconnection
-can be delayed until services wake. No artificial keepalive, unlimited-uptime
-promise or paid upgrade is configured. Neon and Gmail quotas still apply. Stop at
+can be delayed until services wake. The user-requested liveness jobs below do not
+guarantee unlimited uptime, and no paid upgrade is configured. Neon and Gmail quotas still apply. Stop at
 quota exhaustion instead of enabling billing. Hosted backup scheduling/retention
 and real Android push/background acceptance remain operational follow-up items.
 
+### External liveness schedule — 22 November 2026
+
+At the user's explicit request, two enabled cron-job.org jobs now use GET once an hour
+(`0 * * * *`, UTC). The initial five-minute schedule was reduced on the same day
+to leave shared Render hours for other backends:
+
+| Job | ID | URL |
+| --- | --- | --- |
+| Dearly backend — liveness | 8916060 | `https://dearly-z8zm.onrender.com/health/live` |
+| Dearly WAHA — liveness | 8916069 | `https://dearly-waha-singapore.onrender.com/ping` |
+
+Both endpoints returned HTTP 200 during setup. Neither liveness handler queries
+the database; normal background workers/session activity can still access Neon.
+No credentials, custom headers or request body were added. Jobs use the default
+30-second timeout and do not expire. A cold start can exceed that timeout.
+Existing GitHub maintenance/monitoring schedules remain unchanged.
+
+[Render Free](https://render.com/docs/free) provides 750 instance-hours shared by
+the workspace each month. Two continuously running services consume two hours
+per elapsed hour, so these jobs cannot guarantee full-month availability. Quota
+exhaustion must not trigger billing or attempts to bypass the cap. This external
+configuration record changes no app code and requires no APK/version bump.
+Hourly checks allow idle services to sleep between requests; cold starts and
+delayed scheduled delivery remain possible. Actual usage depends on other
+traffic too, so this interval does not guarantee staying within the allowance.
+
 ## Phase 18 private configuration reconciliation — 21 November 2026
 
-See [environment audit](environment-audit.md). Backend and WAHA environment-update
+See [current project documentation](README.md). Backend and WAHA environment-update
 deployments succeeded on their existing code/image. The relay-mode API no longer
 stores the unused Gmail password; explicit OTP quota preserves its previous
 default. WAHA interfaces remain disabled with explicit private admin credentials
@@ -116,4 +142,18 @@ then changing the API transport URL and verifying readiness without replaying OT
 `WAHA_SERVER_API_URL` is the Singapore transport. `WAHA_SERVER_SCOPE_ORIGIN`
 retains the old hosted origin solely for this same sender's existing quota and
 receipt scope. Development ignores this override. Never use it to merge unrelated
-senders. See [measured rollout and release evidence](otp-performance.md).
+senders. See [current project documentation](README.md).
+
+## Canonical environment reconciliation — 22 November 2026
+
+API environment-only deployment `dep-dc1d76ajnfac738eugjg` is Live on the existing
+1.6.2 source `0e473ab`. Its 59 saved settings were compared exactly with the
+service-specific selection from the single private backend source. Six public or
+existing-default settings were added; three unused/redundant fields were removed.
+Credentials and effective runtime configuration were preserved. The published
+runtime still requires the legacy SMSGATE_SERVER_API_URL and SMTP_FROM field names;
+those are generated during synchronization, not stored as duplicate canonical
+inputs. Do not apply new variable names to an older image without checking its
+parser. Singapore WAHA's 22 fields already matched, so it was not restarted.
+API/database/worker liveness and WhatsApp sender READY passed without live sends.
+See [current project documentation](README.md).

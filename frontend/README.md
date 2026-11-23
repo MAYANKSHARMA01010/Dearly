@@ -1,12 +1,11 @@
 # Dearly mobile app
 
 Expo SDK 58, JavaScript, Expo Router, NativeWind v4, and React Native Paper (MD3).
-Phase 3 provides the mobile foundation. Phase 5 adds phone login, first-login
-profile setup and secure session recovery against the development-only Phase 4 API.
-Phase 7 adds private draft composition and management. Phase 8 adds photo/video/file
-selection, voice recording, private streamed transfers and media previews. See
-[attachments](../docs/attachments.md) for formats, limits and permission behavior. See [mobile drafts](../docs/mobile-drafts.md).
-See [mobile auth](../docs/mobile-auth.md) for behavior and verification limits.
+Android is the current APK distribution and acceptance target. The app provides
+WhatsApp phone login, verified email linking, private drafts, manual recipients,
+media previews, scheduling, mailboxes, preferences and Android push registration.
+Encrypted snapshots and reusable media require the project's native build;
+Expo Go is not the acceptance target. See [current documentation](../docs/README.md).
 
 ## Run locally
 
@@ -25,32 +24,20 @@ changing app configuration, or editing public environment values; `npm run start
 clears the bundler cache if needed.
 
 ```bash
-npm run ios
 npm run android
-npm run web
 ```
 
 Expo Go can run the bundled modules used here. App-specific native configuration
 such as the `dearly` URL scheme takes effect in a development/standalone build;
 Expo Go uses its own `exp://` URL. Do not generate native folders just to edit UI.
 
-## Implemented screens
+## Routes and development
 
-- `/`: Dearly home, sign-in/profile navigation, and an honest future-feature notice.
-- `/login`: country/phone entry, simulated OTP, resend countdown and recovery.
-- `/drafts`: protected saved-draft list with refresh/pagination.
-- `/drafts/new` and `/drafts/[id]`: compose/reopen, review recipients, save/edit/delete,
-  and unsaved/conflict/uncertain-outcome recovery. Saved drafts also support private
-  attachments and voice notes.
-- `/profile`: protected first-login setup, own profile editing and sign-out.
-- `/status`: checks the real `/health` and `/health/db` endpoints, shows loading,
-  available/unavailable states, and offers retry. Server/database results are
-  separate, and the last check time is visible.
-- Unmatched paths: a clear message and a working return-home action.
-
-The native Stack supplies navigation/back behavior and protected-route guards.
-Session recovery gates protected content; first login requires a name. Inbox and
-delivery remain later phases. Draft composition is implemented. OTP is explicitly simulated, not sent.
+Routes live in src/app; implementation lives in src/screens. Inspect the current
+route files instead of relying on a historical screen list. Use manual recipient
+entry; no address-book import/search or contacts permission is implemented.
+Run npm run check for shared lint, types and tests. CI exports Android only;
+standalone iOS/APNs are outside current scope.
 
 ## Structure and styling
 
@@ -155,7 +142,7 @@ native verification evidence/limits are recorded in the phase plan.
 
 See [environment setup](../docs/environment-setup.md),
 [project structure](../docs/project-structure.md), and
-[implementation phases](../docs/implementation-phases.md).
+[current project documentation](../docs/README.md).
 
 ## Scheduling
 

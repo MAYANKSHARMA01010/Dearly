@@ -82,7 +82,7 @@ oversized/invalid writes disable or skip cache work while network reads continue
 
 ## Verification
 
-See the dated Phase 20 record in [the follow-up plan](follow-up-phases.md).
+See the dated Phase 20 record in [current project documentation](README.md).
 Host SQLite tests execute actual migrations/queries and close/reopen a temporary
 file; they do not prove SQLCipher in a native binary. Native verification must
 separately prove cipher availability, restart persistence, encrypted file bytes,

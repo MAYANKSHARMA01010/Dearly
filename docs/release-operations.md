@@ -3,7 +3,7 @@
 The hosted deployment uses Render API/workers/WAHA/Key Value, Neon PostgreSQL
 and private objects, and Gmail through the protected Neon relay. See
 [Render deployment](render-deployment.md) for that topology and
-[the current baseline and open gates](follow-up-phases.md) before release. The
+[current project documentation](README.md) before release. The
 Compose instructions below describe an alternative self-managed deployment; they
 are not the current Render startup configuration. Physical Android/push acceptance
 remains separate from engineering and published RC evidence.
@@ -16,8 +16,10 @@ and fencing live in PostgreSQL. Never use a Render web URL or an incomplete Redi
 resource name as a connection string. Keep local API port 8080 and the separate
 hosted URL; production never falls back to localhost.
 
-For self-managed Compose, copy `backend/.env.production.example` into ignored
-`backend/.env.production` and fill values privately. It is deliberately incomplete.
+For self-managed Compose, fill the `HOSTED_` section of the single `backend/.env`
+using `backend/.env.example`. Select it with `node scripts/environment.mjs run
+backend-hosted -- docker compose -f scripts/compose.release.yaml up -d`.
+Never pass the complete multi-service file into a container.
 For the existing Render deployment, use private service settings and the hosted
 entrypoint; do not replace its Neon storage or Gmail relay settings with Compose
 filesystem/SMTP assumptions. Phase 18 owns env/example reconciliation. Set the
@@ -231,7 +233,7 @@ keeps failed checks from automatically becoming a new hosted deployment.
 For a user-facing deployed fix, finish with a matching signed APK and GitHub
 release unless the user explicitly defers it. Do not overwrite old release assets
 or say the installed app contains a source-only fix. Current release evidence
-and native build numbers are in [the follow-up baseline](follow-up-phases.md);
+and native build numbers are in [current project documentation](README.md);
 older dated verification records remain historical.
 
 The mobile app prefers the hosted backend even in development. Local is the

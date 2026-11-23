@@ -2,7 +2,7 @@
 
 The phase-by-phase descriptions below record how folders were introduced. They
 are historical implementation context, not pending tasks or current deployment
-status. See [the follow-up plan](follow-up-phases.md) for current work and
+status. See [current project documentation](README.md) for current work and
 [Render deployment](render-deployment.md) for hosted storage/processes.
 
 Phase 1 prepares folders for phone-only login and future messages containing

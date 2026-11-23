@@ -13,4 +13,4 @@ ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-"$ANDROID_HOME"}
 export ANDROID_HOME ANDROID_SDK_ROOT
 mkdir -p artifacts
 umask 077
-EAS_NO_VCS=1 exec eas build --platform android --profile preview --local --non-interactive --output "$DEARLY_PROJECT_DIR/artifacts/Dearly-preview.apk"
+EAS_NO_VCS=1 exec node ../scripts/environment.mjs run frontend-release -- eas build --platform android --profile preview --local --non-interactive --output "$DEARLY_PROJECT_DIR/artifacts/Dearly-preview.apk"

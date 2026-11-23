@@ -77,7 +77,7 @@ in that private configuration. The existing ShopSmart container/volume is untouc
 From the repository root:
 
 ```sh
-docker compose --env-file backend/.env -f scripts/whatsapp.compose.yaml up -d
+node scripts/environment.mjs run waha-local -- docker compose -f scripts/whatsapp.compose.yaml up -d
 npm run whatsapp:init --prefix backend
 npm run whatsapp:status --prefix backend
 npm run whatsapp:pair --prefix backend

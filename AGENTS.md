@@ -13,15 +13,11 @@ Implemented channels are in-app, WhatsApp, SMS, and email; provider acceptance,
 phone arrival, and content opening remain separate evidence. Support drafts and editing,
 rescheduling, and canceling messages before delivery.
 
-Read the original [Phases 1–16](docs/implementation-phases.md), the current
-[Phases 17–24 and acceptance checklist](docs/follow-up-phases.md), and
-[the structure guide](docs/project-structure.md) before implementation. Consult
-[messaging options](docs/messaging-options.md) before provider work; it records
-ShopSmart reuse evidence and editable suggestions, not final provider decisions. Work on
-the phase or task requested by the user. Finish, verify, document, and commit that
-scope before moving on; do not implement all phases in one run. Report completion
-and the next phase, then wait for the user to start it. A request for a small task
-within a phase does not authorize the entire phase.
+Read [current project documentation](docs/README.md) and the relevant API/security
+contracts before implementation. Work only on the requested task. Finish, verify,
+document and commit that scope before adding unrelated features. Historical plans
+and progress are optional local context under ignored `.local-notes/`; public
+setup must not depend on those files.
 
 ## Inspect first and preserve conventions
 
@@ -158,7 +154,7 @@ within a phase does not authorize the entire phase.
 ## Phase 16 operations boundaries
 
 - Follow [release operations](docs/release-operations.md) and the dated
-  [verification record](docs/release-verification.md). The user requested all
+  [current project documentation](docs/README.md). The user requested all
   remaining implementation, then explicitly deferred APK/physical-device testing.
   Complete non-device work without repeating device prompts. Do not mark real
   push/native or hosted acceptance as passed from build/export evidence.
@@ -181,13 +177,10 @@ within a phase does not authorize the entire phase.
   change system volume, output device or Focus settings. Report sound failures;
   do not claim the user heard a sound just because playback returned successfully.
 
-- Use a single iOS simulator: iPhone 18 Pro Max if installed; otherwise iPhone
-  17 Pro Max. Do not create additional iPhone or iPad targets for routine work.
-  Keep one suitable Android phone emulator for Android checks, and leave it
-  stopped unless Android verification is needed. Default interactive development
-  runs the iOS app and backend; do not launch Android automatically. Simulator
-  resets erase local device data and are performed when requested, not on every
-  startup. This preference supersedes earlier multi-device QA habits.
+- Android is the only current acceptance and release target. Use the physical
+  iQOO when authorized; start an Android emulator only when needed. Do not launch
+  iOS, run iOS exports or request APNs/iOS acceptance for current work. Preserve
+  existing iOS compatibility/configuration for a future explicitly requested scope.
 - Establish the baseline and use existing scripts where available. For frontend
   implementation, follow the lint/typecheck requirements in `frontend/AGENTS.md`.
   For backend implementation, run relevant build/type checks and focused tests.
@@ -302,7 +295,7 @@ unrelated bundle, and do not split every file into a separate commit.
 
 ## Follow-up work: Phases 17–24
 
-- Work only on the requested phase in [the follow-up plan](docs/follow-up-phases.md).
+- Work only on the requested phase in [current project documentation](docs/README.md).
   Its checklist is the current completion index; dated verification records are
   evidence, not a claim that every later release passed every historical check.
 - Distinguish implemented, verified, deployed, released and device-accepted work.
@@ -337,8 +330,14 @@ unrelated bundle, and do not split every file into a separate commit.
   bounded batches and sanitized outcomes. Actions schedules do real work, not
   keepalive traffic; missing activation/configuration must fail closed.
 - Scheduled maintenance and service monitoring must be bounded and non-overlapping.
-  Never use artificial keepalive jobs to bypass free-host sleeping or promise exact
-  delivery while services sleep. Do not create paid Render cron services. Never
+  On 22 November 2026, the user explicitly requested two cron-job.org liveness
+  jobs, later reduced to once an hour to conserve the shared Render allowance:
+  backend `/health/live` and WAHA `/ping`. These GETs
+  must not query the database or carry credentials. See the deployment runbook
+  for job IDs and limits. This scoped request supersedes the earlier no-keepalive
+  preference; do not expand it to DB readiness or provider actions. Never bypass
+  hosting quotas or promise exact delivery/continuous uptime on free services.
+  Do not create paid Render cron services. Never
   schedule WAHA logout/reset/relink or automatic replay of uncertain submissions.
 - Phase 24 coordinates release proposals, trusted local signing, exact-commit
   Render deployment and immutable publication; follow [the pipeline](docs/release-pipeline.md).
@@ -371,3 +370,40 @@ unrelated bundle, and do not split every file into a separate commit.
   separate requirements. Enable them through the authorized feature flow and
   distinguish gateway acceptance from observed arrival. A test-send permission is
   limited to its stated recipient/count; do not replay or send another automatically.
+
+## Single-source environment configuration
+
+- Maintain exactly `backend/.env`, `backend/.env.example`, `frontend/.env` and
+  `frontend/.env.example` as the package dotenv files. Do not add production,
+  local, WAHA, release or provider dotenv variants. Private files stay ignored
+  and owner-readable only. The examples document every supported setting safely.
+- Keep shared settings once under canonical names; `HOSTED_` contains only real
+  hosted differences. WAHA process options and intentional exceptions follow
+  `docs/environment-setup.md`. Do not duplicate every field under service prefixes.
+  Preserve the explicit local-only exclusion list, never replay against another
+  backend, merge paired senders or pass the complete file to a service.
+- Use `scripts/environment.mjs` to select service settings in memory. Hosted
+  platform settings still need deliberate synchronization; a local edit is not
+  a deployment. No raw environment dumps in logs, screenshots or tool output.
+- Deployment-specific URLs, sender credentials and build/project identity belong
+  in the appropriate environment. Never put backend secrets in frontend config,
+  EXPO_PUBLIC values, EAS profiles or APK assets. User-entered account/message data
+  belongs in the authenticated database, not the environment. Fixed vendor origins,
+  protocol identifiers, security bounds and test fixtures may remain in code.
+- Preserve native signing/Firebase credential-file formats; they are not dotenv
+  files and must not be pasted into env values. Tests use synthetic settings.
+  Run environment isolation tests alongside package checks after configuration changes.
+
+## Private project context
+
+- Historical phase plans, progress logs, audit evidence and task context belong
+  under ignored `.local-notes/`; never stage that directory or add its contents
+  to a release archive. Keep useful setup, API/security contracts and recovery
+  instructions in public docs. Public docs must not depend on private notes.
+- When `.local-notes/context.md` exists, read it at task start and update current
+  state, decisions, checks and outstanding work after meaningful changes. Never
+  store secrets or private message content in narrative notes. A fresh clone must
+  remain understandable through README.md, docs/README.md and these instructions.
+- Current verification is Android + backend. iOS is outside current acceptance,
+  not a blocker or a claimed tested platform. Keep semantic version/native metadata
+  consistency, signed APK verification and existing security/release gates.

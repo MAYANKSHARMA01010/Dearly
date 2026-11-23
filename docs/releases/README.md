@@ -2,9 +2,11 @@
 
 `VERSION` is the project release version. Frontend/backend packages and lockfiles,
 Expo's user-facing version and GitHub tag must agree. Native build numbers increase
-independently. The current published baseline is 1.1.3 RC1, Android code 7 and
-iOS build 7; see [current evidence and open gates](../follow-up-phases.md). Earlier
-version/build records are historical, not values to reuse.
+independently. Consult GitHub Releases for the latest published APK; VERSION may
+represent prepared source that has not been released. Never reuse a published
+version or Android build number. Android is the current distribution/acceptance
+scope. iOS build metadata stays synchronized for compatibility, without implying
+iOS testing or distribution.
 
 Use MAJOR for incompatible changes, MINOR for compatible features and PATCH for
 compatible fixes. In the commands below, replace X.Y.Z and N with the actual
@@ -17,8 +19,9 @@ node scripts/release.mjs check
 ```
 
 Review and commit the focused changes. Run checks, then build the APK locally with
-`sh scripts/build-android-apk.sh`. Its profile explicitly embeds the public hosted
-API origin; ignored `.env` files are not the release configuration mechanism.
+`sh scripts/build-android-apk.sh`. The wrapper reads public configuration from
+frontend/.env and forces the hosted production target. Backend secrets never
+reach the mobile build.
 Private local signing stays on this Mac. Do not upload the keystore, Firebase
 server key, app passwords or backend environment to GitHub.
 
@@ -48,15 +51,14 @@ provides its normal source ZIP/TAR downloads for each tag.
 An AAB is a store-upload bundle, not an installable APK. The current requested
 phone download is the signed ARM64 APK; no app-store submission is performed.
 
-## Existing automation versus planned orchestration
+## Automated verification and trusted release orchestration
 
-`.github/workflows/ci.yml` checks code, version consistency/deployment version
-gating, isolated integrations, backup drills and platform exports.
-`.github/workflows/release.yml` validates published asset hashes. Neither currently
-orchestrates signed builds, Render rollout checks and publication end to end.
-Phase 24 in [the follow-up plan](../follow-up-phases.md) owns that work. Version
-selection must consult published history; native build numbers must increase for
-every distributed binary. Never expose signing credentials to untrusted workflows.
+GitHub CI checks backend/mobile source, disposable database integrations, recovery,
+version consistency, Android exports and container definitions. The trusted local
+coordinator builds/signs the APK, gates exact-source Render deployment and publishes
+immutable release assets. See [the release pipeline](../release-pipeline.md).
+No public-repository self-hosted signing runner is installed. Provider credentials
+and signing material remain private; tests use fake transports.
 
 Documentation-only updates require no app-version bump, build or release. A runtime
 release needs the exact source commit, passed checks, matching verified APK,

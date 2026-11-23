@@ -1,6 +1,7 @@
 name: Dearly checks
 on:
   push:
+    branches: [main]
   pull_request:
 permissions:
   contents: read
@@ -47,11 +48,24 @@ jobs:
           cache-dependency-path: |
             backend/package-lock.json
             frontend/package-lock.json
-      - name: Install media validation tools
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg postgresql-client-16
+      - name: Ensure media and PostgreSQL validation tools
+        run: |
+          packages=()
+          command -v ffprobe >/dev/null || packages+=(ffmpeg)
+          if [ ! -x /usr/lib/postgresql/16/bin/pg_dump ] || [ ! -x /usr/lib/postgresql/16/bin/pg_restore ]; then
+            packages+=(postgresql-client-16)
+          fi
+          if [ ${#packages[@]} -gt 0 ]; then
+            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=30 update
+            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=30 install -y "${packages[@]}"
+          fi
+          ffprobe -version >/dev/null
+          /usr/lib/postgresql/16/bin/pg_dump --version | grep -E 'PostgreSQL\) 16[.]'
+          /usr/lib/postgresql/16/bin/pg_restore --version | grep -E 'PostgreSQL\) 16[.]'
       - run: node scripts/release.mjs check
       - run: node --test scripts/operations/*.test.mjs scripts/release/*.test.mjs
       - run: npm ci --prefix backend
+      - run: node --test scripts/environment.test.mjs
       - run: npm ci --prefix frontend
       - run: npm run check --prefix backend
       - run: npm run check --prefix frontend
@@ -63,10 +77,10 @@ jobs:
           ROLLBACK_DATABASE_URL: postgresql://dearly_ci:ci-disposable-only@127.0.0.1:5432/dearly_ci
           ROLLBACK_TAG: v1.5.0-rc.1
         run: node scripts/release/rollback-drill.mjs
-      - name: Bundle iOS and Android without signing credentials
+      - name: Bundle Android without signing credentials
         working-directory: frontend
         env:
           NODE_ENV: production
-        run: npx expo export --platform ios --platform android --output-dir /tmp/dearly-ci-export
+        run: npx expo export --platform android --output-dir /tmp/dearly-ci-export
       - name: Validate container definitions
         run: docker compose -f scripts/compose.release.yaml config --no-env-resolution --no-interpolate > /dev/null

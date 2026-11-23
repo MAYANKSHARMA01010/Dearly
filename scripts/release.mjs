@@ -180,12 +180,11 @@ function pack(tag, input) {
   if (
     tracked.some(
       (p) =>
-        /(^|\/)(?:\.runtime|\.secrets|node_modules|artifacts)\/|(?:^|\/)credentials\.json$|\.(?:jks|keystore|apk|aab)$/.test(
+        /(^|\/)(?:\.runtime|\.secrets|\.local-notes|node_modules|artifacts)\/|(?:^|\/)credentials\.json$|\.(?:jks|keystore|apk|aab)$/.test(
           p,
         ) ||
         (/(^|\/)\.env(?:\.|$)/.test(p) &&
-          !p.endsWith('.env.example') &&
-          !p.endsWith('.env.production.example')),
+          !['backend/.env.example', 'frontend/.env.example'].includes(p)),
     )
   )
     throw Error('Private/generated files are tracked; packaging refused.');

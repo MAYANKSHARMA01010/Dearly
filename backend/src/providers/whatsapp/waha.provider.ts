@@ -246,7 +246,7 @@ export class WahaProvider {
     }
     return this.sendText(
       chatId,
-      `Your private Dearly message is ready.\n\n${link}\n\nDownload Android app: ${appDownloadUrl}\n${appDownloadInstructions}\n\nThis link expires in seven days. Anyone with the link can open it; the sender can revoke it.`,
+      `Your private Dearly message is ready.\n\n${link}\n\nDownload Android app: ${appDownloadUrl()}\n${appDownloadInstructions}\n\nThis link expires in seven days. Anyone with the link can open it; the sender can revoke it.`,
     );
   }
   async sendOtp(phone: string, code: string): Promise<SubmissionResult> {

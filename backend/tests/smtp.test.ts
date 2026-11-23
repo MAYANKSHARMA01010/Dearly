@@ -12,9 +12,10 @@ const source = {
 
 test('SMTP defaults disabled and enabled mode requires complete credentials without echoing values', () => {
   assert.equal(parseEnvironment({ DATABASE_URL: source.DATABASE_URL }).email, undefined);
-  for (const key of ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM']) {
+  for (const key of ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASSWORD']) {
     assert.throws(() => parseEnvironment({ ...source, [key]: undefined }), EnvironmentError);
   }
+  assert.equal(parseEnvironment({ ...source, SMTP_FROM: undefined }).email?.from, source.SMTP_USER);
   for (const overrides of [{ SMTP_PORT: '25' }, { SMTP_FROM: 'other@gmail.com' }, { SMTP_USER: 'private-secret' }]) {
     assert.throws(() => parseEnvironment({ ...source, ...overrides }), (error: unknown) => {
       assert.ok(error instanceof EnvironmentError);

@@ -125,4 +125,4 @@ remain pending. The hosted backend URL is intentionally empty, so the standalone
 preview APK shows service configuration is needed. Physical push acceptance cannot
 be claimed from compilation, a fake gateway or a token registration. Phase 15 is
 engineering-complete, with device acceptance deferred by the user. Phase 16
-non-device checks and handover are recorded in [release verification](release-verification.md).
+non-device checks and handover are recorded in [current project documentation](README.md).

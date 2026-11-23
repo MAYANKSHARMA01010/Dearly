@@ -5,14 +5,83 @@ x-common: &common
     context: ..
     dockerfile: backend/Dockerfile
     target: runtime
-  env_file:
-    - ${DEARLY_ENV_FILE:-../backend/.env.production}
-  environment:
-    NODE_ENV: production
-    HOST: 0.0.0.0
-    PORT: '8080'
-    STORAGE_ROOT: /var/lib/dearly/attachments
-    PERSISTENT_STORAGE_CONFIRMED: 'true'
+  environment: &backend-environment
+    - APP_DOWNLOAD_URL
+    - AUTH_MODE
+    - BACKEND_LOCAL_URL
+    - BACKEND_SERVER_URL
+    - BACKUP_ENCRYPTION_KEY
+    - BODY_LIMIT_BYTES
+    - CLIENT_URL
+    - CONTENT_PUBLIC_URL
+    - DATABASE_URL
+    - EMAIL_DAILY_LIMIT
+    - EMAIL_MODE
+    - EMAIL_PUBLIC_URL
+    - EMAIL_RELAY_SECRET
+    - EMAIL_RELAY_URL
+    - EXPO_ACCESS_TOKEN
+    - EXPO_PROJECT_ID
+    - EXTERNAL_ACCESS_SECRET
+    - FFPROBE_PATH
+    - FRONTEND_URL
+    - LOG_LEVEL
+    - MONITORING_TOKEN
+    - NEON_STORAGE_ACCESS_KEY_ID
+    - NEON_STORAGE_BUCKET
+    - NEON_STORAGE_ENDPOINT
+    - NEON_STORAGE_REGION
+    - NEON_STORAGE_SECRET_ACCESS_KEY
+    - OPERATIONS_TOKEN
+    - OTP_PEPPER
+    - PG_DUMP_BIN
+    - PG_RESTORE_BIN
+    - PUSH_PROVIDER
+    - RATE_LIMIT_MAX
+    - RATE_LIMIT_WINDOW_MS
+    - REDIS_LOCAL_URL
+    - REDIS_SERVER_URL
+    - REDIS_URL
+    - RESTORE_DATABASE_URL
+    - RESTORE_STORAGE_ROOT
+    - SHUTDOWN_TIMEOUT_MS
+    - SMSGATE_CALLBACK_URL
+    - SMSGATE_API_URL
+    - SMSGATE_CONNECTION
+    - SMSGATE_DEVICE_ID
+    - SMSGATE_LOCAL_API_URL
+    - SMSGATE_PASSWORD
+    - SMSGATE_SERVER_API_URL
+    - SMSGATE_SIM_NUMBER
+    - SMSGATE_TOKEN
+    - SMSGATE_USERNAME
+    - SMSGATE_WEBHOOK_SECRET
+    - SMS_DAILY_LIMIT
+    - SMS_PROVIDER
+    - SMTP_FROM
+    - SMTP_HOST
+    - SMTP_PASSWORD
+    - SMTP_PORT
+    - SMTP_USER
+    - SOURCE_STORAGE_ROOT
+    - STORAGE_PROVIDER
+    - TRUST_PROXY_HOPS
+    - WAHA_API_KEY
+    - WAHA_CALLBACK_URL
+    - WAHA_DAILY_LIMIT
+    - WAHA_ENGINE
+    - WAHA_LOCAL_API_URL
+    - WAHA_SERVER_API_URL
+    - WAHA_SERVER_SCOPE_ORIGIN
+    - WAHA_SESSION
+    - WAHA_WEBHOOK_SECRET
+    - WHATSAPP_MODE
+    - WHATSAPP_OTP_DAILY_LIMIT
+    - NODE_ENV=production
+    - HOST=0.0.0.0
+    - PORT=8080
+    - STORAGE_ROOT=/var/lib/dearly/attachments
+    - PERSISTENT_STORAGE_CONFIRMED=true
   volumes:
     - attachments:/var/lib/dearly/attachments
   restart: unless-stopped
@@ -41,8 +110,7 @@ services:
       context: ..
       dockerfile: backend/Dockerfile
       target: migration
-    env_file:
-      - ${DEARLY_ENV_FILE:-../backend/.env.production}
+    environment: *backend-environment
     profiles: [operations]
     restart: 'no'
 volumes:
