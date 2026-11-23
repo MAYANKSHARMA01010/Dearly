@@ -1,47 +1,45 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
+# Dependencies and package-manager state
+node_modules/
 /.pnp
-.pnp.js
+/.pnp.*
 
-# testing
-/coverage
+# Generated builds, test reports and tool caches
+dist/
+coverage/
+/build/
+*.tsbuildinfo
 
-# next.js
-/.next/
-/out/
+# Private environment files; safe templates remain tracked
+.env
+.env.*
+!.env.example
 
-# production
-/build
-
-# misc
-.DS_Store
+# Local credentials, signing material and backup archives
+.secrets/
+credentials.json
 *.pem
+*.key
+*.p8
+*.p12
+*.jks
+*.keystore
+*.mobileprovision
+*.dearly
+*.dearly.json
 
-# debug
+# Generated mobile packages
+*.apk
+*.aab
+
+# Debug logs and OS metadata
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.DS_Store
 
-# local env files
-.env*.local
-.env
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# Local simulator/emulator review captures
-/.impeccable/review/
-
-# Private WhatsApp pairing artifacts and runtime files
-/backend/.runtime/
-
-/temp/
-
-# Private project context, historical plans and local review notes
+# Root-local AI/design context, runtime evidence and scratch work
+/.stitch/
+/.impeccable/
 /.local-notes/
+/backend/.runtime/
+/temp/

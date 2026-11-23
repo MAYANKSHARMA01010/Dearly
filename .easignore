@@ -28,3 +28,6 @@ frontend/ios/
 
 # Internal AI context and encrypted local recovery archives
 .local-notes/
+
+# Local design-tool state
+.stitch/
