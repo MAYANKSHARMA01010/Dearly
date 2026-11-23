@@ -40,3 +40,8 @@ next-env.d.ts
 
 # Private WhatsApp pairing artifacts and runtime files
 /backend/.runtime/
+
+/temp/
+
+# Private project context, historical plans and local review notes
+/.local-notes/

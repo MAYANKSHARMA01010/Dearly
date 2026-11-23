@@ -137,7 +137,7 @@ auth, draft, media and schedule suites remain regression checks.
 Authentication is still development-only. Email, WhatsApp and SMS delivery,
 external content links, notifications and public release work remain later phases.
 See [worker operations](delivery-workers.md), [scheduling](scheduling.md) and the
-[phase plan](implementation-phases.md) for exact completion evidence and native limits.
+[current project documentation](README.md) for exact completion evidence and native limits.
 
 ## Phase 12 extension
 

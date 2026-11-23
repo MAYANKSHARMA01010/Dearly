@@ -118,6 +118,6 @@ concurrent reads, logout and revoked-session recovery. It never sends messages.
 A forced process termination may require cleanup of that exact test schema.
 
 Native iPhone functional evidence and remaining device limits are recorded in the
-[phase completion record](implementation-phases.md). The user requested no preview
+[current project documentation](README.md). The user requested no preview
 or design review; no screenshots, visual review, additional simulators, Android
 launch, physical-device or VoiceOver audit is implied by these checks.

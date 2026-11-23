@@ -67,4 +67,4 @@ checks; they have not been claimed as passed.
 The APK above predates the SDK 58 patch alignment. Both current platform bundles
 pass, but the existing APK has not been rebuilt or physically tested at this
 checkpoint. Rebuild with the permanent backend URL before the user resumes phone
-acceptance. See [release verification](release-verification.md).
+acceptance. See [current project documentation](README.md).

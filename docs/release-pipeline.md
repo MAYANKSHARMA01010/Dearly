@@ -119,7 +119,7 @@ recovery review; the drill must fail instead of masking incompatibility.
 Build/export evidence, provider readiness and real device acceptance are distinct.
 Phone installation, notifications, media permissions, push arrival, native iOS and
 full screen-reader operation require actual observations. Follow the dated
-[phase checklist](follow-up-phases.md) for current results. Free Render/Actions
+[current project documentation](README.md) for current results. Free Render/Actions
 limits still apply; no paid runner/cron service, keepalive or provider test is added.
 
 

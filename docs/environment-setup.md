@@ -186,7 +186,7 @@ Check three different things: configuration shape, service availability and real
 provider/device behavior. Passing the first does not prove the others. For this
 phase, read-only health/auth checks are sufficient to verify credential rollout;
 new live OTP/email/SMS tests require specific authorization. Record unfinished
-rotation work in [the follow-up checklist](follow-up-phases.md).
+rotation work in [current project documentation](README.md).
 
 ## Guardrails in automation
 
@@ -208,4 +208,4 @@ HTTPS origin. Omit it for new senders; never merge unrelated accounts/sessions.
 It is ignored in development so the independently paired local gateway retains
 its own identity. This setting does not redirect network requests. The hosted section of the single
 example and validator cover this optional field. See [deployment](render-deployment.md)
-and [Phase 19 evidence](otp-performance.md). Credentials remain in private settings.
+and [current project documentation](README.md). Credentials remain in private settings.

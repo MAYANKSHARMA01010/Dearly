@@ -150,5 +150,5 @@ are installed privately and `OPERATIONS_ENABLED=true` is set in GitHub Actions.
 [First combined run](https://github.com/MAYANKSHARMA01010/Dearly/actions/runs/44987240246)
 completed successfully: maintenance succeeded, backend ready and WAHA ready.
 Unauthenticated monitoring and maintenance attempted with the monitoring key both
-returned 401. See the [dated closeout](follow-up-phases.md#phase-23-closeout--22-november-2026)
+returned 401. See the [current project documentation](README.md)
 for CI, deployment, signed APK and release evidence. No provider message was sent.

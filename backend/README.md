@@ -162,7 +162,7 @@ these overrides when upgrading either tool. Express remains v4 and Prisma v5.
 
 See [environment setup](../docs/environment-setup.md),
 [project structure](../docs/project-structure.md), and
-[implementation phases](../docs/implementation-phases.md) for remaining work.
+[current project documentation](../docs/README.md) for remaining work.
 
 ## Private attachments
 
@@ -262,7 +262,7 @@ worker startup, CI/container definitions, and encrypted backup/isolated restore.
 Start from the hosted section of `.env.example`; keep all real settings in the
 single ignored `.env`. Select service profiles using `../scripts/environment.mjs`.
 Read [operations and recovery](../docs/release-operations.md) before deployment or
-backup commands, and [release verification](../docs/release-verification.md) for
+backup commands, and [current project documentation](../docs/README.md) for
 passed checks and deferred physical/hosted acceptance. No deployment is implied.
 
 

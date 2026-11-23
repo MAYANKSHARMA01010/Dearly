@@ -81,7 +81,7 @@ reads when encryption/storage is unavailable; no fallback plaintext DB is used.
 
 ## Verification and release evidence
 
-See the dated Phase 21 record in [the follow-up plan](follow-up-phases.md).
+See the dated Phase 21 record in [current project documentation](README.md).
 Unit/integration tests cover deduplication, subscriber cancellation, expired auth
 windows, denied reads, invalidation races, bounded retry behavior and uncertain
 writes. Synthetic rendered checks cover dashboard expiry, detail status placement,

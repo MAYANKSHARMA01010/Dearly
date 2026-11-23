@@ -3,7 +3,7 @@
 The hosted deployment uses Render API/workers/WAHA/Key Value, Neon PostgreSQL
 and private objects, and Gmail through the protected Neon relay. See
 [Render deployment](render-deployment.md) for that topology and
-[the current baseline and open gates](follow-up-phases.md) before release. The
+[current project documentation](README.md) before release. The
 Compose instructions below describe an alternative self-managed deployment; they
 are not the current Render startup configuration. Physical Android/push acceptance
 remains separate from engineering and published RC evidence.
@@ -233,7 +233,7 @@ keeps failed checks from automatically becoming a new hosted deployment.
 For a user-facing deployed fix, finish with a matching signed APK and GitHub
 release unless the user explicitly defers it. Do not overwrite old release assets
 or say the installed app contains a source-only fix. Current release evidence
-and native build numbers are in [the follow-up baseline](follow-up-phases.md);
+and native build numbers are in [current project documentation](README.md);
 older dated verification records remain historical.
 
 The mobile app prefers the hosted backend even in development. Local is the

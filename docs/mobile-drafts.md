@@ -64,7 +64,7 @@ conflicting edits, explicit reload, versioned update/delete, recipient cascade a
 signed-out access. Unit tests cover validation, safe response parsing, missing
 records, uncertain writes, duplicate taps, scope clearing and late responses.
 Platform exports validate bundling; they do not establish native hardware parity.
-See the dated completion record in [the phase plan](implementation-phases.md) for
+See the dated completion record in [current project documentation](README.md) for
 native verification and remaining limits.
 
 Phase 8 adds [attachments, recording and uploads](attachments.md) to saved drafts.

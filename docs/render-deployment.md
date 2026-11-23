@@ -1,7 +1,7 @@
 # Dearly hosted deployment
 
 Topology established 20 November 2026; Phase 19 routing verified 22 November.
-See [current release evidence and open gates](follow-up-phases.md). This document
+See [current project documentation](README.md). This document
 is a deployment runbook, not a fresh inspection of live settings or logs.
 
 Neon holds the PostgreSQL database and private media. Render hosts the API,
@@ -74,7 +74,7 @@ check reached READY; this deployment did not submit a real test email.
 
 ## Verification and free-service limits
 
-See [release verification](release-verification.md) for dated evidence and remaining
+See [current project documentation](README.md) for dated evidence and remaining
 physical-device checks, and [releases](releases/README.md) for the signed APK/source
 ZIP/checksum workflow. A private encrypted backup was taken while the backend was
 suspended before applying the additive relay migration. PostgreSQL 18 tools are
@@ -118,7 +118,7 @@ traffic too, so this interval does not guarantee staying within the allowance.
 
 ## Phase 18 private configuration reconciliation — 21 November 2026
 
-See [environment audit](environment-audit.md). Backend and WAHA environment-update
+See [current project documentation](README.md). Backend and WAHA environment-update
 deployments succeeded on their existing code/image. The relay-mode API no longer
 stores the unused Gmail password; explicit OTP quota preserves its previous
 default. WAHA interfaces remain disabled with explicit private admin credentials
@@ -142,7 +142,7 @@ then changing the API transport URL and verifying readiness without replaying OT
 `WAHA_SERVER_API_URL` is the Singapore transport. `WAHA_SERVER_SCOPE_ORIGIN`
 retains the old hosted origin solely for this same sender's existing quota and
 receipt scope. Development ignores this override. Never use it to merge unrelated
-senders. See [measured rollout and release evidence](otp-performance.md).
+senders. See [current project documentation](README.md).
 
 ## Canonical environment reconciliation — 22 November 2026
 
@@ -156,4 +156,4 @@ those are generated during synchronization, not stored as duplicate canonical
 inputs. Do not apply new variable names to an older image without checking its
 parser. Singapore WAHA's 22 fields already matched, so it was not restarted.
 API/database/worker liveness and WhatsApp sender READY passed without live sends.
-See [the reconciliation evidence](environment-audit.md).
+See [current project documentation](README.md).
