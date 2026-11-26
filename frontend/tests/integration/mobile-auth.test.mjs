@@ -33,6 +33,9 @@ test('real mobile client and PostgreSQL auth: login, profile, restart, expiry, r
     const emailSql = readFileSync(new URL('../../../backend/prisma/migrations/20261120140000_verified_recipient_email/migration.sql', import.meta.url), 'utf8')
       .replace(/"(users|email_verifications)"/g, `"${schema}"."$1"`);
     for (const statement of emailSql.split(';').filter(s=>s.trim())) await db.$executeRawUnsafe(statement);
+    const cleanupSql = readFileSync(new URL('../../../backend/prisma/migrations/20261126090000_otp_message_deletion/migration.sql', import.meta.url), 'utf8')
+      .replace(/"otp_challenges"/g, `"${schema}"."otp_challenges"`);
+    for (const statement of cleanupSql.replace(/^\s*--.*$/gm, '').split(';').filter(s => s.trim())) await db.$executeRawUnsafe(statement);
     const config = parseEnvironment({ NODE_ENV: 'test', DATABASE_URL: url.toString(), AUTH_MODE: 'development', OTP_PEPPER: randomBytes(32).toString('hex') });
     const logger = { info() {}, warn() {}, error() {} };
     server = createServer(createApp(config, { prisma: db, isReady: async () => true, disconnect: async () => {} }, logger));
