@@ -7,6 +7,7 @@ import request from 'supertest';
 import { createApp } from '../../src/app';
 import { AuthService } from '../../src/services/auth.service';
 import { developmentOtpProvider, type OtpProvider, type OtpDispatchResult } from '../../src/providers/otp/otp.provider';
+import { deleteExpiredOtpMessages } from '../../src/jobs/deleteExpiredOtpMessages';
 import { ApiError } from '../../src/utils/ApiError';
 import { tokenHash } from '../../src/utils/authCrypto';
 import { captureLogger, config } from '../helpers';
@@ -51,6 +52,9 @@ test('PostgreSQL-backed auth security and HTTP contracts', { timeout: 240_000 },
     for (const statement of alertsSql.replace(/^\s*--.*$/gm, '').split(';').filter(s => s.trim())) await db.$executeRawUnsafe(statement);
     const emailSql = readFileSync('prisma/migrations/20261120140000_verified_recipient_email/migration.sql', 'utf8').replace(/"(users|email_verifications)"/g, `"${schema}"."$1"`);
     for(const statement of emailSql.split(';').filter(s=>s.trim())) await db.$executeRawUnsafe(statement);
+    const cleanupSql = readFileSync('prisma/migrations/20261126090000_otp_message_deletion/migration.sql', 'utf8')
+      .replace(/"otp_challenges"/g, `"${schema}"."otp_challenges"`);
+    for (const statement of cleanupSql.replace(/^\s*--.*$/gm, '').split(';').filter(s => s.trim())) await db.$executeRawUnsafe(statement);
     const tables = await db.$queryRaw<{ table_name: string }[]>`SELECT table_name FROM information_schema.tables WHERE table_schema = ${schema}`;
     assert.equal(tables.length, 10);
     t.beforeEach(async () => {
@@ -205,7 +209,7 @@ test('PostgreSQL-backed auth security and HTTP contracts', { timeout: 240_000 },
 
     await t.test('pending dispatch cannot verify and superseded dispatch cannot become active', async () => {
       let finish: ((outcome: OtpDispatchResult) => void) | undefined;
-      const s = service({ dispatch: () => new Promise((resolve) => { finish = resolve; }) });
+      const s = service({ deletionScope: 'synthetic-sender', dispatch: () => new Promise((resolve) => { finish = resolve; }) });
       const pending = s.requestOtp(phone);
       // Poll persisted reservation, bounded without timing-sensitive fixed sleeps.
       let c;
@@ -214,7 +218,17 @@ test('PostgreSQL-backed auth security and HTTP contracts', { timeout: 240_000 },
       await assert.rejects(service().verifyOtp(c.id, '123456'), rejectCode('INVALID_OTP'));
       time += minute; const next = await service().requestOtp(phone);
       const rejection = assert.rejects(pending, rejectCode('OTP_UNAVAILABLE'));
-      finish({ status: 'simulated', developmentCode: '123456' }); await rejection;
+      finish({ status: 'accepted', providerMessageId: 'true_12025550123@c.us_SYNTHETIC' }); await rejection;
+      const tracked = await db.otpChallenge.findUniqueOrThrow({ where: { id: c.id } });
+      assert.equal(tracked.providerMessageId, 'true_12025550123@c.us_SYNTHETIC');
+      assert.equal(tracked.deletionScope, 'synthetic-sender');
+      let deleted = 0;
+      const gateway = { scope: 'synthetic-sender', async deleteOtpMessage() { deleted++; return true; } };
+      assert.deepEqual(await deleteExpiredOtpMessages(db, gateway, now()), { deleted: 0, failed: 0 });
+      assert.deepEqual(await deleteExpiredOtpMessages(db, { ...gateway, scope: 'other-sender' }, tracked.expiresAt), { deleted: 0, failed: 0 });
+      assert.deepEqual(await deleteExpiredOtpMessages(db, gateway, tracked.expiresAt), { deleted: 1, failed: 0 });
+      assert.deepEqual(await deleteExpiredOtpMessages(db, gateway, tracked.expiresAt), { deleted: 0, failed: 0 });
+      assert.equal(deleted, 1);
       await assert.rejects(service().verifyOtp(c.id, '123456'), rejectCode('INVALID_OTP'));
       assert.ok(await service().verifyOtp(next.challengeId, '123456'));
     });

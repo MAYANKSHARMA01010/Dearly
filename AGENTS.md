@@ -148,6 +148,10 @@ Follow [operations/recovery](docs/operations.md) and [releases](docs/releases.md
   exact-source CI/migrations, sign locally, verify signer/native/archive identity,
   deploy exact source and publish immutable matching APK/ZIP/manifest/checksums.
   Never reuse a published version/build or overwrite a tag/asset. RC is not stable.
+  Before pushing runtime changes, prepare the required version/build increase and
+  run `node scripts/release.mjs check-deploy origin/main`; a successful local
+  package check does not cover the push-time semantic-version gate. Include new
+  migrations in integration fixtures that apply a selected migration subset.
 - A deployed user-facing runtime fix needs its matching signed APK/release unless
   explicitly deferred. Source alone does not update installed APKs. Docs-only
   changes need no version bump/build/deploy. Do not push/deploy unless requested.
