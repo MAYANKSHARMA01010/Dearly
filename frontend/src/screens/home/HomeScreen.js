@@ -5,6 +5,7 @@ import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import { Divider, Icon, Text, useTheme } from 'react-native-paper';
 import Screen from '../../components/layout/Screen';
 import AppButton from '../../components/common/AppButton';
+import BrandLockup from '../../components/common/BrandLockup';
 import { spacing } from '../../theme';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/auth/authService';
@@ -22,8 +23,7 @@ export default function HomeScreen() {
   if (user) return <DashboardScreen />;
   return <Screen includeTopInset>
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm }}>
-      <Icon source="email-heart-outline" size={28} color={theme.colors.primary} />
-      <Text variant="titleLarge" style={{ fontWeight: '600' }}>Dearly</Text>
+      <BrandLockup />
     </View>
     <View style={{ flex: 1, justifyContent: 'center', gap: spacing.lg, paddingVertical: spacing.lg }}>
       <Text variant="headlineLarge" accessibilityRole="header" style={{ fontWeight: '600' }}>A message for their tomorrow.</Text>

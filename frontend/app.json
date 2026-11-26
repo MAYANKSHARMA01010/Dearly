@@ -2,25 +2,24 @@
   "expo": {
     "name": "Dearly",
     "slug": "dearly",
-    "version": "1.6.3",
+    "version": "1.6.4",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/dearly-icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mayanksharma.dearly",
-      "buildNumber": "16"
+      "buildNumber": "17"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#FFFBFE",
+        "foregroundImage": "./assets/dearly-adaptive-foreground.png",
+        "monochromeImage": "./assets/dearly-adaptive-monochrome.png"
       },
       "package": "com.mayanksharma.dearly",
       "googleServicesFile": "./google-services.json",
-      "versionCode": 16,
+      "versionCode": 17,
       "blockedPermissions": [
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_MEDIA_VIDEO",
@@ -30,7 +29,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/dearly-favicon.png",
       "bundler": "metro"
     },
     "plugins": [

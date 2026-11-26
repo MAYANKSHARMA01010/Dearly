@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import Screen from '../components/layout/Screen';
 import StateView from '../components/common/StateView';
 import AppButton from '../components/common/AppButton';
+import BrandLockup from '../components/common/BrandLockup';
 import { DraftWorkspaceProvider } from '../context/DraftWorkspaceContext';
 
 function SessionNavigator() {
@@ -28,7 +29,7 @@ function SessionNavigator() {
     headerStyle: { backgroundColor: themes.paper.colors.surface },
     contentStyle: { backgroundColor: themes.paper.colors.background },
   }}>
-    <Stack.Screen name="index" options={{ title: 'Dearly', headerBackVisible: false, headerShown: Boolean(user) }} />
+    <Stack.Screen name="index" options={{ title: 'Dearly', headerTitle: () => <BrandLockup />, headerBackVisible: false, headerShown: Boolean(user) }} />
     <Stack.Screen name="status" options={{ title: 'Service status' }} />
     <Stack.Protected guard={!user}>
       <Stack.Screen name="login" options={{ title: 'Sign in' }} />
