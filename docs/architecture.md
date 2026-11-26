@@ -42,6 +42,14 @@ Codes are HMAC-hashed with a private pepper; no plaintext code enters logs/stora
 Read-only sender preparation may retry status GETs; OTP POSTs never retry silently.
 Rejected, pending, uncertain, expired or superseded dispatch cannot authenticate.
 
+New WhatsApp OTPs retain an outgoing message ID and sender scope for expiry
+cleanup. The delivery worker requests deletion for everyone after five minutes,
+including consumed/superseded codes, without reading chat history or touching
+scheduled messages. A persisted lease and bounded retries survive worker restarts.
+Deletion is best effort: sleeping hosts, offline recipients or gateway failures
+can delay/prevent it; screenshots and prior notification previews cannot be erased.
+OTP expiry is enforced by the server independently of WhatsApp deletion.
+
 Access tokens are opaque random secrets, hashed in PostgreSQL, with 15-minute
 expiry and a live session check. Sessions expire absolutely after 30 days. Refresh
 rotates both tokens; replay revokes the session. Native SecureStore keeps the pair

@@ -5,6 +5,7 @@ export type OtpDispatchResult =
 
 export interface OtpProvider {
   readonly channel?: 'whatsapp';
+  readonly deletionScope?: string;
   readonly budget?: { key: string; dailyLimit: number };
   readiness?(): Promise<'READY' | 'WARMING' | 'UNAVAILABLE'>;
   dispatch(input: { phone: string; code: string; challengeId: string }): Promise<OtpDispatchResult>;

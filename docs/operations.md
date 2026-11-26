@@ -20,6 +20,15 @@ in [releases](releases.md); key ownership is in [setup](setup.md).
 
 Render backend: root directory empty, Dockerfile `./backend/Dockerfile`, build
 context `.`, command `node dist/jobs/startHosted.js`, health path `/health/live`.
+Apply the additive OTP cleanup migration before running the updated API/worker.
+The delivery worker also sweeps tracked expired WhatsApp OTPs every poll (normally
+15 seconds), claiming at most three per cycle. Failed deletions retry the same
+message after two minutes, at most 20 attempts and within 24 hours of expiry.
+Only matching sender scopes are eligible; old unscoped OTPs are not backfilled.
+No new cron, credentials or env keys are needed. Keep the delivery worker running
+locally too for local-sender cleanup. Sanitized `auth.otp.deletion_*` events indicate
+retry/database failures; provider acceptance is not recipient-device deletion proof.
+
 The hosted supervisor starts separate API/delivery/push processes after strict
 configuration and connection-only Gmail preflight. One web instance is used;
 process-local IP limits are not distributed abuse control.

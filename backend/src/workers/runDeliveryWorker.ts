@@ -1,3 +1,4 @@
+import { deleteExpiredOtpMessages } from '../jobs/deleteExpiredOtpMessages';
 import { SmsGateProvider } from '../providers/sms/smsgate.provider';
 import { SmsReceiptService } from '../services/smsReceipt.service';
 import { WahaProvider } from '../providers/whatsapp/waha.provider';
@@ -113,6 +114,7 @@ async function main() {
       ? new ExternalDelivery(db.prisma!, config.externalAccess, providers)
       : undefined,
   );
+  const otpGateway = config.whatsapp ? new WahaProvider(config.whatsapp) : undefined;
   const stop = new AbortController();
   let deadline: NodeJS.Timeout | undefined;
   const shutdown = () => {
@@ -131,7 +133,15 @@ async function main() {
     log.info('delivery.worker.started');
     await runWorkerLoop(
       {
-        enqueue: () => enqueueDeliveries(db.prisma!),
+        enqueue: async () => {
+          if (otpGateway) {
+            try {
+              const result = await deleteExpiredOtpMessages(db.prisma!, otpGateway);
+              if (result.failed) log.warn('auth.otp.deletion_retry_pending');
+            } catch { log.error('auth.otp.deletion_cycle_failed'); }
+          }
+          return enqueueDeliveries(db.prisma!);
+        },
         claim: () => worker.claim(),
         execute: (c) => worker.execute(c),
         heartbeat: (stopped) => worker.heartbeat(id, stopped),

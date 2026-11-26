@@ -81,6 +81,7 @@ export class AuthService {
       await tx.otpChallenge.updateMany({ where: { phone, consumedAt: null }, data: { consumedAt: now } });
       const challenge = await tx.otpChallenge.create({ data: {
         id, phone, codeHash: otpHash(this.pepper, id, code), expiresAt: new Date(now.getTime() + OTP_TTL), createdAt: now,
+        ...(this.provider.deletionScope && { deletionScope: this.provider.deletionScope, deleteAfter: new Date(now.getTime() + OTP_TTL) }),
       } });
       return { challenge, code };
     }), this.logger, requestId);
@@ -89,11 +90,15 @@ export class AuthService {
     try { outcome = await timeOtpStage('DISPATCH', () => this.provider.dispatch({ phone, code: reservation.code, challengeId: reservation.challenge.id }), this.logger, requestId); }
     catch { outcome = { status: 'unknown', code: 'DISPATCH_UNCERTAIN' }; }
     const active = await timeOtpStage('FINALIZATION', () => this.locked(`phone:${phone}`, async (tx) => {
+      // Preserve cleanup identity even if another request superseded this code
+      // while the gateway was sending. It never makes that code valid again.
+      if (outcome.status === 'accepted')
+        await tx.otpChallenge.updateMany({ where: { id: reservation.challenge.id },
+          data: { providerMessageId: outcome.providerMessageId } });
       const updated = await tx.otpChallenge.updateMany({ where: {
         id: reservation.challenge.id, consumedAt: null, expiresAt: { gt: this.now() }, dispatchStatus: 'pending',
       }, data: {
         dispatchStatus: outcome.status,
-        providerMessageId: outcome.status === 'accepted' ? outcome.providerMessageId : null,
       } });
       return updated.count === 1;
     }), this.logger, requestId);

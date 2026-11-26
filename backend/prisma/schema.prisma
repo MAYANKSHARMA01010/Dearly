@@ -52,8 +52,13 @@ model OtpChallenge {
   consumedAt        DateTime?
   dispatchStatus    String    @default("pending")
   providerMessageId String?
+  deletionScope     String?
+  deleteAfter       DateTime?
+  deleteAttempts    Int       @default(0)
+  deletedAt         DateTime?
   createdAt         DateTime  @default(now())
 
+  @@index([deletionScope, deleteAfter])
   @@index([phone, createdAt])
   @@index([expiresAt])
   @@map("otp_challenges")

@@ -93,6 +93,10 @@ Follow [architecture/security](docs/architecture.md) and [API workflows](docs/ap
   code generation/budget reservation. Cold-start polling retries only bounded,
   abortable GETs. Never replay uncertain OTP/refresh POSTs, expose development
   simulation publicly, silently fall back to SMS or fabricate delivery evidence.
+  Track new outgoing WhatsApp OTP IDs with their sender scope for best-effort
+  deletion after expiry. Preserve durable leases/retry bounds; never enumerate
+  chats, delete scheduled messages or claim deletion is guaranteed. Expiry must
+  remain enforced independently of provider cleanup.
 - Preserve UTC instants, IANA zones, DST rejection, signed review expiry and
   version/content/media/recipient/consent binding. Use the shared message lock.
   DISPATCHING ends editing/canceling, including during retries. Paused plans need

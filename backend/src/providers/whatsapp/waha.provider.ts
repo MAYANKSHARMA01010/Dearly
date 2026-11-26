@@ -249,6 +249,19 @@ export class WahaProvider {
       `Your private Dearly message is ready.\n\n${link}\n\nDownload Android app: ${appDownloadUrl()}\n${appDownloadInstructions}\n\nThis link expires in seven days. Anyone with the link can open it; the sender can revoke it.`,
     );
   }
+  /** Revoke only one recorded outgoing OTP; never enumerate or clear chats. */
+  async deleteOtpMessage(messageId: string): Promise<boolean> {
+    const match = /^true_([0-9]{5,20}@(c\.us|lid))_[A-Za-z0-9_-]+$/.exec(messageId);
+    if (!match || messageId.length > 255) return false;
+    try {
+      const response = await this.http(
+        `/api/${encodeURIComponent(this.config.session)}/chats/${encodeURIComponent(match[1])}/messages/${encodeURIComponent(messageId)}?forMe=false`,
+        { method: 'DELETE' },
+      );
+      // A 404 can mean a missing session, not proof of deletion.
+      return response.ok;
+    } catch { return false; }
+  }
   async sendOtp(phone: string, code: string): Promise<SubmissionResult> {
     if (!/^\d{6}$/.test(code))
       return { state: 'REJECTED', code: 'INVALID_OTP', providerMessageId: null };
