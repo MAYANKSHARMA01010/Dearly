@@ -52,7 +52,7 @@ function fixture() {
       if (ledger.has(key))
         return { kind: "duplicate", result: ledger.get(key)! };
       ledger.set(key, null);
-      return { kind: "claimed", to: "canonical@example.com" };
+      return { kind: "claimed", to: "canonical@example.com", senderName: "Alex Morgan" };
     },
     complete: async (key, result) => {
       if (failPersist) throw Error("synthetic persistence failure");
@@ -65,7 +65,8 @@ function fixture() {
     accessSecret,
     publicUrl: "https://dearly.example",
     repository,
-    send: async (to, link, key) => {
+    send: async (to, link, key, senderName) => {
+      assert.equal(senderName, "Alex Morgan");
       sends++;
       assert.equal(to, "canonical@example.com");
       assert.equal(

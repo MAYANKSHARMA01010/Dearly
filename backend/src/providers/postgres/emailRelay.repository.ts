@@ -30,7 +30,7 @@ export class PostgresEmailRelay implements EmailRelayRepository {
     }
   }
   async claim(id: string): Promise<RelayClaim> {
-    const created = await this.db.query<{ email: string }>(
+    const created = await this.db.query<{ email: string; senderName: string | null }>(
       `
    WITH claimed AS (
     INSERT INTO email_relay_submissions (id)
@@ -42,11 +42,12 @@ export class PostgresEmailRelay implements EmailRelayRepository {
       AND EXISTS (SELECT 1 FROM delivery_work w WHERE w."messageId"=m.id AND w.state='RUNNING'
        AND w."leaseExpiresAt">CURRENT_TIMESTAMP AND m.version=w."scheduleVersion"+1)
     ON CONFLICT (id) DO NOTHING RETURNING id
-   ) SELECT r.email FROM claimed c JOIN email_deliveries e ON e.id=c.id
-     JOIN delivery_intents i ON i.id=e."intentId" JOIN draft_recipients r ON r.id=i."recipientId"`,
+   ) SELECT r.email, u.name AS "senderName" FROM claimed c JOIN email_deliveries e ON e.id=c.id
+     JOIN delivery_intents i ON i.id=e."intentId" JOIN draft_recipients r ON r.id=i."recipientId"
+     JOIN draft_messages m ON m.id=i."messageId" JOIN users u ON u.id=m."ownerId"`,
       [id],
     );
-    if (created.rows[0]) return { kind: "claimed", to: created.rows[0].email };
+    if (created.rows[0]) return { kind: "claimed", to: created.rows[0].email, senderName: created.rows[0].senderName };
     const existing = await this.db.query<{ result: unknown }>(
       `SELECT result FROM email_relay_submissions WHERE id=$1`,
       [id],

@@ -1,3 +1,4 @@
+import { senderDisplayName } from '../../utils/senderDisplayName';
 import { publicDeliveryLink } from '../../utils/deliveryLinks';
 import { createHash } from 'node:crypto';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
@@ -9,7 +10,14 @@ import { boundedJson } from '../../utils/boundedJson';
 export type SmsGateStatus = 'READY' | 'OFFLINE' | 'AUTH_FAILED' | 'DISABLED' | 'MISCONFIGURED';
 export const smsScope = (c: SmsGateConfig) => createHash('sha256')
   .update(`smsgate:${c.baseUrl}:${c.connection}:${c.deviceId ?? 'local'}:${c.simNumber}:${createHash('sha256').update(c.webhookSecret).digest('hex')}`).digest('hex');
-export const smsText = (link: string) => `Dearly (7-day link): ${link}`;
+export function smsText(link: string, senderName?: string | null) {
+  const display = senderDisplayName(senderName);
+  // A Unicode name makes the entire long bearer link UTF-16 (70-unit limit).
+  // Keep the existing one-segment policy without corrupting the name/link.
+  const name = Array.from(smsSegments(display).encoding === 'GSM-7' ? display : 'Someone');
+  while (name.length > 1 && smsSegments(`Dearly from ${name.join('')} (7 days): ${link}`).segments > 1) name.pop();
+  return `Dearly from ${name.join('')} (7 days): ${link}`;
+}
 export const smsLinkFits = (origin: string) => publicDeliveryLink(origin) && smsSegments(smsText(`${origin}/external/#00000000-0000-4000-8000-000000000000.${'a'.repeat(43)}`)).segments === 1;
 const outcome = (state: SubmissionResult['state'], code: string | null, providerMessageId: string | null = null): SubmissionResult => ({ state, code, providerMessageId });
 
@@ -42,7 +50,7 @@ export class SmsGateProvider {
       return Number.isFinite(lastSeen) && Date.now() - lastSeen <= 1200000 && lastSeen <= Date.now() + 60000 ? 'READY' : 'OFFLINE';
     } catch { return 'OFFLINE'; }
   }
-  async send(phone: string, link: string, id: string): Promise<SubmissionResult> {
+  async send(phone: string, link: string, id: string, senderName?: string | null): Promise<SubmissionResult> {
     const parsed = parsePhoneNumberFromString(phone);
     if (!parsed?.isValid() || parsed.number !== phone || !/^\+[1-9]\d{5,14}$/.test(phone))
       return outcome('REJECTED', 'INVALID_RECIPIENT');
@@ -52,7 +60,7 @@ export class SmsGateProvider {
       if (!['http:', 'https:'].includes(u.protocol) || u.username || u.password || !/^[0-9a-f-]{36}$/.test(id)) throw Error();
     } catch { return outcome('REJECTED', 'INVALID_RECIPIENT'); }
     // One carrier segment per notification. No media, message body or shortening service.
-    const text = smsText(link);
+    const text = smsText(link, senderName);
     if (smsSegments(text).segments !== 1) return outcome('REJECTED', 'SMS_TOO_LONG');
     const readiness = await this.readiness();
     if (readiness !== 'READY') return outcome('RETRYABLE', readiness === 'AUTH_FAILED' ? 'SMSGATE_AUTH' : 'SMSGATE_OFFLINE');

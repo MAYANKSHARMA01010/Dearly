@@ -224,3 +224,15 @@ or pending selections. Logout/account/origin changes purge Dearly caches and rev
 in-flight leases. OS eviction is a normal miss; remote revocation is not instant
 while a permitted copy is open. Suspended processes and flash erasure cannot offer
 instant physical deletion guarantees. Secrets/private content never enter logs.
+
+## Sender attribution in external notifications
+
+Scheduled email (subject and body), WhatsApp and SMS identify the sender using
+the message owner's saved profile name at submission time. Names are display
+labels, not verified legal identities. Blank names use “Someone”; notification
+text never substitutes a sender phone/email or exposes message content. Email
+markup is escaped, control/bidi characters are removed and label length is bounded.
+The Gmail relay resolves the name from the durable intent's owner, never caller
+input. Gmail's actual From address remains the configured Dearly mailbox.
+SMS shortens GSM-compatible names to preserve the one-segment/link budget; names
+that would force Unicode encoding use “Someone”. OTPs remain system notifications.

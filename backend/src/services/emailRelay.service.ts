@@ -11,7 +11,7 @@ import {
 } from "../providers/email/relay.protocol";
 import { accessToken } from "../utils/externalAccessToken";
 export type RelayClaim =
-  | { kind: "claimed"; to: string }
+  | { kind: "claimed"; to: string; senderName?: string | null }
   | { kind: "duplicate"; result: EmailResult | null }
   | { kind: "inactive" };
 export interface EmailRelayRepository {
@@ -109,6 +109,7 @@ export function createEmailRelayHandler(c: {
               claim.to,
               verification ? emailVerificationCode(id, c.accessSecret) : `${c.publicUrl}/external/#${accessToken(id, c.accessSecret)}`,
               id,
+              verification ? undefined : claim.senderName,
             ),
           );
           result = parsed.success ? parsed.data : uncertain;

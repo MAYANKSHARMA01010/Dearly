@@ -18,14 +18,14 @@ test('SMSGate sends one short private link with a deterministic reservation ID a
     calls.push({ url: String(url), options });
     return options?.method ? accepted() : Response.json({ status: 'pass' });
   });
-  assert.equal((await provider.send(phone, link, id)).state, 'ACCEPTED');
+  assert.equal((await provider.send(phone, link, id, 'Alex Morgan')).state, 'ACCEPTED');
   const body = JSON.parse(String(calls[1].options?.body));
   assert.equal(calls[1].url, `${settings.baseUrl}/message`);
   assert.deepEqual(body.phoneNumbers, [phone]);
   assert.equal(body.id, id); assert.equal(body.simNumber, 1);
   assert.equal(body.withDeliveryReport, true); assert.equal(body.ttl, 300); assert.equal(body.priority, 0);
   assert.equal(body.scheduleAt, undefined); assert.equal(body.deviceId, undefined);
-  assert.equal(body.textMessage.text, `Dearly (7-day link): ${link}`);
+  assert.equal(body.textMessage.text, `Dearly from Alex Morgan (7 days): ${link}`);
   assert.equal(calls[1].options?.redirect, 'error');
   assert.equal(smsLinkFits('http://localhost:8080'), false);
   assert.ok(smsLinkFits('https://dearly.example'));

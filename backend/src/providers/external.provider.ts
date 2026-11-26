@@ -8,6 +8,6 @@ export interface ExternalProvider {
   senderKey: string;
   dailyLimit: number;
   scope?: string;
-  send(to: string, link: string, id: string): Promise<SubmissionResult>;
+  send(to: string, link: string, id: string, senderName?: string | null): Promise<SubmissionResult>;
   reconcile?(providerMessageId: string): Promise<void>;
 }

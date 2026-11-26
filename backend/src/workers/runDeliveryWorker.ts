@@ -96,14 +96,14 @@ async function main() {
       senderKey: `whatsapp:${waha.scope}`,
       scope: waha.scope,
       dailyLimit: config.whatsapp.dailyLimit,
-      send: (to, link) => waha.send(to, link),
+      send: (to, link, _id, senderName) => waha.send(to, link, senderName),
       reconcile: (id) => receipts.reconcile(id),
     };
   }
   if (config.sms) {
     const sms = new SmsGateProvider(config.sms), receipts = new SmsReceiptService(db.prisma!, config.sms);
     providers.SMS = { senderKey: `sms:${sms.scope}`, scope: sms.scope, dailyLimit: config.sms.dailyLimit,
-      send: (to, link, id) => sms.send(to, link, id), reconcile: (id) => receipts.reconcile(id) };
+      send: (to, link, id, senderName) => sms.send(to, link, id, senderName), reconcile: (id) => receipts.reconcile(id) };
   }
   const worker = new DeliveryWorker(
     db.prisma!,

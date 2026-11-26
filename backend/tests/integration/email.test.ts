@@ -96,6 +96,7 @@ test(
       const owner = await db.user.create({
           data: {
             phone: '+12025550160',
+            name: 'Alex Morgan',
             phoneVerifiedAt: new Date('2020-01-01'),
           },
         }),
@@ -117,7 +118,7 @@ test(
         };
       const repository=new PostgresEmailRelay(pool);
       const relayHandler=createEmailRelayHandler({secret,accessSecret:key,publicUrl:access.publicUrl,repository,
-        send:async()=>{sends++;return result;},verify:async()=> 'READY'});
+        send:async(_to,_link,_id,senderName)=>{assert.equal(senderName,'Alex Morgan');sends++;return result;},verify:async()=> 'READY'});
       const sender=new EmailRelay({mode:'relay',url:'https://relay.example',secret,user:'synthetic@gmail.com',from:'synthetic@gmail.com'},
         async(input,init)=>relayHandler.fetch(new Request(String(input),init))).send;
       assert.equal(await repository.ready(),true);

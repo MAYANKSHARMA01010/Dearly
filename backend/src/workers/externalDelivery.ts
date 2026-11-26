@@ -113,7 +113,7 @@ export class ExternalDelivery {
       const channel = intent.channel as ExternalChannel,
         provider = this.providers[channel];
       const prepared = await this.tx(async (tx) => {
-        const { now } = await this.held(tx, c);
+        const { m, now } = await this.held(tx, c);
         const old = await tx.externalDelivery.findUnique({
           where: { intentId: intent.id },
         });
@@ -198,6 +198,7 @@ export class ExternalDelivery {
         });
         return {
           id: row.id,
+          senderName: (await tx.user.findUnique({ where: { id: m.ownerId }, select: { name: true } }))?.name,
           to:
             channel === 'EMAIL'
               ? intent.recipient.email!
@@ -216,6 +217,7 @@ export class ExternalDelivery {
         prepared.to,
         `${this.access.publicUrl}/external/#${accessToken(prepared.id, this.access.secret)}`,
         prepared.id,
+        prepared.senderName,
       );
       await this.tx(async (tx) => {
         const { now } = await this.held(tx, c);

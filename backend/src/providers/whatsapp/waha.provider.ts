@@ -1,3 +1,4 @@
+import { senderDisplayName } from '../../utils/senderDisplayName';
 import { appDownloadUrl, appDownloadInstructions, publicDeliveryLink } from '../../utils/deliveryLinks';
 import { boundedJson } from '../../utils/boundedJson';
 export { boundedJson } from '../../utils/boundedJson';
@@ -224,7 +225,7 @@ export class WahaProvider {
     try { return await this.otpProbe; }
     finally { this.otpProbe = null; }
   }
-  async send(to: string, link: string): Promise<SubmissionResult> {
+  async send(to: string, link: string, senderName?: string | null): Promise<SubmissionResult> {
     const result = (
       state: SubmissionResult['state'],
       code: string | null,
@@ -246,7 +247,7 @@ export class WahaProvider {
     }
     return this.sendText(
       chatId,
-      `Your private Dearly message is ready.\n\n${link}\n\nDownload Android app: ${appDownloadUrl()}\n${appDownloadInstructions}\n\nThis link expires in seven days. Anyone with the link can open it; the sender can revoke it.`,
+      `${senderDisplayName(senderName).replace(/[*_~`]/g, '') || 'Someone'} sent you a private message via Dearly.\n\n${link}\n\nDownload Android app: ${appDownloadUrl()}\n${appDownloadInstructions}\n\nThis link expires in seven days. Anyone with the link can open it; the sender can revoke it.`,
     );
   }
   /** Revoke only one recorded outgoing OTP; never enumerate or clear chats. */

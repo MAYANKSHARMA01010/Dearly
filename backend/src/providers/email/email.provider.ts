@@ -1,3 +1,4 @@
+import { senderDisplayName } from '../../utils/senderDisplayName';
 import { appDownloadUrl, appDownloadInstructions, publicDeliveryLink } from '../../utils/deliveryLinks';
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
@@ -13,6 +14,7 @@ export type EmailSender = (
   to: string,
   link: string,
   id: string,
+  senderName?: string | null,
 ) => Promise<EmailResult>;
 export const escapeHtml = (value: string) =>
   value.replace(
@@ -22,12 +24,13 @@ export const escapeHtml = (value: string) =>
         c
       ]!,
   );
-export function emailTemplate(link: string) {
+export function emailTemplate(link: string, senderName?: string | null) {
   if (!publicDeliveryLink(link)) throw Error('Invalid public message link');
+  const sender = senderDisplayName(senderName);
   return {
-    subject: 'Your Dearly message is ready',
-    text: `Someone has sent you a private Dearly message.\n\nOpen message: ${link}\n\nDownload Android app: ${appDownloadUrl()}\n${appDownloadInstructions}\n\nThis link expires in seven days. Anyone with the link can open this message. The sender can revoke it.`,
-    html: `<h1>Your Dearly message is ready</h1><p>Someone has sent you a private message.</p><p><a href="${escapeHtml(link)}">Open message</a></p><h2>Get the Dearly app</h2><p><a href="${appDownloadUrl()}">Download Android app from GitHub Releases</a></p><p>${appDownloadInstructions}</p><p>This link expires in seven days. Anyone with the link can open this message. The sender can revoke it.</p>`,
+    subject: `${sender} sent you a private message via Dearly`,
+    text: `${sender} sent you a private message via Dearly.\n\nOpen message: ${link}\n\nDownload Android app: ${appDownloadUrl()}\n${appDownloadInstructions}\n\nThis link expires in seven days. Anyone with the link can open this message. The sender can revoke it.`,
+    html: `<h1>Your Dearly message is ready</h1><p style="overflow-wrap:anywhere;word-break:break-word">${escapeHtml(sender)} sent you a private message.</p><p><a href="${escapeHtml(link)}">Open message</a></p><h2>Get the Dearly app</h2><p><a href="${appDownloadUrl()}">Download Android app from GitHub Releases</a></p><p>${appDownloadInstructions}</p><p>This link expires in seven days. Anyone with the link can open this message. The sender can revoke it.</p>`,
   };
 }
 export function smtpFailure(error: unknown): EmailResult {
@@ -71,7 +74,7 @@ export function verificationEmailTemplate(code: string) {
 }
 export function createEmailSender(config: SmtpConfig | RelayEmailConfig, verification = false): EmailSender {
   if (config.mode === 'relay') return verification ? new EmailRelay(config).sendVerification : new EmailRelay(config).send;
-  return async (to, link, id) => {
+  return async (to, link, id, senderName) => {
     if (!(verification ? /^\d{6}$/.test(link) : publicDeliveryLink(link))) return { state: 'REJECTED', code: 'INVALID_CONTENT_URL', providerMessageId: null };
     if (!z.email().safeParse(to).success)
       return {
@@ -88,7 +91,7 @@ export function createEmailSender(config: SmtpConfig | RelayEmailConfig, verific
           to: { address: to, name: '' },
           envelope: { from: config.from, to: [to] },
           messageId: `<${id}@dearly.local>`,
-          ...(verification ? verificationEmailTemplate(link) : emailTemplate(link)),
+          ...(verification ? verificationEmailTemplate(link) : emailTemplate(link, senderName)),
         }),
         new Promise<never>((_resolve, reject) => {
           timeout = setTimeout(() => {
