@@ -44,3 +44,13 @@ Visual proposals are guidance for native components, not HTML to paste into the
 app. Do not change providers, authentication, scheduling, ownership checks or data
 contracts while polishing UI. Never embed credentials or private content in design
 prompts or render fixtures.
+
+## Dearly brand mark
+
+Use the violet folded-letter mark with a heart cutout in
+frontend/assets/dearly-mark.png. Keep the adjacent wordmark as real text and
+make the repeated image decorative for accessibility. A light neutral tile keeps
+the mark legible in both themes. Website delivery uses a compact same-origin PNG.
+Launcher assets keep generous transparent padding plus an independent monochrome
+layer; do not replace them with a screenshot of the wordmark. The original
+AI-generated concept was normalized to the existing solid violet color.
