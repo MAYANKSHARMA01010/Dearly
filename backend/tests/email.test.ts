@@ -72,6 +72,12 @@ test('external viewer is no-store and opening without authorization never return
   assert.equal(page.headers['cache-control'], 'no-store');
   assert.equal(page.headers['referrer-policy'], 'no-referrer');
   assert.match(page.headers['content-security-policy'], /default-src 'none'/);
+  assert.match(page.headers['content-security-policy'], /img-src 'self' blob:/);
+  assert.match(page.text, /<header class="brand"><img src="\/external\/logo\.png" width="48" height="48" alt=""><span>Dearly<\/span>/);
+  const logo = await request(app).get('/external/logo.png').expect(200).expect('Content-Type', /image\/png/);
+  assert.deepEqual([...logo.body.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  assert.equal(logo.headers['x-content-type-options'], 'nosniff');
+
   await request(app)
     .post('/external/open')
     .send({ token: 'invalid' })

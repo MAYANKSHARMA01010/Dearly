@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { join } from 'node:path';
 import type { PrismaClient } from '@prisma/client';
 import type { AppConfig } from '../configs/env';
 import type { AuthService } from '../services/auth.service';
@@ -19,7 +20,7 @@ export function createExternalAccessRouter(
       'Cache-Control': 'no-store',
       'Referrer-Policy': 'no-referrer',
       'Content-Security-Policy':
-        "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; img-src blob:; media-src blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
+        "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self' blob:; media-src blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
       'X-Content-Type-Options': 'nosniff',
     });
     if (
@@ -40,6 +41,7 @@ export function createExternalAccessRouter(
     next();
   });
   router.get('/', (_req, res) => res.type('html').send(externalViewer()));
+  router.get('/logo.png', (_req, res) => res.type('png').sendFile(join(__dirname, '../../public/dearly-logo.png')));
   router.get('/viewer.js', (_req, res) => res.type('js').send(externalScript));
   if (!db || !config.externalAccess) {
     router.use((_req, _res, next) =>
