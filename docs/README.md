@@ -1,8 +1,11 @@
 # Dearly documentation
 
-Dearly is an Android app for creating private messages and delivering them later
-through in-app, WhatsApp, SMS and Gmail channels. Android APK and backend are the
-current testing/release scope. Existing iOS source is retained for future work.
+Dearly is an Android digital time capsule app for preserving personal memories,
+feelings and wishes and making them available to your future self or chosen people
+at a scheduled time. In-app access and controlled external links provide access
+to due capsules; WhatsApp, SMS, Gmail and push support notifications, with WhatsApp
+OTP used for phone sign-in. Android APK and backend are the current testing/release
+scope. Existing iOS source is retained for future work.
 
 | Guide | Read it for |
 | --- | --- |
@@ -12,7 +15,9 @@ current testing/release scope. Existing iOS source is retained for future work.
 | [Deployment, operations and recovery](operations.md) | Render/Neon topology, diagnostics, scheduled jobs, backups, restore and limitations |
 | [Android builds and releases](releases.md) | Local APK signing, major.minor.patch, exact-source deployment and GitHub publication |
 
-Start with the [root README](../README.md). API schemas live in the running
+Start with the [root README](../README.md), including its
+[project explanation and viva answers](../README.md#project-explanation-and-viva-answers).
+API schemas live in the running
 backend's `/api/docs` and `/api/openapi.json`; keep Markdown focused on behavior
 and workflows rather than duplicating every schema. Canonical key descriptions
 live in [backend/.env.example](../backend/.env.example) and

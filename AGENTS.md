@@ -2,9 +2,11 @@
 
 ## Scope and context
 
-- Dearly creates private drafts and delivers reviewed messages later through
-  in-app, WhatsApp, SMS and Gmail channels. Phone OTP is login; verified email
-  linking is a separate profile flow. Preserve the implemented behavior.
+- Describe Dearly as a digital time capsule app for preserving memories, feelings
+  and wishes and sharing them with a future self or chosen people at a scheduled
+  time. Existing message/draft models implement capsules; in-app access and
+  external notifications support their availability. Phone OTP is login; verified
+  email linking is a separate profile flow. Preserve the implemented behavior.
 - Android APK and backend are the current acceptance/release targets. Do not
   launch iOS, run iOS exports or request APNs acceptance. Preserve existing iOS
   source/configuration and synchronized native metadata for possible future scope.

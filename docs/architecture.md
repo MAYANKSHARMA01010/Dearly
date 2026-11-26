@@ -1,9 +1,18 @@
 # Architecture and security
 
-Dearly is an Android app for composing private messages and delivering them later.
-It supports text, photos, videos, voice and files; recipients may be self, a Dearly
-user ID, a phone number or an email address. This guide describes current behavior,
-not phase history or proof that a particular deployment was tested.
+Dearly is an Android digital time capsule app for preserving memories, feelings
+and wishes and sharing them at a meaningful future time. Capsules support text,
+photos, videos, voice and files; recipients may be self, a Dearly user ID, a phone
+number or an email address. This guide describes current behavior, not phase
+history or proof that a particular deployment was tested.
+
+“Capsule” describes the product experience. Existing code, database models, APIs
+and screen labels use message, draft, recipient, schedule and mailbox terminology
+for the underlying content and delivery lifecycle. Those identifiers remain the
+technical reference throughout this guide. WhatsApp, SMS, email and push support
+verification or capsule notifications; private content access follows the due-time
+and ownership rules below. Capsule scheduling does not imply indefinite archival
+guarantees or end-to-end encryption.
 
 ## Code and data ownership
 

@@ -1,5 +1,10 @@
 # Dearly Android app
 
+Dearly is a digital time capsule app for capturing memories, feelings and wishes
+and scheduling them for your future self or chosen people. The mobile experience
+covers capsule creation, attachments, review, scheduling and access to due content.
+Existing route/screen names use drafts, schedules and mailboxes for these features.
+
 Expo SDK 58, React Native, Expo Router, NativeWind v4 and React Native Paper.
 Feature screens live in `src/screens/`; `src/app/` owns routes and protected layouts.
 `index.js` loads global CSS and Router, with providers in `src/app/_layout.js`.

@@ -1,5 +1,10 @@
 # Dearly backend
 
+The backend supports Dearly's digital time capsules: private multimedia content
+prepared today and made available to selected recipients at a scheduled future
+time. Existing message/draft models represent capsules; delivery providers support
+notifications and controlled access to due content.
+
 Node 22, Express, TypeScript, Prisma and PostgreSQL. The API handles phone auth,
 private drafts/media, reviewed schedules, mailboxes, notifications and signed
 provider callbacks. Separate supervised processes perform delivery and push work;
