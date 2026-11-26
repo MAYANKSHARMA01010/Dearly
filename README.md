@@ -51,3 +51,7 @@ cannot promise exact delivery times.
 See [all project documentation](docs/README.md), [backend setup](backend/README.md)
 and [repository structure](docs/architecture.md#code-and-data-ownership). Private progress/history
 is stored locally and excluded from Git and release archives.
+
+A user-requested [redacted AI conversation archive](AI_CHAT_HISTORY.md) records
+project discussions. It is historical context; use the current guides for setup
+and behavior.
