@@ -47,6 +47,12 @@ Render cache; do not set PERSISTENT_STORAGE_CONFIRMED=true for ephemeral disk.
 STORAGE_PROVIDER=local is valid only with an actual private persistent volume.
 Never migrate/delete objects without checking database references and recovery.
 
+WAHA access logs use `WAHA_HTTP_LOG_LEVEL=info` (canonical
+`GATEWAY_HTTP_LOG_LEVEL`). This assigns request-completion severity; setting it to
+`error` mislabels successful HTTP 200/201 requests. Keep the separate application
+threshold at `WAHA_LOG_LEVEL=error` to retain actual error logging without verbose
+session/message logs. A browser `/favicon.ico` 404 is unrelated to sender readiness.
+
 WAHA uses a pinned official image, API-key protection, disabled dashboard/Swagger
 and QR logging, and stable namespace/worker/session identity. Hosted pairing has
 a separate session-store role/database; local pairing uses its own volume. Never
